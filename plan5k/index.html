@@ -167,12 +167,41 @@ tr.next td{background:var(--accent-soft)}
 .debt-edit:first-child{border-top:0;padding-top:0}
 
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
-nav.tabs .in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
-nav.tabs button{font:inherit;font-size:.72rem;font-weight:600;background:none;border:0;color:var(--muted);padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+nav.tabs .in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav.tabs button{font:inherit;font-size:.76rem;font-weight:600;background:none;border:0;color:var(--muted);padding:8px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
 nav.tabs button svg{width:22px;height:22px}
 nav.tabs button[aria-current="page"]{color:var(--accent)}
 .banner{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:.85rem}
 .toast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:.88rem;font-weight:600;z-index:20;max-width:calc(100% - 32px);text-align:center}
+
+/* inputs: one height everywhere; iOS date/month pickers otherwise size themselves and spill over neighbours */
+input[type=number],input[type=date],input[type=text],input[type=month],select{height:46px;line-height:1.2}
+input[type=date],input[type=month]{-webkit-appearance:none;appearance:none;display:block;text-align:left}
+input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
+input.amount{height:auto}
+.intro{display:flex;flex-direction:column;gap:4px}
+.step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-family:var(--f-num);font-size:.76rem;margin-right:8px;vertical-align:2px}
+.guide{display:flex;flex-direction:column}
+.gi{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.gi:first-child{border-top:0}
+.gi .mk{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;font-weight:700;color:var(--on-accent)}
+.gi.urgent .mk{border-color:var(--warn)}
+.gi.done .mk{background:var(--good);border-color:var(--good)}
+.gi.done strong{color:var(--muted)}
+.gi .s{display:block;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.gi.urgent .s{color:var(--warn)}
+.gi input{width:22px;height:22px;accent-color:var(--good);margin:0}
+details.howto{border-top:1px solid var(--line);padding-top:10px}
+details.howto summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600}
+.rhythm{display:flex;flex-direction:column;gap:8px;margin:10px 0 6px}
+.rhythm div{display:grid;grid-template-columns:7.5rem minmax(0,1fr);gap:8px;font-size:.84rem}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.stepc{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;font-size:.78rem;min-width:0}
+.stepc strong{font-size:.84rem}
+.stepc span{color:var(--muted)}
+.stepc.cur{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.stepc.done strong::after{content:" ✓";color:var(--good)}
+nav.tabs button small{font-size:.64rem;font-weight:500;opacity:.75;line-height:1}
 @media (prefers-reduced-motion: no-preference){.bar>i{transition:width .4s ease}}
 @media (max-width:380px){.cats{grid-template-columns:repeat(2,minmax(0,1fr))}.fields{grid-template-columns:1fr}}
 </style>
@@ -201,22 +230,26 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 
   <div id="banner" class="banner" hidden></div>
 
-  <!-- 오늘 -->
+  <!-- 오늘: 매일 -->
   <section class="view" id="v-today" aria-label="오늘">
-    <div class="panel">
-      <div class="row"><h2>이번 카드 주기 생활비</h2><span class="muted small num" id="cyRange"></span></div>
-      <div class="row"><div class="big" id="cySpent">0원</div><div class="muted small">한도 <span class="num" id="cyBudget">-</span></div></div>
-      <div class="bar" id="cyBar" aria-hidden="true"><i style="width:0"></i><b style="left:0"></b></div>
-      <div class="stats">
-        <div class="stat"><span class="muted small">남은 돈</span><span class="v" id="cyLeft">-</span></div>
-        <div class="stat"><span class="muted small">하루 가용</span><span class="v" id="cyPerDay">-</span></div>
-        <div class="stat"><span class="muted small" id="wkLabel">이번 주</span><span class="v" id="wkSpent">-</span></div>
-      </div>
-      <p class="small muted" id="cyPace"></p>
+    <div class="panel" id="guidePanel">
+      <div class="row"><h2>오늘 할 일</h2><span class="chip" id="guideCount"></span></div>
+      <div class="guide" id="guide"></div>
+      <details class="howto" id="howto">
+        <summary>언제 어느 탭을 여나요?</summary>
+        <div class="rhythm">
+          <div><strong>매일</strong><span>오늘 탭: 쓴 돈 기록, 습관 체크</span></div>
+          <div><strong>일요일</strong><span>주간 점검 탭: 카드 앱 숫자 입력 → 이번 주 돌아보기</span></div>
+          <div><strong>21일 · 25일 · 월말</strong><span>월급·상환 탭: 돈 확보 → 상환 기록 → 월말 잔액</span></div>
+          <div><strong>궁금할 때</strong><span>현황 탭: 순자산, 남은 빚, 완납 예상</span></div>
+        </div>
+        <p class="tiny muted">해야 할 일이 생기면 위 목록에 날짜에 맞춰 나타나요. 목록의 버튼만 따라 누르면 돼요.</p>
+      </details>
     </div>
 
     <form class="panel" id="entryForm" autocomplete="off">
-      <div class="row"><h2 id="entryTitle">지출 입력</h2><input type="date" id="enDate" aria-label="날짜" style="width:auto"></div>
+      <div class="row"><h2 id="entryTitle">쓴 돈 기록</h2><span class="tiny muted">금액 → 카테고리 → 결제수단</span></div>
+      <label class="field"><span>날짜</span><input type="date" id="enDate"></label>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
       <div class="pills" id="quickAdd">
         <button type="button" class="pill num" data-add="1000">+1천</button>
@@ -235,7 +268,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
       <div id="instBox" hidden class="fields">
         <label class="field"><span>할부 개월</span><input type="number" id="enMonths" inputmode="numeric" min="2" max="36" value="3"></label>
         <label class="check" style="align-self:end"><input type="checkbox" id="enFree"><span>무이자 할부</span></label>
-        <p class="note bad" id="instWarn" style="grid-column:1/-1">규칙: 할부는 무이자일 때만. 오늘 체크인의 '신규 할부 0건'은 자동으로 꺼져요.</p>
+        <p class="note bad" id="instWarn" style="grid-column:1/-1">규칙: 할부는 무이자일 때만. 유이자 할부를 기록하면 '신규 할부 0건' 체크가 자동으로 꺼져요.</p>
       </div>
       <input type="text" id="enMemo" placeholder="메모 (선택)" aria-label="메모">
       <div class="btns">
@@ -247,9 +280,10 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
     <div class="panel">
       <div class="row"><h2 id="dayTitle">오늘 기록</h2><span class="num" id="dayTotal"></span></div>
       <div class="list" id="dayList"></div>
+      <button type="button" class="btn ghost" id="noSpendBtn">오늘은 안 썼어요 (무지출)</button>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="habitPanel">
       <div class="row"><h2>습관 체크</h2><span class="chip good" id="streak" hidden></span></div>
       <div class="checks" id="habits">
         <label class="check"><input type="checkbox" id="hk_noInst"><span>신규 할부 0건, 모두 일시불</span></label>
@@ -260,60 +294,39 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
       <input type="text" id="dayMemo" placeholder="하루 메모 (넘친 항목, 이유)" aria-label="하루 메모">
     </div>
 
-    <div class="panel" id="upTasksPanel" hidden>
-      <div class="row"><h2>다가오는 할 일</h2><button type="button" class="btn ghost" data-go="debt">전체 보기</button></div>
-      <div id="upTasks"></div>
-    </div>
-  </section>
-
-  <!-- 예산 -->
-  <section class="view" id="v-budget" aria-label="예산" hidden>
-    <div class="seg" id="bdMode" role="group" aria-label="기준">
-      <button type="button" data-mode="cycle" aria-pressed="true">카드 주기 (12일~11일)</button>
-      <button type="button" data-mode="month" aria-pressed="false">달력 월</button>
-    </div>
-    <div class="row" style="align-items:center">
-      <button type="button" class="btn ghost" id="bdPrev" aria-label="이전">‹ 이전</button>
-      <strong class="num" id="bdLabel"></strong>
-      <button type="button" class="btn ghost" id="bdNext" aria-label="다음">다음 ›</button>
-    </div>
     <div class="panel">
-      <div class="row"><div class="big" id="bdSpent">0원</div><div class="muted small" id="bdOf"></div></div>
-      <div class="bar" id="bdBar" aria-hidden="true"><i style="width:0"></i><b style="left:0"></b></div>
-      <p class="small muted" id="bdPace"></p>
-      <div class="pills" id="bdOver"></div>
-    </div>
-    <div class="panel">
-      <div class="row"><h2>카테고리별</h2><span class="tiny muted">세로선 = 오늘까지 적정 사용액</span></div>
-      <div id="bdCats"></div>
-    </div>
-  </section>
-
-  <!-- 카드 -->
-  <section class="view" id="v-card" aria-label="카드" hidden>
-    <div class="panel">
-      <div class="row"><h2>롯데카드 이번 주기</h2><span class="muted small num" id="ccRange"></span></div>
-      <div class="stats two">
-        <div class="stat"><span class="muted small">가계부 기준 이용금액</span><span class="v" id="ccUse">-</span></div>
-        <div class="stat"><span class="muted small" id="ccBillLabel">다음 결제 예상</span><span class="v" id="ccBill">-</span></div>
+      <div class="row"><h2>이번 카드 주기 생활비</h2><span class="muted small num" id="cyRange"></span></div>
+      <div class="row"><div class="big" id="cySpent">0원</div><div class="muted small">한도 <span class="num" id="cyBudget">-</span></div></div>
+      <div class="bar" id="cyBar" aria-hidden="true"><i style="width:0"></i><b style="left:0"></b></div>
+      <div class="stats">
+        <div class="stat"><span class="muted small">남은 돈</span><span class="v" id="cyLeft">-</span></div>
+        <div class="stat"><span class="muted small">하루 가용</span><span class="v" id="cyPerDay">-</span></div>
+        <div class="stat"><span class="muted small" id="wkLabel">이번 주</span><span class="v" id="wkSpent">-</span></div>
       </div>
-      <p class="tiny muted">예상 결제액 = 해당 주기 롯데 일시불 합계 + 그 달 할부액</p>
+      <p class="small muted" id="cyPace"></p>
+      <div class="pills" id="cyOver"></div>
     </div>
+  </section>
+
+  <!-- 주간 점검: 일요일 -->
+  <section class="view" id="v-week" aria-label="주간 점검" hidden>
+    <div class="intro"><h2>주간 점검</h2><p class="small muted">매주 일요일, 롯데카드 앱을 열어 두고 위에서부터 순서대로 하세요. 5분이면 끝나요.</p></div>
 
     <form class="panel" id="wkForm" autocomplete="off">
-      <div class="row"><h2>주간 점검</h2><span class="chip" id="wkSunday" hidden>오늘은 점검일</span></div>
-      <p class="small muted">카드 앱에서 보이는 숫자를 그대로 적어 주세요.</p>
-      <div class="fields">
-        <label class="field"><span>점검 날짜</span><input type="date" id="wkDate"></label>
-        <label class="field"><span>이번 주기 이용금액</span><input type="text" inputmode="numeric" id="wkUsage" placeholder="0"></label>
-        <label class="field" style="grid-column:1/-1"><span id="wkBillLabel">다음 결제예정액</span><input type="text" inputmode="numeric" id="wkBill" placeholder="0"></label>
-      </div>
-      <button class="btn" type="submit">비교하고 저장</button>
-      <div id="wkResult"></div>
+      <div class="row"><h2><span class="step">1</span>카드 앱 숫자 적기</h2><span class="chip" id="wkSunday" hidden>오늘은 점검일</span></div>
+      <label class="field"><span>점검 날짜</span><input type="date" id="wkDate"></label>
+      <label class="field"><span>이번 주기 이용금액 <span class="muted" id="wkUseRange"></span></span><input type="text" inputmode="numeric" id="wkUsage" placeholder="0"></label>
+      <label class="field"><span id="wkBillLabel">다음 결제예정액</span><input type="text" inputmode="numeric" id="wkBill" placeholder="0"></label>
+      <button class="btn" type="submit">가계부와 비교하기</button>
     </form>
 
     <div class="panel">
-      <div class="row"><h2>주간 리뷰</h2><span class="muted small num" id="rvRange"></span></div>
+      <h2><span class="step">2</span>가계부와 맞는지 확인</h2>
+      <div id="wkResult"><p class="empty">1번에 숫자를 적으면 가계부 예상값과 비교한 결과가 여기 나와요.</p></div>
+    </div>
+
+    <div class="panel">
+      <div class="row"><h2><span class="step">3</span>이번 주 돌아보기</h2><span class="muted small num" id="rvRange"></span></div>
       <div class="row"><div><div class="muted small">이번 주 사용액</div><div class="big" id="rvSpent">-</div></div><div class="muted small">한도 <span class="num" id="rvLimit">-</span></div></div>
       <div class="bar" id="rvBar" aria-hidden="true"><i style="width:0"></i></div>
       <div class="stats two">
@@ -324,34 +337,40 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
     </div>
 
     <div class="panel">
-      <h2>점검 기록</h2>
-      <div class="list" id="wkHist"></div>
+      <div class="row"><h2>카테고리별 예산</h2><span class="tiny muted">세로선 = 오늘까지 적정 사용액</span></div>
+      <div class="seg" id="bdMode" role="group" aria-label="기준">
+        <button type="button" data-mode="cycle" aria-pressed="true">카드 주기 (12일~11일)</button>
+        <button type="button" data-mode="month" aria-pressed="false">달력 월</button>
+      </div>
+      <div class="row" style="align-items:center">
+        <button type="button" class="btn ghost" id="bdPrev" aria-label="이전 기간">‹ 이전</button>
+        <strong class="num small" id="bdLabel"></strong>
+        <button type="button" class="btn ghost" id="bdNext" aria-label="다음 기간">다음 ›</button>
+      </div>
+      <div class="row"><div class="big" id="bdSpent">0원</div><div class="muted small" id="bdOf"></div></div>
+      <div class="bar" id="bdBar" aria-hidden="true"><i style="width:0"></i><b style="left:0"></b></div>
+      <p class="small muted" id="bdPace"></p>
+      <div class="pills" id="bdOver"></div>
+      <div id="bdCats"></div>
     </div>
 
     <div class="panel">
-      <div class="row"><h2>할부 일정</h2><span class="muted small">남은 합계 <span class="num" id="schLeft">-</span></span></div>
-      <p class="tiny muted">선결제를 기록하면 '선결제 감소'에 반영돼요. 할부표 원본은 설정에서 고쳐요.</p>
-      <div class="tbl-wrap"><table id="schTbl"></table></div>
+      <h2>지난 점검 기록</h2>
+      <div class="list" id="wkHist"></div>
     </div>
   </section>
 
-  <!-- 상환 -->
-  <section class="view" id="v-debt" aria-label="상환" hidden>
-    <div class="panel" id="payPanel"></div>
+  <!-- 월급·상환: 21일, 25일, 월말 -->
+  <section class="view" id="v-month" aria-label="월급·상환" hidden>
+    <div class="intro"><h2>월급·상환</h2><p class="small muted">한 달에 세 번 열어요. 21일 월급날, 25일 카드 결제 뒤, 그리고 월말이에요.</p></div>
+    <div class="steps" id="monthSteps"></div>
 
-    <div class="panel">
-      <div class="row">
-        <div><div class="muted small">남은 빚 합계</div><div class="big" id="dbTotal">-</div></div>
-        <div style="text-align:right"><div class="muted small">완납 예상</div><div class="num" style="font-weight:600" id="dbFree">-</div></div>
-      </div>
-      <div class="bar good" id="dbBar" aria-hidden="true"><i style="width:0"></i></div>
-      <p class="small muted" id="dbProg"></p>
-    </div>
+    <div class="panel" id="payPanel"></div>
 
     <form class="panel" id="payForm" hidden autocomplete="off">
       <div class="row"><h2>선결제·상환 기록</h2><button type="button" class="btn ghost" id="pfClose">닫기</button></div>
+      <label class="field"><span>어디에</span><select id="pfDebt"></select></label>
       <div class="fields">
-        <label class="field" style="grid-column:1/-1"><span>어디에</span><select id="pfDebt"></select></label>
         <label class="field"><span>날짜</span><input type="date" id="pfDate"></label>
         <label class="field"><span>금액</span><input type="text" inputmode="numeric" id="pfAmount" placeholder="0"></label>
       </div>
@@ -365,15 +384,20 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
       <button class="btn" type="submit">기록</button>
     </form>
 
-    <div class="panel">
-      <div class="row"><h2>상환 순서</h2><span class="muted small">금리 높은 것부터</span></div>
-      <div id="dbList"></div>
-      <button type="button" class="btn ghost" data-act="pay-open">+ 선결제·상환 기록</button>
-    </div>
+    <form class="panel" id="nwForm" autocomplete="off">
+      <h2><span class="step">3</span>월말 잔액 기록</h2>
+      <p class="small muted">저축통장·결제계좌 등 현금성 잔액을 모두 더해 적어 주세요. 보증금은 자동으로 더해요.</p>
+      <div class="fields">
+        <label class="field"><span>월</span><input type="month" id="nwMonth"></label>
+        <label class="field"><span>저축·현금 잔액</span><input type="text" inputmode="numeric" id="nwCash" placeholder="0"></label>
+      </div>
+      <button class="btn" type="submit">기록</button>
+    </form>
 
     <div class="panel">
       <h2>상환 기록</h2>
       <div class="list" id="pmList"></div>
+      <button type="button" class="btn ghost" data-act="pay-open">+ 선결제·상환 직접 기록</button>
     </div>
 
     <div class="panel">
@@ -382,7 +406,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
     </div>
   </section>
 
-  <!-- 현황 -->
+  <!-- 현황: 궁금할 때 -->
   <section class="view" id="v-dash" aria-label="현황" hidden>
     <div class="panel">
       <span class="muted small">지금 순자산 (추정)</span>
@@ -399,25 +423,34 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
     </div>
 
     <div class="panel">
+      <div class="row">
+        <div><div class="muted small">남은 빚 합계</div><div class="big" id="dbTotal">-</div></div>
+        <div style="text-align:right"><div class="muted small">완납 예상</div><div class="num" style="font-weight:600" id="dbFree">-</div></div>
+      </div>
+      <div class="bar good" id="dbBar" aria-hidden="true"><i style="width:0"></i></div>
+      <p class="small muted" id="dbProg"></p>
       <div class="stats two">
-        <div class="stat"><span class="muted small">남은 빚</span><span class="v" id="dsDebt">-</span></div>
-        <div class="stat"><span class="muted small">상환 진행률</span><span class="v" id="dsProg">-</span></div>
         <div class="stat"><span class="muted small">27년 말 목표</span><span class="v" id="dsTarget">-</span></div>
         <div class="stat"><span class="muted small">목표까지</span><span class="v" id="dsGap">-</span></div>
       </div>
       <div class="list" id="dsParts"></div>
     </div>
 
-    <form class="panel" id="nwForm" autocomplete="off">
+    <div class="panel">
+      <div class="row"><h2>상환 순서</h2><span class="muted small">금리 높은 것부터</span></div>
+      <div id="dbList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="row"><h2>할부 일정</h2><span class="muted small">남은 합계 <span class="num" id="schLeft">-</span></span></div>
+      <p class="tiny muted">선결제를 기록하면 '선결제 감소'에 반영돼요. 할부표 원본은 설정에서 고쳐요.</p>
+      <div class="tbl-wrap"><table id="schTbl"></table></div>
+    </div>
+
+    <div class="panel">
       <h2>월말 잔액 기록</h2>
-      <p class="small muted">한 달에 한 번, 저축통장·결제계좌 등 현금성 잔액 합계를 적어 주세요. 보증금은 자동으로 더해요.</p>
-      <div class="fields">
-        <label class="field"><span>월</span><input type="month" id="nwMonth"></label>
-        <label class="field"><span>저축·현금 잔액</span><input type="text" inputmode="numeric" id="nwCash" placeholder="0"></label>
-      </div>
-      <button class="btn" type="submit">기록</button>
       <div class="list" id="nwList"></div>
-    </form>
+    </div>
   </section>
 
   <!-- 설정 -->
@@ -434,11 +467,10 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 
 <nav class="tabs" aria-label="화면">
   <div class="in">
-    <button type="button" data-go="today" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>오늘</button>
-    <button type="button" data-go="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>예산</button>
-    <button type="button" data-go="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>카드</button>
-    <button type="button" data-go="debt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13l-3-3"/><path d="M21 17H8l3 3"/></svg>상환</button>
-    <button type="button" data-go="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>현황</button>
+    <button type="button" data-go="today" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>오늘<small>매일</small></button>
+    <button type="button" data-go="week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>주간 점검<small>일요일</small></button>
+    <button type="button" data-go="month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13l-3-3"/><path d="M21 17H8l3 3"/></svg>월급·상환<small>21·25일</small></button>
+    <button type="button" data-go="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>현황<small>궁금할 때</small></button>
   </div>
 </nav>
 <div class="toast" id="toast" hidden role="status"></div>
@@ -474,6 +506,7 @@ const dom=s=>Number(s.slice(8));
 
 /* ---------- state ---------- */
 const S={settings:null,budget:null,fixed:null,schedule:null,debts:null,tasks:{},entries:[],days:{},weekly:[],payments:[],networth:[]};
+let dayWriting=Promise.resolve();
 let db=null, view="today", selDate=TODAY, selCat=null, selMethod="lotte", editingId=null;
 let bdMode="cycle", bdKey=null;
 const LS={get(k,f){try{const v=localStorage.getItem("plan5k2:"+k);return v?JSON.parse(v):f}catch(e){return f}},
@@ -630,11 +663,7 @@ let raf=0;function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;r
 function renderAll(){
   renderHeader();
   if(!S.settings){$("banner").hidden=false;$("banner").textContent=db?"설정 데이터를 불러오는 중이에요.":$("banner").textContent;}
-  if(view==="today")renderToday();
-  if(view==="budget")renderBudget();
-  if(view==="card")renderCard();
-  if(view==="debt")renderDebt();
-  if(view==="dash")renderDash();
+  renderToday();renderGuide();renderBudget();renderCard();renderDebt();renderDash();
 }
 
 function renderHeader(){
@@ -705,10 +734,57 @@ function renderToday(){
   while(S.days[d]&&S.days[d].checks&&S.days[d].checks.noInst&&S.days[d].checks.noRevolve){s++;d=addDays(d,-1)}
   $("streak").hidden=s<1;$("streak").textContent=`할부 0 연속 ${s}일`;
 
-  // upcoming tasks
-  const up=[];TASKS.forEach(g=>g.items.forEach(i=>{if(!S.tasks[i.id]&&dayDiff(TODAY,g.d)<=7)up.push({g,i})}));
-  $("upTasksPanel").hidden=!up.length;
-  $("upTasks").innerHTML=up.slice(0,5).map(({g,i})=>{const n=dayDiff(TODAY,g.d);return `<label class="check task"><input type="checkbox" data-task="${i.id}"><span><em>${esc(i.t)}</em><span class="tn">${md(g.d)} ${esc(g.g)} · ${n<0?`<span class="bad-t">${-n}일 지남</span>`:n===0?"오늘":"D-"+n}</span></span></label>`}).join("");
+  // categories already over budget this cycle
+  const r={start:y.c.start,end:y.c.end};
+  const ov=CATS().map(c=>({c,s:sum(entriesIn(r,e=>e.cat===c.id),e=>e.amount),b:c.amount||0})).filter(x=>x.s>x.b);
+  $("cyOver").innerHTML=ov.map(x=>`<span class="chip bad">${esc(x.c.name)} ${won(x.s-x.b)} 초과</span>`).join("");
+  // no-spend toggle
+  const ns=$("noSpendBtn");ns.hidden=list.length>0;
+  ns.textContent=day.noSpend?"무지출로 표시했어요 · 취소":isToday?"오늘은 안 썼어요 (무지출)":"이날은 안 썼어요 (무지출)";
+  ns.setAttribute("aria-pressed",!!day.noSpend);
+}
+
+/* ---------- 오늘 할 일 (what the date asks for) ---------- */
+function guideItems(){
+  const it=[],d=dom(TODAY),M=ymOf(TODAY),day=S.days[TODAY]||{};
+  const todays=S.entries.filter(e=>e.date===TODAY);
+  it.push({done:todays.length>0||!!day.noSpend,t:"쓴 돈 기록",
+    s:todays.length?`${todays.length}건 · ${won(sum(todays,e=>e.amount))} · 더 쓰면 계속 추가`:day.noSpend?"무지출로 표시했어요":"안 쓴 날은 '무지출'을 눌러 주세요",
+    btn:todays.length||day.noSpend?null:["기록","scroll:entryForm"]});
+  const hk=HK.filter(k=>day.checks&&day.checks[k]).length;
+  it.push({done:hk===4,t:"습관 체크",s:`${hk}/4 체크`,btn:hk===4?null:["체크","scroll:habitPanel"]});
+  // weekly card check: Sundays, or a missed one since the app started
+  const wr=weekRange(TODAY),isSun=parse(TODAY).getDay()===0,prevSun=addDays(wr.start,-1);
+  const real=S.weekly.filter(w=>!w.seed).map(w=>w.date).sort();
+  const last=real[real.length-1];
+  if(isSun){const done=!!last&&last>=wr.start;it.push({done,t:"주간 카드 점검",s:done?"이번 주 점검 끝":"롯데카드 앱을 열고 5분",btn:done?null:["시작","go:week"]})}
+  else if(prevSun>=(ST().appStart||"2026-10-07")&&!(last&&last>=addDays(prevSun,-6)))
+    it.push({done:false,urgent:true,t:"주간 카드 점검 (밀림)",s:`${md(prevSun)} 일요일 점검을 아직 안 했어요`,btn:["시작","go:week"]});
+  // card cycle closed on the 11th
+  if(d>=CYC()&&d<=CYC()+2){const k="cycle-"+M,c=cycleOf(M),sp=sum(entriesIn(c),e=>e.amount),B=ST().cycleBudget||0;
+    it.push({task:k,done:!!S.tasks[k],t:"카드 주기 마감 확인",s:`${md(c.start)}~${md(c.end)} 생활비 ${won(sp)} / ${won(B)}${sp>B?` · ${won(sp-B)} 초과`:""}`,btn:["보기","cycle:"+M]})}
+  // payday and card payment
+  if(d>=PAY()&&d<CARD()){const k="secure-"+M,pl=payPlan(M);
+    it.push({task:k,done:!!S.tasks[k],t:"월급날: 카드값·고정비 확보",s:`카드 ${won(pl.card)} + 고정비 ${won(pl.fixed)} 남겨 두기`,btn:["보기","go:month"]})}
+  if(d>=CARD()){const pl=payPlan(M);if(pl.avail>0){const done=pl.rest<=0;
+    it.push({done,t:"상환하고 기록",s:done?"이번 달 상환 기록 끝":`${won(pl.rest)} 남음 · 순서대로 넣기`,btn:done?null:["열기","go:month"]})}}
+  // month-end balance
+  const L=Number(ymDay(M,31).slice(8));
+  if(d>=L-1||d<=3){const ym=d<=3?ymAdd(M,-1):M,done=S.networth.some(n=>n.ym===ym);
+    it.push({done,t:`${ymKo(ym)} 월말 잔액 기록`,s:done?"기록했어요":"저축·현금 잔액 합계 한 줄",btn:done?null:["기록","nw:"+ym]})}
+  // dated to-dos from the plan
+  TASKS.forEach(g=>g.items.forEach(i=>{const n=dayDiff(TODAY,g.d);if(!S.tasks[i.id]&&n<=3)
+    it.push({task:i.id,done:false,urgent:n<0,t:i.t,s:`${g.label||md(g.d)+" "+g.g} · ${n<0?`${-n}일 지남`:n===0?"오늘":"D-"+n}`})}));
+  return it;
+}
+function renderGuide(){
+  const it=guideItems(),dn=it.filter(x=>x.done).length;
+  $("guideCount").textContent=`${dn}/${it.length}`;$("guideCount").className="chip"+(dn===it.length?" good":"");
+  $("guide").innerHTML=it.map(x=>`<div class="gi ${x.done?"done":""} ${x.urgent&&!x.done?"urgent":""}">
+    ${x.task?`<input type="checkbox" data-task="${esc(x.task)}" ${x.done?"checked":""} aria-label="${esc(x.t)} 완료">`:`<span class="mk" aria-hidden="true">${x.done?"✓":""}</span>`}
+    <div style="min-width:0"><strong>${esc(x.t)}</strong><span class="s">${esc(x.s)}</span></div>
+    ${x.btn?`<button type="button" class="btn ghost" data-guide="${esc(x.btn[1])}">${esc(x.btn[0])}</button>`:"<span></span>"}</div>`).join("")+
+    (dn===it.length?'<p class="note good">오늘 할 일을 다 했어요.</p>':"");
 }
 
 /* ---------- 예산 ---------- */
@@ -769,17 +845,13 @@ function compareHTML(w){
 }
 function renderCard(){
   const p=payYmOf(TODAY),c=cycleOf(p);
-  $("ccRange").textContent=`${md(c.start)}~${md(c.end)} → ${md(c.pay)}`;
-  $("ccUse").textContent=won(sum(entriesIn({start:c.start,end:TODAY},e=>e.method!=="cash"),e=>e.amount));
-  const nP=dom(TODAY)<=CARD()?ymOf(TODAY):ymAdd(ymOf(TODAY),1);
-  $("ccBillLabel").textContent=`${md(ymDay(nP,CARD()))} 결제 예상`;
-  $("ccBill").textContent=won(estBill(nP));
   $("wkSunday").hidden=parse(TODAY).getDay()!==0;
   if(!$("wkDate").value)$("wkDate").value=TODAY;
   const wd=$("wkDate").value||TODAY,wP=dom(wd)<=CARD()?ymOf(wd):ymAdd(ymOf(wd),1);
-  $("wkBillLabel").textContent=`다음 결제예정액 (${md(ymDay(wP,CARD()))} 결제)`;
+  $("wkBillLabel").textContent=`다음 결제예정액 (${md(ymDay(wP,CARD()))} 결제분)`;
+  const wc=cycleOf(payYmOf(wd));$("wkUseRange").textContent=`(${md(wc.start)}~${md(wc.end)})`;
   const ws=S.weekly.slice().sort((a,b)=>a.date<b.date?1:-1);
-  if(!$("wkForm").contains(document.activeElement))$("wkResult").innerHTML=ws[0]?`<div class="tiny muted">${mdw(ws[0].date)} 점검 결과</div>`+compareHTML(ws[0]):"";
+  if(!$("wkForm").contains(document.activeElement))$("wkResult").innerHTML=ws[0]?`<div class="tiny muted">${mdw(ws[0].date)} 점검 결과</div>`+compareHTML(ws[0]):'<p class="empty">1번에 숫자를 적으면 가계부 예상값과 비교한 결과가 여기 나와요.</p>';
   $("wkHist").innerHTML=ws.length?ws.slice(0,10).map(w=>{const it=w.seed?[]:weeklyCompare(w);const bad=it.some(x=>x.bad);
     return `<div class="li"><div><div class="t">${mdw(w.date)} ${w.seed?'<span class="chip plain">옮김</span>':bad?'<span class="chip bad">차이 큼</span>':'<span class="chip good">맞음</span>'}</div>
     <div class="s">이용 ${w.usage?num(w.usage):"-"} · 결제예정 ${w.nextBill?num(w.nextBill):"-"}</div></div>
@@ -812,9 +884,14 @@ function renderCard(){
 function renderDebt(){
   const d=dom(TODAY),M=ymOf(TODAY),pl=payPlan(M);
   const phase=d<PAY()?"before":d<CARD()?"secure":"repay";
-  const head=phase==="before"?`<div class="row"><h2>${md(ymDay(M,PAY()))} 월급날 미리보기</h2><span class="chip">D-${dayDiff(TODAY,ymDay(M,PAY()))}</span></div>`
-    :phase==="secure"?`<div class="row"><h2>월급날: 먼저 확보할 돈</h2><span class="chip warn">결제일 ${md(ymDay(M,CARD()))}</span></div>`
-    :`<div class="row"><h2>결제일 이후: 상환 실행</h2><span class="chip good">${ymKo(M)}</span></div>`;
+  const head=phase==="before"?`<div class="row"><h2><span class="step">1</span>${md(ymDay(M,PAY()))} 월급날 미리보기</h2><span class="chip">D-${dayDiff(TODAY,ymDay(M,PAY()))}</span></div><p class="small muted">월급이 들어오면 카드값과 고정비를 결제계좌에 먼저 남겨 두세요.</p>`
+    :phase==="secure"?`<div class="row"><h2><span class="step">1</span>월급날: 먼저 확보할 돈</h2><span class="chip warn">결제일 ${md(ymDay(M,CARD()))}</span></div><p class="small muted">카드값과 고정비를 케이뱅크 결제계좌에 남겨 두세요. 상환은 25일 결제가 끝난 뒤에 해요.</p>`
+    :`<div class="row"><h2><span class="step">2</span>결제일 이후: 상환 실행</h2><span class="chip good">${ymKo(M)}</span></div><p class="small muted">아래 순서대로 넣고, 넣을 때마다 '기록'을 눌러 주세요.</p>`;
+  const sk="secure-"+M,secured=!!S.tasks[sk]||phase==="repay",nwDone=S.networth.some(n=>n.ym===M);
+  const repDone=phase==="repay"&&pl.avail>0&&pl.rest<=0;
+  $("monthSteps").innerHTML=`<div class="stepc ${phase!=="repay"?"cur":""} ${secured?"done":""}"><strong>① 21일</strong><span>카드값·고정비 확보</span></div>
+    <div class="stepc ${phase==="repay"&&!repDone?"cur":""} ${repDone?"done":""}"><strong>② 25일 뒤</strong><span>상환하고 기록</span></div>
+    <div class="stepc ${nwDone?"done":""}"><strong>③ 월말</strong><span>잔액 기록</span></div>`;
   const src=pl.cardSrc==="app"?"카드 앱 입력값":pl.cardSrc==="est-open"?"추정 · 남은 생활비 예산 포함":"가계부 추정";
   const flow=`<div class="flow">
     <div class="fl"><span>실수령${ST().raiseFromYm&&M>=ST().raiseFromYm?" (인상 반영)":""}</span><span class="num">${num(pl.inc)}</span></div>
@@ -834,7 +911,8 @@ function renderDebt(){
         :`<p class="empty">${phase==="repay"&&pl.paid?"이번 달 상환을 다 기록했어요.":"넣을 곳이 없어요."}</p>`)+
       (al.left>0?`<p class="note good">빚을 다 갚고 ${won(al.left)} 남아요. 저축통장으로 옮기세요.</p>`:"");
   }
-  $("payPanel").innerHTML=head+flow+body+`<p class="tiny muted">연봉 인상분·성과급·연말정산 환급이 들어오면 위 금액에 더해 전액 상환하세요.</p>`;
+  const secureBox=phase==="secure"?`<label class="check"><input type="checkbox" data-task="${sk}" ${S.tasks[sk]?"checked":""}><span>카드값과 고정비를 결제계좌에 남겨 뒀어요</span></label>`:"";
+  $("payPanel").innerHTML=head+flow+secureBox+body+`<p class="tiny muted">연봉 인상분·성과급·연말정산 환급이 들어오면 위 금액에 더해 전액 상환하세요.</p>`;
 
   // totals
   const T=totalDebt(),start=ST().startDebt||T,sim=simulate();
@@ -892,7 +970,7 @@ function pfAuto(){
     :"이 건은 월 청구액이 없어요. 카드 앱에서 선결제 후 줄어든 월 할부액을 적어 주세요. 설정에서 월 청구액을 넣으면 자동으로 채워져요.";
 }
 function openPay(id,amt){
-  view==="debt"||go("debt");
+  view==="month"||go("month");
   $("payForm").hidden=false;pfDirty=false;fillPayDebts(id);
   $("pfDate").value=TODAY;$("pfAmount").value=amt?num(amt):"";$("pfMemo").value="";
   pfAuto();$("payForm").scrollIntoView({behavior:"smooth",block:"start"});
@@ -918,7 +996,6 @@ function renderDash(){
   chips.push(`<span class="chip plain">5천만까지 ${won(Math.max(0,(st.finalTarget||0)-now))}</span>`);
   $("nwChips").innerHTML=chips.join("");
   const start=st.startDebt||T,pr=start>0?Math.max(0,(start-T)/start):0;
-  $("dsDebt").textContent=won(T);$("dsProg").textContent=Math.round(pr*100)+"%";
   $("dsTarget").textContent=target!=null?won(target):`시작 +${man(gain)}`;
   $("dsGap").textContent=target!=null?won(Math.max(0,target-now)):"-";
   $("dsParts").innerHTML=[["카드 할부 남은 합계",remainingInst()],...DEBTS().filter(d=>d.kind!=="card").map(d=>[d.name,curBal(d)]),["보증금 (자산)",st.deposit||0],["저축·현금 (최근 기록)",lastCash||0]]
@@ -997,7 +1074,8 @@ function renderSettings(){
 /* ================= EVENTS ================= */
 function go(v){
   view=v;
-  ["today","budget","card","debt","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);
+  if(!["today","week","month","dash","settings"].includes(v))v=view="today";
+  ["today","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===v?"page":"false"));
   if(v==="settings")renderSettings();
   renderAll();window.scrollTo(0,0);
@@ -1006,6 +1084,14 @@ function go(v){
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button,[data-tip]");if(!t)return;
   if(t.dataset.go){go(t.dataset.go);return}
+  if(t.dataset.guide){const[k,v]=t.dataset.guide.split(":");
+    if(k==="go")go(v);
+    if(k==="scroll"){selDate=TODAY;renderToday();$(v).scrollIntoView({behavior:"smooth",block:"start"})}
+    if(k==="cycle"){bdMode="cycle";bdKey=v;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode==="cycle"));go("week");$("bdMode").scrollIntoView({block:"start"})}
+    if(k==="nw"){go("month");$("nwMonth").value=v;$("nwForm").scrollIntoView({block:"start"});$("nwCash").focus()}
+    return}
+  if(t.id==="noSpendBtn"){const day=S.days[selDate]||{};const doc={...day,noSpend:!day.noSpend,savedAt:new Date().toISOString()};S.days={...S.days,[selDate]:doc};render();
+    dayWriting=dayWriting.then(()=>put("days/"+selDate,doc).catch(()=>{}));return}
   if(t.dataset.tip!=null){$("nwTip").textContent=t.dataset.tip;return}
   if(t.dataset.act==="pay-open"){openPay(t.dataset.debt,Number(t.dataset.amt)||0);return}
   if(t.dataset.cat){selCat=t.dataset.cat;$("enCats").dataset.sel="";renderToday();return}
@@ -1079,7 +1165,6 @@ $("entryForm").addEventListener("submit",async e=>{
 });
 
 /* habits: save each change */
-let dayWriting=Promise.resolve();
 function saveDay(){
   const date=selDate,checks={};HK.forEach(k=>checks[k]=$("hk_"+k).checked);
   const doc={...(S.days[date]||{}),checks,memo:$("dayMemo").value.trim(),savedAt:new Date().toISOString()};
