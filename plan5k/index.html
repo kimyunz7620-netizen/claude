@@ -336,7 +336,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 
     <div class="card" id="uncatCard" hidden>
       <div class="row"><h2>🧩 분류가 필요한 지출</h2><span class="chip warn" id="uncatCount"></span></div>
-      <p class="small muted">카드에만 있던 지출이에요. 눌러서 카테고리를 골라 주세요.</p>
+      <p class="small muted">카드에만 있던 지출이에요. 아래에서 카테고리를 바로 골라 주세요.</p>
       <div class="list" id="uncatList"></div>
     </div>
 
@@ -768,7 +768,7 @@ function renderToday(){
   renderCal();
   const un=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).sort((a,b)=>a.date<b.date?-1:1);
   $("uncatCard").hidden=!un.length;$("uncatCount").textContent=`${un.length}건`;
-  $("uncatList").innerHTML=un.map(e=>entryRow(e).replace('<div class="t">',`<div class="t"><span class="tiny muted">${md(e.date)}</span> `)).join("");
+  if(!$("uncatList").contains(document.activeElement))$("uncatList").innerHTML=un.map(e=>`<div class="sub"><div class="row"><span class="small"><span class="muted">${md(e.date)}</span> ${esc((e.memo||"").replace(/ · 카드에만 있음.*$/,""))}</span><strong>${num(e.amount)}</strong></div><div class="pills">${CATS().map(c=>`<button type="button" class="pill" data-recat="${esc(e.id)}" data-cat2="${esc(c.id)}">${look(c.id)[0]} ${esc(c.name)}</button>`).join("")}<button type="button" class="pill" data-recat="${esc(e.id)}" data-cat2="__excl">🎒 예산에서 빼기</button></div></div>`).join("");
   $("cyOver").innerHTML=CATS().map(c=>({c,s:sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount),b:c.amount||0})).filter(x=>x.s>x.b).map(x=>`<span class="chip bad">${look(x.c.id)[0]} ${esc(x.c.name)} +${num(x.s-x.b)}</span>`).join("");
 }
 
@@ -1069,6 +1069,9 @@ document.addEventListener("click",async e=>{
   if(t.id==="calPrev"){calYm=ymAdd(calYm,-1);calSel=null;renderCal();return}
   if(t.id==="calNext"){calYm=ymAdd(calYm,1);calSel=null;renderCal();return}
   if(t.id==="calCats"){bdMode="month";bdKey=calYm;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode==="month"));go("week");$("bdMode").scrollIntoView({block:"start"});return}
+  if(t.dataset.recat){const en=S.entries.find(x=>x.id===t.dataset.recat);if(!en)return;const{id,...rest}=en;const memo=(rest.memo||"").replace(/ · 카드에만 있음.*$/,"");const doc=t.dataset.cat2==="__excl"?{...rest,memo,excl:true}:{...rest,memo,cat:t.dataset.cat2};
+    S.entries=S.entries.map(x=>x.id===id?{id,...doc}:x);render();
+    try{await put("entries/"+id,doc);toast(t.dataset.cat2==="__excl"?"예산에서 뺐어요":`${look(doc.cat)[0]} ${catName(doc.cat)}(으)로 바꿨어요`)}catch(_){}return}
   if(t.dataset.fxreset){saveFixedOverride(t.dataset.fxreset,t.dataset.ym,null);return}
   if(t.dataset.cat){selCat=t.dataset.cat;renderToday();return}
   if(t.dataset.freq){const[c,a]=t.dataset.freq.split("|");selCat=c;$("enAmount").value=num(a);renderToday();return}
@@ -1092,6 +1095,7 @@ $("pfClose").addEventListener("click",()=>{$("payForm").hidden=true});
 $("enDate").addEventListener("change",e=>{selDate=e.target.value||TODAY;calYm=ymOf(selDate);if(editingId)cancelEdit();renderToday()});
 $("wkDate").addEventListener("change",renderWeek);
 function startEdit(en){
+  if(view!=="today")go("today");
   editingId=en.id;selDate=en.date;selCat=en.cat;selMethod=en.method;
   $("enAmount").value=num(en.amount);$("enMemo").value=en.memo||"";$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;$("enExcl").checked=!!en.excl;
   document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===selMethod));$("instBox").hidden=selMethod!=="inst";
