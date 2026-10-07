@@ -206,6 +206,20 @@ nav.tabs button[aria-current="page"]{color:var(--grape)}
 nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 .banner{background:var(--sun-soft);border-radius:12px;padding:10px 12px;font-size:.85rem}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:.9rem;font-weight:600;z-index:20;max-width:calc(100% - 32px);text-align:center}
+.cal,.cal-h{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal-h span{text-align:center;font-size:.72rem;color:var(--muted);font-weight:600}
+.cd{font:inherit;border:2px solid transparent;border-radius:10px;padding:5px 1px;min-height:52px;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:0}
+.cd .n{font-size:.72rem;color:var(--muted)}
+.cd .v{font-size:.68rem;font-weight:800;white-space:nowrap}
+.cd.g{background:var(--mint-soft)} .cd.w{background:var(--sun-soft)} .cd.b{background:var(--coral-soft)}
+.cd.today .n{color:var(--grape);font-weight:800}
+.cd.sel{border-color:var(--grape)}
+.cd.fut{opacity:.35;cursor:default}
+.cd.pad{visibility:hidden}
+.mstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mstats div{background:var(--bg);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.mstats span{font-size:.72rem;color:var(--muted)}
+.mstats strong{font-family:var(--f-display);font-weight:400;font-size:1.05rem}
 @media (prefers-reduced-motion: no-preference){
   .bar>i,.gauge .trk i{transition:width .5s ease}
   .pop{animation:pop .5s ease}
@@ -308,7 +322,16 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     <div class="card">
       <div class="row"><div class="title"><span class="em">🧾</span><h2 id="dayTitle">오늘 기록</h2></div><span class="disp" id="dayTotal"></span></div>
       <div class="list" id="dayList"></div>
-      <button type="button" class="btn ghost" id="noSpendBtn">🥚 오늘은 안 썼어요 (무지출)</button>
+      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요 (무지출)</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로 돌아가기</button></div>
+    </div>
+
+    <div class="card" id="calCard">
+      <div class="row"><div class="title"><span class="em">📅</span><h2>지난 기록</h2></div>
+        <div class="btns" style="align-items:center"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><strong class="small" id="calLabel"></strong><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
+      <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+      <div class="cal" id="cal"></div>
+      <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>기록한 날 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
+      <div class="row"><span class="tiny muted">🟢 하루 한도 안 · 🟡 1.5배까지 · 🔴 그 이상 · 날짜를 누르면 그날 내역이 위에 떠요</span><button type="button" class="btn ghost" id="calCats">카테고리별 보기</button></div>
     </div>
 
     <div class="card" id="habitPanel">
@@ -443,7 +466,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     </div>
     <div class="card">
       <div class="row"><div class="title"><span class="em">💳</span><h2>카드 할부 <span id="instCount"></span></h2></div><span class="muted small" id="instSum"></span></div>
-      <p class="small muted">모두 연 19.6% 유이자예요. 남은 기간이 길수록 선결제로 아끼는 수수료가 커서, <strong>절약률</strong>(아끼는 수수료 ÷ 선결제 금액) 순으로 정렬했어요.</p>
+      <p class="small muted">모두 연 19.6% 유이자예요. 선결제하면 <strong>아끼는 수수료가 큰 순서</strong>로 정렬했어요. 월급·상환 탭은 그달 가진 돈으로 아낄 수 있는 수수료 합계가 가장 큰 조합을 추천해요.</p>
       <div class="list" id="instList"></div>
       <details class="more" id="instMoreBox"><summary id="instMoreSum">나머지 보기</summary><div class="list" id="instMore"></div></details>
       <details class="more"><summary>끝난 할부 보기</summary><div class="list" id="instDone"></div></details>
@@ -512,7 +535,7 @@ const dom=s=>Number(s.slice(8));
 
 /* ---------- state ---------- */
 const S={settings:null,budget:null,fixed:null,schedule:null,inst:null,debts:null,tasks:{},entries:[],days:{},weekly:[],payments:[],networth:[],coach:{},accounts:null};
-let db=null,sample=null,view="today",selDate=TODAY,selCat=null,selMethod="lotte",editingId=null,bdMode="cycle",bdKey=null;
+let calYm=null,db=null,sample=null,view="today",selDate=TODAY,selCat=null,selMethod="lotte",editingId=null,bdMode="cycle",bdKey=null;
 let dayWriting=Promise.resolve(),taskWriting=Promise.resolve();
 const LS={get(k,f){try{const v=localStorage.getItem("plan5k3:"+k);return v?JSON.parse(v):f}catch(e){return f}},
           set(k,v){try{localStorage.setItem("plan5k3:"+k,JSON.stringify(v))}catch(e){}}};
@@ -594,11 +617,19 @@ const loanOrder=()=>LOANS().filter(d=>loanBal(d)>0).slice().sort((a,b)=>(a.last?
 function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort((a,b)=>a.date<b.date?1:-1)[0];return w?w.nextBill:null}
 function estBill(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"),e=>e.amount)+effSched(ym)}
 
-/* recommended use of money: close whole card items that fit, best fee saving first; the rest waits for the next item or goes to loans */
+/* pick the card items to prepay with the money at hand so the fee saved is as large as possible (0/1 knapsack in 1,000원 steps) */
+function bestSet(opts,money){
+  const U=1000,C=Math.min(30000,Math.floor(money/U)),n=opts.length;if(C<=0||!n)return[];
+  const w=opts.map(o=>Math.ceil(o.amt/U)),dp=new Float64Array(C+1),take=[...Array(n)].map(()=>new Uint8Array(C+1));
+  for(let i=0;i<n;i++)for(let c=C;c>=w[i];c--){const v=dp[c-w[i]]+opts[i].save;if(v>dp[c]){dp[c]=v;take[i][c]=1}}
+  const out=[];let c=C;for(let i=n-1;i>=0;i--)if(take[i][c]){out.push(opts[i]);c-=w[i]}
+  return out;
+}
+/* recommended use of money: the prepayments that save the most fee this month, biggest saving first; leftovers wait in the parking account for the next big one, or go to loans when no card item is left */
 function allocate(amount,date){
-  const rows=[];let pot=amount,skipped=null;
-  for(const o of cardOrder(date)){if(o.amt<=pot){rows.push({kind:"item",x:o.x,amt:o.amt,save:o.save});pot-=o.amt}else if(!skipped)skipped=o}
-  if(pot>0&&skipped)rows.push({kind:"pot",target:skipped,amt:pot});
+  const order=cardOrder(date),pick=bestSet(order,amount),rows=pick.sort((a,b)=>b.save-a.save).map(o=>({kind:"item",x:o.x,amt:o.amt,save:o.save}));
+  let pot=amount-sum(pick,o=>o.amt);const next=order.find(o=>!pick.includes(o));
+  if(pot>0&&next)rows.push({kind:"pot",target:next,amt:pot});
   else for(const d of loanOrder()){if(pot<=0)break;const a=Math.min(pot,loanBal(d));rows.push({kind:"loan",d,amt:a});pot-=a}
   return rows;
 }
@@ -614,7 +645,8 @@ function simulate(){
     const ab=Object.keys(closed).length?null:appBill(ym);
     pot+=ab!=null?incomeAt(ym)-fixedTotal(ym)-ab-buf:incomeAt(ym)-fixedTotal(ym)-living-inst-buf;
     const next=ymAdd(ym,1);
-    for(const x of order){if(closed[x.id])continue;const left=sum(itemMonths(x).filter(m=>m>=next),m=>itemRaw(x,m).p);if(left>0&&left<=pot){closed[x.id]=next;pot-=left}}
+    const opts=order.filter(x=>!closed[x.id]).map(x=>{const ms=itemMonths(x).filter(m=>m>=next);return{x,amt:sum(ms,m=>itemRaw(x,m).p),save:sum(ms,m=>itemRaw(x,m).fee)}}).filter(o=>o.amt>0);
+    for(const o of bestSet(opts,pot)){closed[o.x.id]=next;pot-=o.amt}
     const cardLeft=order.some(x=>!closed[x.id]&&itemEnd(x)>ym);
     if(!cardLeft&&!cardDone)cardDone=ym;
     if(!cardLeft)for(const l of loans){if(l.bal<=0||pot<=0)continue;const a=Math.min(pot,l.bal);l.bal-=a;pot-=a;if(l.bal<=0.5)l.done=ym}
@@ -743,7 +775,7 @@ function renderToday(){
   $("dayTotal").textContent=won(sum(list,e=>e.amount));
   $("dayList").innerHTML=list.length?list.map(e=>{const[em,col]=look(e.cat);return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":`⚠️ 할부 ${e.months}개월${e.free?" 무이자":""}`}${e.excl?" · 🎒 예산 제외":""}</div></button><div class="a">${num(e.amount)}</div></div>`}).join("")
     :`<p class="empty">${isToday?"아직 기록이 없어요. 위에서 금액과 카테고리를 고르고 기록하세요.":"이날 기록이 없어요."}</p>`;
-  const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;
+  const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;$("backToday").hidden=isToday;
   ns.textContent=dd.noSpend?"🥚 무지출로 표시했어요 · 취소":isToday?"🥚 오늘은 안 썼어요 (무지출)":"🥚 이날은 안 썼어요 (무지출)";
   if(!$("habits").contains(document.activeElement))HK.forEach(k=>$("hk_"+k).checked=!!(dd.checks&&dd.checks[k]));
   HK.forEach(k=>$("hk_"+k).closest(".hb").classList.toggle("on",$("hk_"+k).checked));
@@ -753,7 +785,23 @@ function renderToday(){
   $("cyRange").textContent=`${md(y.c.start)}~${md(y.c.end)} → ${md(y.c.pay)} 결제`;
   $("cySpent").textContent=won(y.spent);$("cyBudget").textContent=won(y.B);paintBar($("cyBar"),y.spent,y.B,y.pace);
   $("cyPace").textContent=y.spent>y.B?`한도를 ${won(y.spent-y.B)} 넘었어요. 남은 ${y.left}일은 꼭 필요한 지출만.`:y.spent>y.pace?`적정 페이스(${won(y.pace)})보다 ${won(y.spent-y.pace)} 빨라요.`:`적정 페이스 ${won(y.pace)} 안이에요 👍`;
+  renderCal();
   $("cyOver").innerHTML=CATS().map(c=>({c,s:sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount),b:c.amount||0})).filter(x=>x.s>x.b).map(x=>`<span class="chip bad">${look(x.c.id)[0]} ${esc(x.c.name)} +${num(x.s-x.b)}</span>`).join("");
+}
+
+function renderCal(){
+  if(!calYm)calYm=ymOf(TODAY);
+  const [y,m]=calYm.split("-").map(Number),first=calYm+"-01",days=new Date(y,m,0).getDate(),lead=(parse(first).getDay()+6)%7,dayB=(ST().weekBudget||0)/7;
+  $("calLabel").textContent=`${y}년 ${m}월`;$("calNext").disabled=calYm>=ymOf(TODAY);
+  let html="",tot=0,recDays=0,zero=0;
+  for(let i=0;i<lead;i++)html+='<span class="cd pad"></span>';
+  for(let k=1;k<=days;k++){const d=calYm+"-"+pad(k),fut=d>TODAY,es=S.entries.filter(e=>e.date===d&&!e.excl),s=sum(es,e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,rec=recorded(d);
+    if(!fut&&rec){recDays++;tot+=s;if(s===0)zero++}
+    const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b";
+    const v=fut?"":s>0?(s>=10000?man1(s):num(s)):ns?"🥚":rec?"0":"";
+    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span></button>`}
+  $("cal").innerHTML=html;
+  $("calSum").textContent=won(tot);$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
 }
 
 /* ---------- 퀘스트 ---------- */
@@ -896,7 +944,7 @@ function renderMonth(){
   let body="";
   if(pl.avail<0)body='<p class="note bad">고정비와 카드값을 다 덮지 못해요. 생활비를 줄여 메우고, 리볼빙·분할납부는 누르지 마세요.</p>';
   else{const rows=allocate(phase==="repay"?pl.rest:pl.avail,phase==="repay"?TODAY:ymDay(M,CARD()));
-    body=(phase==="repay"&&pl.paid?`<p class="small muted">이번 달 이미 기록한 상환 ${won(pl.paid)} · 남은 ${won(pl.rest)}</p>`:"")+`<h3>${phase==="repay"?"🗡️ 이렇게 넣으세요":"🗡️ 25일 뒤 넣을 곳 (예정)"}</h3>`+
+    body=(phase==="repay"&&pl.paid?`<p class="small muted">이번 달 이미 기록한 상환 ${won(pl.paid)} · 남은 ${won(pl.rest)}</p>`:"")+`<h3>${phase==="repay"?"🗡️ 이렇게 넣으세요":"🗡️ 25일 뒤 넣을 곳 (예정)"}</h3><p class="tiny muted">이 돈으로 아낄 수 있는 수수료 합계가 가장 큰 조합이에요. 아끼는 수수료가 큰 순서로 적었어요.</p>`+
       (rows.length?`<div class="list">${rows.map(r=>r.kind==="item"?`<div class="li"><span class="av">💳</span><div><div class="t">${esc(r.x.name)}</div><div class="s">${md(r.x.date)} 할부 · 수수료 ${won(r.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(r.amt)}</div>${phase==="repay"?`<button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(r.x.id)}">기록</button>`:""}</div></div>`
         :r.kind==="pot"?`<div class="li"><span class="av">🐷</span><div><div class="t">파킹통장에 모아 두기</div><div class="s">다음 ${esc(r.target.x.name)} 선결제(${won(r.target.amt)})용 · 수수료 ${won(r.target.save)} 절약 예정</div></div><div class="a">${num(r.amt)}</div></div>`
         :`<div class="li"><span class="av">🏦</span><div><div class="t">${esc(r.d.name)}</div><div class="s">${esc(r.d.rate||"")}${r.d.last?" · 비상금 역할이라 마지막":""}</div></div><div style="text-align:right"><div class="a">${num(r.amt)}</div>${phase==="repay"?`<button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="d:${esc(r.d.id)}" data-amt="${Math.round(r.amt)}">기록</button>`:""}</div></div>`).join("")}</div>`
@@ -920,7 +968,7 @@ function renderMonth(){
 }
 function fillTargets(keep){
   const sel=$("pfTarget"),v=keep||sel.value;
-  sel.innerHTML=`<optgroup label="카드 할부 (절약률 순)">${cardOrder(TODAY).map(o=>`<option value="i:${esc(o.x.id)}">💳 ${esc(o.x.name)} ${md(o.x.date)} · ${num(o.amt)}</option>`).join("")}</optgroup><optgroup label="대출">${LOANS().map(d=>`<option value="d:${esc(d.id)}">🏦 ${esc(d.name)} · ${num(loanBal(d))}</option>`).join("")}</optgroup>`;
+  sel.innerHTML=`<optgroup label="카드 할부 (아끼는 수수료 큰 순)">${cardOrder(TODAY).sort((a,b)=>b.save-a.save).map(o=>`<option value="i:${esc(o.x.id)}">💳 ${esc(o.x.name)} ${md(o.x.date)} · ${num(o.amt)}</option>`).join("")}</optgroup><optgroup label="대출">${LOANS().map(d=>`<option value="d:${esc(d.id)}">🏦 ${esc(d.name)} · ${num(loanBal(d))}</option>`).join("")}</optgroup>`;
   if(v)sel.value=v;
 }
 function pfAuto(){
@@ -952,9 +1000,9 @@ function renderDash(){
   drawChart(snaps,snaps.length?snaps[0].ym:ymOf(TODAY),st.targetYm||"2027-12",snaps.length?startNet:null,snaps.length?target:null);
   const bs=badges();$("badgeCount").textContent=`${bs.filter(b=>b.on).length}/${bs.length}`;
   $("badges").innerHTML=bs.map(b=>`<div class="bd ${b.on?"on":"off"}"><span class="e">${b.e}</span>${esc(b.t)}</div>`).join("");
-  const order=cardOrder(TODAY),open=ITEMS().filter(x=>itemBal(x)>0),done=ITEMS().filter(x=>itemBal(x)<=0),free=open.filter(x=>x.fee===0),nx=ymAdd(lastPassed(),1);
+  const order=cardOrder(TODAY).sort((a,b)=>b.save-a.save),open=ITEMS().filter(x=>itemBal(x)>0),done=ITEMS().filter(x=>itemBal(x)<=0),free=open.filter(x=>x.fee===0),nx=ymAdd(lastPassed(),1);
   $("instCount").textContent=`${open.length}건`;$("instSum").textContent=`원금 ${won(cardDebt())}`;
-  const row=(o,i)=>`<div class="li"><span class="av">${["🥇","🥈","🥉"][i]||"💳"}</span><div><div class="t">${esc(o.x.name)} <span class="eff">절약 ${Math.round(o.ratio*100)}%</span></div><div class="s">${md(o.x.date)} 결제 · ${itemLeftN(o.x)}회 남음 · 다음 청구 ${num(itemBill(o.x,nx))} · 선결제하면 수수료 ${num(o.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(o.amt)}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(o.x.id)}">선결제</button></div></div>`;
+  const row=(o,i)=>`<div class="li"><span class="av">${["🥇","🥈","🥉"][i]||"💳"}</span><div><div class="t">${esc(o.x.name)} <span class="eff">−${man1(o.save)} 수수료</span></div><div class="s">${md(o.x.date)} 결제 · ${itemLeftN(o.x)}회 남음 · 다음 청구 ${num(itemBill(o.x,nx))} · 선결제하면 수수료 ${num(o.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(o.amt)}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(o.x.id)}">선결제</button></div></div>`;
   $("instList").innerHTML=order.slice(0,5).map(row).join("")||'<p class="empty">선결제할 유이자 할부가 없어요 🎉</p>';
   $("instMoreBox").hidden=order.length<=5&&!free.length;$("instMoreSum").textContent=`나머지 ${order.length-5>0?order.length-5:0}건${free.length?` + 무이자 ${free.length}건`:""} 보기`;
   $("instMore").innerHTML=(order.slice(5).map((o,i)=>row(o,i+5)).join("")+
@@ -1014,6 +1062,11 @@ document.addEventListener("click",async e=>{
     return}
   if(t.dataset.act==="pay-open"){openPay(t.dataset.target,Number(t.dataset.amt)||0);return}
   if(t.dataset.mission!=null){const d=addDays(TODAY,-1),c=S.coach[d];if(!c)return;const doc={...c,missionDone:t.dataset.mission==="1"};S.coach={...S.coach,[d]:doc};render();toast(doc.missionDone?"💪 미션 성공! 멋져요":"괜찮아요. 오늘 다시 해 봐요");try{await put("coach/"+d,doc)}catch(_){}return}
+  if(t.dataset.day){selDate=t.dataset.day;if(editingId)cancelEdit();renderToday();$("dayTitle").closest(".card").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(t.id==="backToday"){selDate=TODAY;calYm=ymOf(TODAY);if(editingId)cancelEdit();renderToday();return}
+  if(t.id==="calPrev"){calYm=ymAdd(calYm,-1);renderCal();return}
+  if(t.id==="calNext"){calYm=ymAdd(calYm,1);renderCal();return}
+  if(t.id==="calCats"){bdMode="month";bdKey=calYm;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode==="month"));go("week");$("bdMode").scrollIntoView({block:"start"});return}
   if(t.dataset.cat){selCat=t.dataset.cat;renderToday();return}
   if(t.dataset.freq){const[c,a]=t.dataset.freq.split("|");selCat=c;$("enAmount").value=num(a);renderToday();return}
   if(t.dataset.add){$("enAmount").value=t.dataset.add==="clear"?"":num(parseNum($("enAmount").value)+Number(t.dataset.add));return}
@@ -1033,7 +1086,7 @@ $("bdNext").addEventListener("click",()=>{bdKey=ymAdd(bdKey,1);renderWeek()});
 document.addEventListener("input",e=>{const el=e.target;if(el.matches('input[inputmode="numeric"][type="text"]')&&!el.readOnly)el.value=el.value.trim()===""?"":num(parseNum(el.value));if(el.id==="pfDate")pfAuto()});
 $("pfTarget").addEventListener("change",pfAuto);
 $("pfClose").addEventListener("click",()=>{$("payForm").hidden=true});
-$("enDate").addEventListener("change",e=>{selDate=e.target.value||TODAY;if(editingId)cancelEdit();renderToday()});
+$("enDate").addEventListener("change",e=>{selDate=e.target.value||TODAY;calYm=ymOf(selDate);if(editingId)cancelEdit();renderToday()});
 $("wkDate").addEventListener("change",renderWeek);
 function startEdit(en){
   editingId=en.id;selDate=en.date;selCat=en.cat;selMethod=en.method;
