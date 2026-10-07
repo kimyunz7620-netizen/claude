@@ -344,6 +344,12 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div id="coachBody"></div>
       <div class="btns"><button type="button" class="btn ghost" id="coachBtn">오늘 코칭 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
     </div>
+    <div class="card" id="uncatCard" hidden>
+      <div class="row"><div class="title"><span class="em">🧩</span><h2>분류가 필요한 지출</h2></div><span class="chip warn" id="uncatCount"></span></div>
+      <p class="small muted">카드 내역에는 있는데 가계부에 없던 지출이에요. 눌러서 카테고리를 골라 주세요. 다른 사람 몫이면 '생활비 예산에서 빼기'를 체크하세요.</p>
+      <div class="list" id="uncatList"></div>
+    </div>
+
     <div class="card" id="calCard">
       <div class="row"><div class="title"><span class="em">📅</span><h2>지난 기록</h2></div>
         <div class="btns" style="align-items:center"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><strong class="small" id="calLabel"></strong><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
@@ -533,7 +539,7 @@ const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
 const won=n=>(Math.round(n)||0).toLocaleString("ko-KR")+"원";
 const num=n=>(Math.round(n)||0).toLocaleString("ko-KR");
 const signed=n=>(n>0?"+":n<0?"−":"")+num(Math.abs(n))+"원";
-const man=n=>{const v=Math.round(n/10000);return (v<0?"−":"")+Math.abs(v).toLocaleString("ko-KR")+"만"};
+const man=n=>{const v=Math.round(n/10000),s=v<0?"−":"",x=Math.abs(v);if(x>=10000){const e=Math.floor(x/10000),r=x%10000;return s+e+"억"+(r?" "+r.toLocaleString("ko-KR")+"만":"")}return s+x.toLocaleString("ko-KR")+"만"};
 const man1=n=>{const v=Math.round(n/1000)/10;return (v<0?"−":"")+Math.abs(v).toLocaleString("ko-KR")+"만"};
 const parseNum=v=>{const s=String(v??"").replace(/[^\d-]/g,"");return s?Number(s)||0:0};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -543,7 +549,7 @@ const dom=s=>Number(s.slice(8));
 
 /* ---------- state ---------- */
 const S={settings:null,budget:null,fixed:null,schedule:null,inst:null,debts:null,tasks:{},entries:[],days:{},weekly:[],payments:[],networth:[],coach:{},accounts:null};
-let calSel=null,calYm=null,db=null,sample=null,view="today",selDate=TODAY,selCat=null,selMethod="lotte",editingId=null,bdMode="cycle",bdKey=null;
+let fxOpen=false,calSel=null,calYm=null,db=null,sample=null,view="today",selDate=TODAY,selCat=null,selMethod="lotte",editingId=null,bdMode="cycle",bdKey=null;
 let dayWriting=Promise.resolve(),taskWriting=Promise.resolve();
 const LS={get(k,f){try{const v=localStorage.getItem("plan5k3:"+k);return v?JSON.parse(v):f}catch(e){return f}},
           set(k,v){try{localStorage.setItem("plan5k3:"+k,JSON.stringify(v))}catch(e){}}};
@@ -576,7 +582,7 @@ const monthRange=ym=>({start:ym+"-01",end:ymDay(ym,31)});
 const inRange=(s,r)=>s>=r.start&&s<=r.end;
 const fromOf=date=>dom(date)<CYC()?ymOf(date):ymAdd(ymOf(date),1); // first bill a prepayment changes
 function incomeAt(ym){const s=ST();const b=s.income||0;return s.raiseFromYm&&ym>=s.raiseFromYm?Math.round(b*(1+(s.raisePct||0)/100)):b}
-function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amount||0;(it.changes||[]).slice().sort((x,y)=>x.fromYm<y.fromYm?-1:1).forEach(c=>{if(c.fromYm<=ym)a=c.amount});return{name:it.name,amount:a,card:!!it.card}})}
+function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amount||0;(it.changes||[]).slice().sort((x,y)=>x.fromYm<y.fromYm?-1:1).forEach(c=>{if(c.fromYm<=ym)a=c.amount});const ov=it.overrides&&it.overrides[ym]!=null;if(ov)a=it.overrides[ym];return{id:it.id,name:it.name,amount:a,card:!!it.card,note:it.note||"",ov}})}
 const fixedTotal=ym=>sum(fixedAt(ym),x=>x.amount);
 // fixed costs charged to the Lotte card are part of the card bill, not paid from salary separately
 const fixedCash=ym=>sum(fixedAt(ym).filter(x=>!x.card),x=>x.amount),fixedCard=ym=>sum(fixedAt(ym).filter(x=>x.card),x=>x.amount);
@@ -801,6 +807,9 @@ function renderToday(){
   const gapNote=partial(y.c)?" · ⏳ "+gapTxt(y.c):"";
   $("cyPace").textContent=(y.spent>y.B?`한도를 ${won(y.spent-y.B)} 넘었어요. 남은 ${y.left}일은 꼭 필요한 지출만.`:y.spent>y.pace?`적정 페이스(${won(y.pace)})보다 ${won(y.spent-y.pace)} 빨라요.`:`적정 페이스 ${won(y.pace)} 안이에요 👍`)+gapNote;
   renderCal();
+  const un=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).sort((a,b)=>a.date<b.date?-1:1);
+  $("uncatCard").hidden=!un.length;$("uncatCount").textContent=`${un.length}건`;
+  $("uncatList").innerHTML=un.map(e=>entryRow(e).replace('<div class="t">',`<div class="t"><span class="tiny muted">${md(e.date)}</span> `)).join("");
   $("cyOver").innerHTML=CATS().map(c=>({c,s:sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount),b:c.amount||0})).filter(x=>x.s>x.b).map(x=>`<span class="chip bad">${look(x.c.id)[0]} ${esc(x.c.name)} +${num(x.s-x.b)}</span>`).join("");
 }
 
@@ -826,6 +835,8 @@ function renderCal(){
 function questItems(){
   const it=[],d=dom(TODAY),M=ymOf(TODAY),day=S.days[TODAY]||{},todays=S.entries.filter(e=>e.date===TODAY);
   it.push({e:"✏️",done:todays.length>0||!!day.noSpend,t:"쓴 돈 기록",s:todays.length?`${todays.length}건 · ${won(sum(todays,e=>e.amount))}`:day.noSpend?"무지출 데이 🥚":"안 쓴 날은 '무지출'만 눌러도 돼요",btn:todays.length||day.noSpend?null:["기록","scroll:entryForm"]});
+  const unc=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).length;
+  if(unc)it.push({e:"🧩",done:false,urgent:true,t:`분류가 필요한 지출 ${unc}건`,s:"카드에만 있던 지출이에요",btn:["정리","scroll:uncatCard"]});
   const hk=HK.filter(k=>day.checks&&day.checks[k]).length;
   it.push({e:"✅",done:hk===4,t:"습관 체크",s:`${hk}/4`,btn:hk===4?null:["체크","scroll:habitPanel"]});
   if(sample||S.coach[TODAY])it.push({e:"🧑‍🏫",done:!!S.coach[TODAY],t:"코칭 받기",s:S.coach[TODAY]?"오늘 코칭 완료":"오늘 숫자로 한마디 듣기",btn:S.coach[TODAY]?null:["받기","coach"]});
@@ -963,7 +974,7 @@ function renderMonth(){
     :phase==="secure"?`<div class="row"><h2><span class="step">1</span>월급날: 먼저 확보할 돈</h2><span class="chip warn">결제일 ${md(ymDay(M,CARD()))}</span></div><p class="small muted">하나은행(급여)에서 카드값을 케이뱅크 결제계좌로 옮기고, 고정비는 빠져나갈 통장에 남겨 두세요. 선결제는 25일 결제가 끝난 뒤에 해요.</p>`
     :`<div class="row"><h2><span class="step">2</span>결제일 이후: 선결제 실행</h2><span class="chip good">${ymKo(M)}</span></div><p class="small muted">카드 앱에서 아래 건을 '건별 선결제'하고, 할 때마다 '기록'을 눌러 주세요.</p>`;
   const src=pl.cardSrc==="app"?"카드 앱 입력값":pl.cardSrc==="est-open"?"추정 · 남은 생활비 포함":"가계부 추정";
-  const flow=`<div class="flow"><div class="fl"><span>💵 실수령${ST().raiseFromYm&&M>=ST().raiseFromYm?" (인상 반영)":""}</span><span class="num">${num(pl.inc)}</span></div><div class="fl"><span>💳 카드값 (${md(ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div><details class="more"><summary class="fl" style="display:flex;justify-content:space-between;color:var(--ink);font-weight:400"><span>🏠 고정비 ▾${fixedCard(M)?" <span class=\"tiny muted\">카드 결제분은 카드값에</span>":""}</span><span class="num" style="font-weight:800">−${num(pl.fixed)}</span></summary><div class="list small">${(()=>{const its=(S.fixed&&S.fixed.items)||[];return fixedAt(M).map((x,i)=>`<div class="li"><span class="av">${x.card?"💳":"🏦"}</span><div><div class="t">${esc(x.name)}</div><div class="s">${esc((its[i]&&its[i].note)||"")}${x.card?" · 카드값에 포함":""}</div></div><div class="a">${num(x.amount)}</div></div>`).join("")})()}</div></details>
+  const flow=`<div class="flow"><div class="fl"><span>💵 실수령${ST().raiseFromYm&&M>=ST().raiseFromYm?" (인상 반영)":""}</span><span class="num">${num(pl.inc)}</span></div><div class="fl"><span>💳 카드값 (${md(ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div><details class="more" id="fxBox" ${fxOpen?"open":""}><summary class="fl" style="display:flex;justify-content:space-between;color:var(--ink);font-weight:400"><span>🏠 고정비 ▾ <span class="tiny muted">눌러서 이번 달만 고치기</span></span><span class="num" style="font-weight:800">−${num(pl.fixed)}</span></summary><div class="list small">${fixedAt(M).map(x=>`<div class="li"><span class="av">${x.card?"💳":"🏦"}</span><div><div class="t">${esc(x.name)}${x.ov?' <span class="chip warn">이번 달 조정</span>':""}</div><div class="s">${esc(x.note)}${x.card?" · 카드값에 포함돼 여기선 안 빠져요":""}</div></div><div style="text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end"><input type="text" inputmode="numeric" class="fxin" data-fx="${esc(x.id)}" data-ym="${M}" value="${num(x.amount)}" style="width:7.5rem;height:38px;text-align:right" aria-label="${esc(x.name)} ${ymKo(M)} 금액">${x.ov?`<button type="button" class="btn ghost" style="padding:4px 10px;font-size:.76rem" data-fxreset="${esc(x.id)}" data-ym="${M}">원래대로</button>`:""}</div></div>`).join("")}</div><p class="tiny muted">여기서 고친 금액은 ${ymKo(M)}에만 적용돼요. 매달 바뀌는 금액은 설정에서 고쳐요.</p></details>
     ${pl.cashRes?`<div class="fl"><span>🏦 케뱅에 남길 체크카드 생활비 <span class="tiny muted">${pl.resSrc}</span></span><span class="num">−${num(pl.cashRes)}</span></div>`:""}${ST().buffer?`<div class="fl"><span>🛟 버퍼</span><span class="num">−${num(ST().buffer)}</span></div>`:""}
     <div class="fl total"><span>⚔️ 선결제·상환 가능</span><span class="${pl.avail<0?"bad-t":"good-t"}">${won(pl.avail)}</span></div></div>`;
   let body="";
@@ -975,6 +986,7 @@ function renderMonth(){
         :`<div class="li"><span class="av">🏦</span><div><div class="t">${esc(r.d.name)}</div><div class="s">${esc(r.d.rate||"")}${r.d.last?" · 비상금 역할이라 마지막":""}</div></div><div style="text-align:right"><div class="a">${num(r.amt)}</div>${phase==="repay"?`<button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="d:${esc(r.d.id)}" data-amt="${Math.round(r.amt)}">기록</button>`:""}</div></div>`).join("")}</div>`
         :`<p class="empty">${phase==="repay"&&pl.paid?"이번 달 상환을 다 기록했어요 🎉":"넣을 곳이 없어요."}</p>`)}
   const secureBox=phase==="secure"?`<label class="check"><input type="checkbox" data-task="${sk}" ${S.tasks[sk]?"checked":""}><span>카드값은 케이뱅크로 옮기고, 고정비도 남겨 뒀어요</span></label>`:"";
+  fxOpen=fxOpen||!!($("fxBox")&&$("fxBox").open);if(document.activeElement&&document.activeElement.classList.contains("fxin"))return;
   $("payPanel").innerHTML=head+flow+secureBox+body+'<p class="tiny muted">연봉 인상분·성과급·연말정산 환급이 들어오면 위 금액에 더해 전액 상환하세요.</p>';
   const ps=S.payments.slice().sort((a,b)=>a.date<b.date?1:-1);
   $("pmList").innerHTML=ps.length?ps.map(p=>{const x=p.itemId&&ITEMS().find(i=>i.id===p.itemId),dl=p.debtId&&LOANS().find(l=>l.id===p.debtId);
@@ -1099,6 +1111,7 @@ document.addEventListener("click",async e=>{
   if(t.id==="calPrev"){calYm=ymAdd(calYm,-1);calSel=null;renderCal();return}
   if(t.id==="calNext"){calYm=ymAdd(calYm,1);calSel=null;renderCal();return}
   if(t.id==="calCats"){bdMode="month";bdKey=calYm;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode==="month"));go("week");$("bdMode").scrollIntoView({block:"start"});return}
+  if(t.dataset.fxreset){saveFixedOverride(t.dataset.fxreset,t.dataset.ym,null);return}
   if(t.dataset.cat){selCat=t.dataset.cat;renderToday();return}
   if(t.dataset.freq){const[c,a]=t.dataset.freq.split("|");selCat=c;$("enAmount").value=num(a);renderToday();return}
   if(t.dataset.add){$("enAmount").value=t.dataset.add==="clear"?"":num(parseNum($("enAmount").value)+Number(t.dataset.add));return}
@@ -1154,6 +1167,12 @@ function saveDay(){
   S.days={...S.days,[date]:doc};render();if(HK.every(k=>checks[k]))toast("✅ 습관 4개 모두 체크! 최고예요");
   dayWriting=dayWriting.then(()=>put("days/"+date,doc).catch(()=>{}));
 }
+async function saveFixedOverride(id,ym,amount){
+  const items=((S.fixed&&S.fixed.items)||[]).map(it=>{if(it.id!==id)return it;const o={...(it.overrides||{})};if(amount==null)delete o[ym];else o[ym]=amount;return{...it,overrides:o}});
+  S.fixed={...S.fixed,items};fxOpen=true;render();
+  try{await put("config/fixed",{items});toast(amount==null?"원래 금액으로 돌렸어요":`${ymKo(ym)} 고정비를 고쳤어요`)}catch(_){}
+}
+document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("fxin"))saveFixedOverride(el.dataset.fx,el.dataset.ym,parseNum(el.value))});
 $("habits").addEventListener("change",saveDay);$("dayMemo").addEventListener("change",saveDay);
 document.addEventListener("change",e=>{const id=e.target.dataset&&e.target.dataset.task;if(!id)return;S.tasks={...S.tasks,[id]:e.target.checked};render();const done=S.tasks;taskWriting=taskWriting.then(()=>put("plan/tasks",{done}).catch(()=>{}))});
 $("wkForm").addEventListener("submit",async e=>{
