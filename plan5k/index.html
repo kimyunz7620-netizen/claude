@@ -209,6 +209,16 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .flowchart .evl{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
 .flowchart .hit{fill:transparent;cursor:pointer}
 .flowchart .hit:hover{fill:var(--line);fill-opacity:.35}
+.step-card{border:2px solid var(--sun-soft)}
+.step-card .link{font:inherit;background:none;border:0;padding:0;color:var(--grape);font-weight:700;cursor:pointer}
+.step-big{text-wrap:balance;font-family:var(--f-display);font-size:1.15rem;font-weight:800;line-height:1.45;letter-spacing:-.02em}
+.step-big em{font-style:normal;color:var(--mint)}
+.step-rows{display:flex;flex-direction:column;gap:8px}
+.step-rows .sr{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;font-size:.86rem;align-items:start}
+.step-rows .sr b{font-weight:800}
+.step-rows .sr .good-t,.step-rows .sr .bad-t{font-weight:800}
+.whatif{display:flex;flex-direction:column;gap:10px;background:var(--bg);border-radius:14px;padding:14px}
+.whatif #pjWhatIf{line-height:1.7}
 .tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .tl li{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;position:relative}
 .tl li::before{content:"";position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--line)}
@@ -294,6 +304,11 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </div>
 
+    <div class="card step-card" id="stepCard">
+      <div class="row"><h2>🌅 오늘의 한 걸음</h2><button type="button" class="link small" data-go="dash">앞으로의 길 ›</button></div>
+      <div class="step-big" id="stepBig"></div>
+      <div class="step-rows" id="stepRows"></div>
+    </div>
     <form class="card" id="entryForm" autocomplete="off">
       <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span></div>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
@@ -455,7 +470,11 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="flowchart" id="pjChart" data-tipbox="pjTip"></div>
       <div class="tiny muted" id="pjTip">막대를 누르면 그 달 숫자가 보여요.</div>
       <ol class="tl" id="pjList"></ol>
-      <p class="small" id="pjWhatIf"></p>
+      <div class="whatif">
+        <div class="row"><strong class="small">💸 생활비를 바꾸면?</strong><span class="tiny muted">한 달 기준</span></div>
+        <div class="seg" id="wiSeg" role="group" aria-label="생활비 바꾸기"><button type="button" data-wi="-200000">−20만</button><button type="button" data-wi="-100000" aria-pressed="true">−10만</button><button type="button" data-wi="-50000">−5만</button><button type="button" data-wi="100000">+10만</button></div>
+        <div class="small" id="pjWhatIf"></div>
+      </div>
       <p class="tiny muted" id="pjNote"></p>
     </div>
     <div class="card hp">
@@ -726,7 +745,7 @@ const TASKS=[
 
 /* ================= RENDER ================= */
 let raf=0;function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;SIMC={};renderAll()})}
-function renderAll(){SIMC={};renderHeader();renderToday();renderQuest();renderCoach();renderWeek();renderMonth();renderDash()}
+function renderAll(){SIMC={};renderHeader();renderToday();renderStep();renderQuest();renderCoach();renderWeek();renderMonth();renderDash()}
 function renderHeader(){
   const t=parse(TODAY),h=new Date().getHours();
   $("today").textContent=`${t.getMonth()+1}월 ${t.getDate()}일 ${DOW[t.getDay()]}요일 · 머니플랜`;
@@ -1032,6 +1051,27 @@ function renderDash(){
   $("schTbl").innerHTML="<thead><tr><th>결제월</th><th>할부 청구</th><th>건수</th></tr></thead><tbody>"+schedMonths().filter(m=>m>lp).map(m=>`<tr class="${m===nx?"next":""}"><td>${ymShort(m)}</td><td><strong>${num(effSched(m))}</strong></td><td>${ITEMS().filter(x=>itemBill(x,m)>0).length}</td></tr>`).join("")+"</tbody>";
   $("nwList").innerHTML=snaps.slice().reverse().map(s=>`<div class="li"><span class="av">🐷</span><div><div class="t">${ymKo(s.ym)}</div><div class="s">${s.hana!=null?`하나 ${num(s.hana)} · 케뱅 ${num(s.kbank)} · 우리 ${num(s.woori)}`:`현금 ${num(s.cash)}`} · 빚 ${num(s.debt)}</div></div><div style="text-align:right"><div class="a">${num(s.net)}</div><button type="button" class="btn danger" style="margin-top:4px" data-del-nw="${esc(s.ym)}">삭제</button></div></div>`).join("")||'<p class="empty">월급·상환 탭에서 월말 잔액을 기록하면 쌓여요.</p>';
 }
+let WI=-100000;
+/* how much sooner a sum of money brings the goal: before debt-free it speeds up 빚 0원, after that it speeds up 1억 */
+function speedRate(){const sim=simulate(),P=sim.path,fi=sim.free?P.findIndex(p=>p.ym===sim.free):-1,debtNow=ymOf(TODAY)<=(sim.free||"9999");
+  const m=debtNow?(P[1]||P[0]||{}).debt:(P[fi+1]||{}).save;return{perDay:(m||0)/30.4,goal:debtNow?"빚 0원":`${man(ST().finalTarget||1e8)} 도착`}}
+function fasterTxt(amount){const r=speedRate();if(!(r.perDay>0)||!(amount>0))return"";const d=amount/r.perDay;return d<1?`약 ${Math.max(1,Math.round(d*24))}시간`:`약 ${d<10?Math.round(d*10)/10:Math.round(d)}일`}
+function renderStep(){
+  const r=speedRate(),dayB=(ST().weekBudget||0)/7,allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl),spentT=sum(todays,e=>e.amount),day=S.days[TODAY]||{};
+  $("stepCard").hidden=!(r.perDay>0);if(!(r.perDay>0))return;
+  const left=Math.max(0,allow-spentT);
+  $("stepBig").innerHTML=spentT===0?`오늘 무지출이면 ${r.goal}이 <em>${fasterTxt(dayB)}</em> 빨라져요`
+    :left>0?`남은 ${won(left)}을 안 쓰면 ${r.goal}이 <em>${fasterTxt(left)}</em> 빨라져요`
+    :`오늘은 여기까지! 내일 무지출이면 <em>${fasterTxt(dayB)}</em> 빨라져요`;
+  const y=cycleSummary(),total=dayDiff(y.c.start,y.c.end)+1,el=dayDiff(y.c.start,TODAY),paceY=y.B*el/total,spentY=sum(entriesIn({start:y.c.start,end:addDays(TODAY,-1)}),e=>e.amount),diff=paceY-spentY;
+  const rows=[];
+  rows.push(el<1?`<div class="sr"><span>🌱</span><span>새 카드 주기 첫날! 오늘부터 아낀 돈이 ${r.goal}을 당겨요.</span></div>`
+    :diff>=0?`<div class="sr"><span>🏃</span><span>이번 주기 예산 페이스보다 <b>${won(diff)}</b> 아꼈어요. ${r.goal} <span class="good-t">${fasterTxt(diff)} 당겨짐</span></span></div>`
+    :`<div class="sr"><span>🐢</span><span>이번 주기 예산 페이스보다 <b>${won(-diff)}</b> 더 썼어요. ${r.goal} <span class="bad-t">${fasterTxt(-diff)} 늦어짐</span>. ${-diff<=y.B*y.left/total?`남은 ${y.left}일 아끼면 되돌릴 수 있어요.`:`${md(addDays(y.c.end,1))} 새 주기부터 다시 당겨요 💪`}</span></div>`);
+  const cur=simulate(),cut=simulate(-100000),M=ST().finalTarget||1e8,h1=cur.path.find(p=>p.net>=M),h2=cut.path.find(p=>p.net>=M),rem=Math.max(1,cur.free?ymDiff(ymOf(TODAY),cur.free)+1:12);
+  rows.push(`<div class="sr"><span>✂️</span><span>생활비를 한 달 10만 줄이면 빚 0원 <b>${fasterTxt(100000*rem)}</b>${h1&&h2&&ymDiff(h2.ym,h1.ym)>0?` · ${man(M)} <b>${ymDiff(h2.ym,h1.ym)}개월</b>`:""} 빨라져요</span></div>`);
+  $("stepRows").innerHTML=rows.join("");
+}
 /* 앞으로의 길: where each month's spare money goes (debt vs savings) and the milestones on the way */
 function renderProjection(sim,now,target){
   const st=ST(),P=sim.path,tYm=st.targetYm||"2027-12",fin=st.finalTarget||1e8,dm=v=>(v>=0?"+":"−")+man(Math.abs(v));
@@ -1063,8 +1103,13 @@ function renderProjection(sim,now,target){
   const atT=P.find(p=>p.ym===tYm);if(atT)items.push(li("","🏁",ymKo(tYm),"목표 시점 순자산",target!=null?`목표 ${man(target)} 대비 ${dm(atT.net-target)}`:"",man(atT.net)));
   [[5e7,"🌳"],[fin,"🏆"]].filter(([v])=>v<=fin).forEach(([v,e])=>{const h=P.find(p=>p.net>=v);items.push(li("good",e,h?ymKo(h.ym):"10년 이후",`순자산 ${man(v)}`,h?"이 페이스로 도착":"",""))});
   $("pjList").innerHTML=items.join("");
-  const alt=simulate(100000),h1=P.find(p=>p.net>=fin),h2=alt.path.find(p=>p.net>=fin);
-  $("pjWhatIf").innerHTML=h1&&h2?`💸 생활비를 매달 10만 원 더 쓰면 빚 0원이 ${alt.free&&sim.free?ymDiff(sim.free,alt.free):"?"}개월, ${man(fin)}이 <strong>${ymDiff(h1.ym,h2.ym)}개월</strong> 늦어져요.`:"";
+  const wi=WI,alt=simulate(wi),h1=P.find(p=>p.net>=fin),h2=alt.path.find(p=>p.net>=fin),rem=Math.max(1,sim.free?ymDiff(ymOf(TODAY),sim.free)+1:12),altAfter=alt.free?alt.path[alt.path.findIndex(p=>p.ym===alt.free)+1]:null;
+  document.querySelectorAll("#wiSeg button").forEach(b=>b.setAttribute("aria-pressed",Number(b.dataset.wi)===wi));
+  const less=wi<0,md2=h1&&h2?ymDiff(h2.ym,h1.ym):0,dd=Math.abs(wi)*rem;
+  $("pjWhatIf").innerHTML=`생활비 월 <b>${man((st.cycleBudget||0)+wi)}</b>이면<br>`+
+    `🎉 빚 0원 ${alt.free?ymKo(alt.free):"-"} <span class="${less?"good-t":"bad-t"}">(${fasterTxt(dd)} ${less?"빨리":"늦게"})</span><br>`+
+    (altAfter?`💰 그 뒤 매달 <b>${man(altAfter.save)}</b> 저축<br>`:"")+
+    (h2?`🏆 ${man(fin)} ${ymKo(h2.ym)} <span class="${less?"good-t":"bad-t"}">(${Math.abs(md2)}개월 ${less?"빨리":"늦게"})</span>`:"");
   const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1);let pace="";
   if(snaps.length>1){const f=snaps[0],l=snaps[snaps.length-1],m=Math.max(1,ymDiff(f.ym,l.ym)),act=(l.net-f.net)/m;pace=` 실제 순자산은 월 ${dm(Math.round(act))}씩 늘고 있어요.`}
   $("pjNote").textContent=`실수령${st.raiseFromYm?`(${ymKo(st.raiseFromYm)}부터 ${st.raisePct||0}% 인상)`:""}에서 고정비와 생활비 ${man(st.cycleBudget||0)}을 빼고 남는 돈을 계산했어요. 월급날 받은 금액을 적고 월말 잔액을 기록할수록 정확해져요.`+pace;
@@ -1130,6 +1175,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.recat){const en=S.entries.find(x=>x.id===t.dataset.recat);if(!en)return;const{id,...rest}=en;const memo=(rest.memo||"").replace(/ · 카드에만 있음.*$/,"");const doc=t.dataset.cat2==="__excl"?{...rest,memo,excl:true}:{...rest,memo,cat:t.dataset.cat2};
     S.entries=S.entries.map(x=>x.id===id?{id,...doc}:x);render();
     try{await put("entries/"+id,doc);toast(t.dataset.cat2==="__excl"?"예산에서 뺐어요":`${look(doc.cat)[0]} ${catName(doc.cat)}(으)로 바꿨어요`)}catch(_){}return}
+  if(t.dataset.wi){WI=Number(t.dataset.wi);renderDash();return}
   if(t.dataset.increset){saveIncome(t.dataset.increset,null);return}
   if(t.dataset.fxreset){saveFixedOverride(t.dataset.fxreset,t.dataset.ym,null);return}
   if(t.dataset.cat){selCat=t.dataset.cat;renderToday();return}
