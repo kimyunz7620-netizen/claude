@@ -1,4 +1,4 @@
-<title>5천만 원 플랜</title>
+<title>머니플랜</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gothic+A1:wght@400;600;800&display=swap">
@@ -216,7 +216,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 
 <div class="wrap">
   <header class="top">
-    <div class="hi"><span class="date" id="today"></span><h1 id="hello">5천만 원 플랜</h1></div>
+    <div class="hi"><span class="date" id="today"></span><h1 id="hello">머니플랜</h1></div>
     <div class="hdr-r"><span class="streak" id="streak">🔥 0일</span>
       <button class="icon-btn" type="button" id="gear" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
   </header>
@@ -293,6 +293,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <label class="check" style="align-self:end"><input type="checkbox" id="enFree"><span>무이자 할부</span></label>
         <p class="note bad" style="grid-column:1/-1">🚨 할부는 무이자일 때만! 유이자 할부를 기록하면 '신규 할부 0건' 체크가 꺼져요.</p>
       </div>
+      <label class="check"><input type="checkbox" id="enExcl"><span>🎒 생활비 예산에서 빼기 <span class="tiny muted">(계모임·회사 경비처럼 다른 돈으로 채우는 지출. 카드값 계산에는 들어가요)</span></span></label>
       <div class="fields">
         <label class="field"><span>날짜</span><input type="date" id="enDate"></label>
         <label class="field"><span>메모</span><input type="text" id="enMemo" placeholder="선택"></label>
@@ -386,8 +387,8 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="row"><h2>⚔️ 선결제·상환 기록</h2><button type="button" class="btn ghost" id="pfClose">닫기</button></div>
       <label class="field"><span>어디에</span><select id="pfTarget"></select></label>
       <div class="fields">
-        <label class="field"><span>날짜</span><input type="date" id="pfDate"></label>
-        <label class="field"><span>금액</span><input type="text" inputmode="numeric" id="pfAmount" placeholder="0"></label>
+        <label class="field"><span>상환한 날</span><input type="date" id="pfDate"></label>
+        <label class="field"><span>상환한 금액</span><input type="text" inputmode="numeric" id="pfAmount" placeholder="0"></label>
       </div>
       <p class="tiny muted" id="pfHint"></p>
       <input type="text" id="pfMemo" placeholder="메모 (선택)" aria-label="메모">
@@ -548,7 +549,9 @@ function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amou
 const fixedTotal=ym=>sum(fixedAt(ym),x=>x.amount);
 
 /* ---------- entries ---------- */
-const entriesIn=(r,f)=>S.entries.filter(e=>inRange(e.date,r)&&(!f||f(e)));
+// cardIn: everything that hits the card; entriesIn: what counts against the living budget (excl = 계모임·회사 경비 등)
+const cardIn=(r,f)=>S.entries.filter(e=>inRange(e.date,r)&&(!f||f(e)));
+const entriesIn=(r,f)=>cardIn(r,e=>!e.excl&&(!f||f(e)));
 // installments typed into the ledger; ones already in the card's list carry cardItem
 const ledgerInst=()=>S.entries.filter(e=>e.method==="inst"&&!e.cardItem&&(e.months||0)>=2);
 function newInstAt(ym){return sum(ledgerInst(),e=>{const k=ymDiff(payYmOf(e.date),ym);return k>=0&&k<e.months?Math.round(e.amount/e.months):0})}
@@ -589,7 +592,7 @@ const loanTotal=()=>sum(LOANS(),loanBal);
 const totalDebt=()=>cardDebt()+loanTotal();
 const loanOrder=()=>LOANS().filter(d=>loanBal(d)>0).slice().sort((a,b)=>(a.last?1:0)-(b.last?1:0)||(b.apr||0)-(a.apr||0));
 function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort((a,b)=>a.date<b.date?1:-1)[0];return w?w.nextBill:null}
-function estBill(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(entriesIn(r,e=>e.method==="lotte"),e=>e.amount)+effSched(ym)}
+function estBill(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"),e=>e.amount)+effSched(ym)}
 
 /* recommended use of money: close whole card items that fit, best fee saving first; the rest waits for the next item or goes to loans */
 function allocate(amount,date){
@@ -626,10 +629,10 @@ function simulate(){
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
   const card=ab!=null?ab:estBill(M)+(open?Math.max(0,(st.cycleBudget||0)-spent):0);
-  const cashRes=sum(entriesIn(c,e=>e.method==="cash"),e=>e.amount);
+  const autoRes=sum(entriesIn(c,e=>e.method==="cash"),e=>e.amount),manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
   const fixed=fixedTotal(M),inc=incomeAt(M),avail=inc-card-fixed-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
-  return{M,inc,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,avail,paid,rest:Math.max(0,avail-paid)};
+  return{M,inc,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
 }
 
 /* ---------- bank balances (bank names only, never account numbers) ---------- */
@@ -655,26 +658,35 @@ function badges(){
   return[{e:"✍️",t:"첫 기록",on:S.entries.length>0},{e:"🔥",t:"3일 연속",on:rec>=3},{e:"🔥",t:"7일 연속",on:rec>=7},{e:"🌋",t:"30일 연속",on:rec>=30},
     {e:"🥚",t:`무지출 ${noSpend}일`,on:noSpend>0},{e:"🛡️",t:`한도 지킨 주 ${goodWeeks}`,on:goodWeeks>0},{e:"💳",t:"할부 0 7일",on:noInst>=7},
     {e:"⚔️",t:`선결제 ${prepaid}건`,on:prepaid>0},{e:"🧹",t:`할부 정리 ${doneItems}건`,on:doneItems>=10},
-    {e:"🌤️",t:"순자산 플러스",on:!!last&&last.net>0},{e:"🏁",t:"27년 목표",on:!!last&&last.net>=snaps[0].net+(ST().targetGain||0)},{e:"🏆",t:"5천만",on:!!last&&last.net>=(ST().finalTarget||5e7)}];
+    {e:"🌤️",t:"순자산 플러스",on:!!last&&last.net>0},{e:"🏁",t:"27년 목표",on:!!last&&last.net>=snaps[0].net+(ST().targetGain||0)},{e:"🏆",t:`${man(ST().finalTarget||1e8)} 달성`,on:!!last&&last.net>=(ST().finalTarget||1e8)}];
 }
 
 /* ---------- tasks ---------- */
 const TASKS=[
- {g:"준비",label:"10/20까지 준비",d:"2026-10-20",items:[
-  {id:"p1",t:"카드 자동할부·할부전환 서비스 해지",n:"9~10월 결제 7건이 자동으로 유이자 할부가 됐어요. 가장 급해요"},
+ {g:"지금 바로",label:"10/8까지 카드 설정",d:"2026-10-08",items:[
+  {id:"p1",t:"롯데카드 자동할부·할부전환 서비스 해지",n:"9월 중순 이후 7건이 자동으로 유이자 할부가 됐어요. 가장 급해요"},
   {id:"p2",t:"간편결제 기본 결제를 일시불로 변경",n:"네이버페이 · 토스 · 쿠팡 · 당근"},
   {id:"p3",t:"무이자 할부 건 확인",n:"33건 중 헥토파이낸셜 1건만 무이자예요"}]},
- {g:"파킹통장",label:"10/22 파킹통장 개설",d:"2026-10-22",items:[{id:"p4",t:"파킹통장 개설",n:"그전까지는 우리은행 통장을 저축용으로"}]},
- {g:"여행",label:"10/15~10/18 여행",d:"2026-10-15",items:[{id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"경비는 계모임 돈으로"}]},
- {g:"월급날",d:"2026-10-21",items:[
+ {g:"첫 주간 점검",label:"10/11(일) 첫 주간 점검",d:"2026-10-11",items:[
+  {id:"w1",t:"카드 앱 이용금액·결제예정액 적고 가계부와 비교",n:"주간 점검 탭에서 5분"},
+  {id:"w2",t:"9/12~10/11 주기 마감: 넘친 카테고리만 메모",n:"10/1~10/7만 기록돼 있어서 실제보다 적게 보여요"}]},
+ {g:"새 주기",label:"10/12 새 카드 주기 시작",d:"2026-10-12",items:[{id:"n1",t:"생활비 80만 · 주 18만, 롯데카드 일시불로 쓰기",n:"매일 '오늘 쓸 수 있는 돈' 안에서"}]},
+ {g:"여행",label:"10/15~10/18 상해 여행",d:"2026-10-15",items:[
+  {id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"경비는 계모임 돈으로"},
+  {id:"t2",t:"여행비를 롯데카드로 냈다면 '예산에서 빼기'로 기록",n:"11/25 카드값에 들어가니 계모임 돈을 케이뱅크에 채워 두기"}]},
+ {g:"월급날",label:"10/21 월급날",d:"2026-10-21",items:[
   {id:"a1",t:"하나은행 → 케이뱅크로 10/26 카드값 2,355,079원 이체"},
   {id:"a2",t:"고정비 약 129만원 출금 가능한지 확인",n:"NH 이자도 26일 출금"},
-  {id:"a3",t:"남은 약 30만원은 우리은행으로 (선결제용)"}]},
- {g:"카드 결제일",d:"2026-10-26",items:[{id:"b1",t:"카드값 · NH 이자 정상 출금 확인"}]},
- {g:"카드 주기 마감",d:"2026-11-11",items:[{id:"c1",t:"10/12~11/11 생활비 80만원 이하인지 확인"}]},
- {g:"월급날",d:"2026-11-21",items:[{id:"d1",t:"하나은행 → 케이뱅크로 11/25 카드값 이체"},{id:"d2",t:"고정비 약 121만원 확인",n:"계모임 24만원으로 줄어듦"}]},
- {g:"카드 결제 직후",d:"2026-11-25",items:[{id:"e1",t:"월급·상환 탭 추천대로 할부 선결제",n:"수수료를 가장 많이 아끼는 건부터"}]},
- {g:"카드 주기 마감",d:"2026-12-11",items:[{id:"f1",t:"11/12~12/11 생활비 80만원 이하인지 확인"}]}
+  {id:"a3",t:"남는 돈은 우리은행으로 (선결제용)"}]},
+ {g:"파킹통장",label:"10/22 파킹통장 개설",d:"2026-10-22",items:[{id:"p4",t:"파킹통장 개설하고 우리은행 저축분 옮기기",n:"월말 잔액 기록의 '우리은행' 칸을 파킹통장으로 쓰면 돼요"}]},
+ {g:"카드 결제일",label:"10/26(월) 카드 결제일",d:"2026-10-26",items:[{id:"b1",t:"카드값 · NH 이자 정상 출금 확인",n:"25일이 일요일이라 26일 출금"}]},
+ {g:"월말",label:"10/31 월말",d:"2026-10-31",items:[{id:"m1",t:"하나·케이뱅크·우리은행 잔액 기록",n:"첫 순자산 기록이 목표 경로의 출발점이 돼요"}]},
+ {g:"카드 주기 마감",label:"11/11 카드 주기 마감",d:"2026-11-11",items:[{id:"c1",t:"10/12~11/11 생활비 80만원 이하인지 확인"}]},
+ {g:"월급날",label:"11/20 월급날 (21일이 토요일)",d:"2026-11-20",items:[{id:"d1",t:"하나은행 → 케이뱅크로 11/25 카드값 이체"},{id:"d2",t:"고정비 약 121만원 확인",n:"계모임 24만원으로 줄어듦"}]},
+ {g:"선결제",label:"11/25 결제 직후 첫 선결제",d:"2026-11-25",items:[{id:"e1",t:"월급·상환 탭 추천대로 할부 선결제",n:"철길부산집·관리비(9/18)·ZARA·당근·쿠팡 2건 · 수수료 약 11만원 절약"}]},
+ {g:"카드 주기 마감",label:"12/11 카드 주기 마감",d:"2026-12-11",items:[{id:"f1",t:"11/12~12/11 생활비 80만원 이하인지 확인"}]},
+ {g:"선결제",label:"12/25 결제 직후 선결제",d:"2026-12-25",items:[{id:"g1",t:"추천대로 선결제, 이마트용으로 모으기 시작",n:"이마트 선결제 시 수수료 약 32만원 절약"}]},
+ {g:"연말정산",label:"27년 2월 연말정산 환급",d:"2027-02-28",items:[{id:"h1",t:"연말정산 환급금 전액 상환",n:"규칙: 인상분·성과급·환급은 전액 상환·저축"}]}
 ];
 
 /* ================= RENDER ================= */
@@ -682,7 +694,7 @@ let raf=0;function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;r
 function renderAll(){renderHeader();renderToday();renderQuest();renderCoach();renderWeek();renderMonth();renderDash()}
 function renderHeader(){
   const t=parse(TODAY),h=new Date().getHours();
-  $("today").textContent=`${t.getMonth()+1}월 ${t.getDate()}일 ${DOW[t.getDay()]}요일 · 5천만 원 플랜`;
+  $("today").textContent=`${t.getMonth()+1}월 ${t.getDate()}일 ${DOW[t.getDay()]}요일 · 머니플랜`;
   $("hello").textContent=h<11?"좋은 아침이에요 ☀️":h<18?"오늘도 잘하고 있어요 🌱":"오늘 하루 마무리 🌙";
   const s=streakNow();$("streak").textContent=`🔥 ${s}일`;$("streak").title=`${s}일 연속 기록 중`;
 }
@@ -704,7 +716,7 @@ function paintBar(el,spent,budget,pace){
   const b=el.querySelector("b");if(b)b.style.left=(budget>0&&pace!=null?Math.min(100,pace/budget*100):0)+"%";
 }
 function renderToday(){
-  const allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
+  const allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=left>=0?won(left):"−"+won(-left);
   $("heroLbl").textContent=allow>0?`오늘 쓸 수 있는 돈 · 하루 ${man1(allow)} 중`:"이번 주 한도를 이미 다 썼어요";
   const ratio=allow>0?spentT/allow:spentT>0?2:0;
@@ -712,7 +724,7 @@ function renderToday(){
   $("ringFace").textContent=face;$("heroMood").textContent=mood;
   $("ringArc").style.strokeDashoffset=String(238.8*(1-Math.min(1,ratio)));$("ringArc").style.stroke=ratio>1?"#FFB3B3":"#fff";
   const wr=weekRange(TODAY),W=ST().weekBudget||0,dayB=W/7;
-  $("weekDots").innerHTML=[...Array(7)].map((_,i)=>{const d=addDays(wr.start,i),s=sum(S.entries.filter(e=>e.date===d),e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,fut=d>TODAY,rec=recorded(d);
+  $("weekDots").innerHTML=[...Array(7)].map((_,i)=>{const d=addDays(wr.start,i),s=sum(S.entries.filter(e=>e.date===d&&!e.excl),e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,fut=d>TODAY,rec=recorded(d);
     const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b",ic=fut?"":!rec?"·":s===0?(ns?"🥚":"✓"):s<=dayB?"✓":s<=dayB*1.5?"!":"✕";
     return `<div class="wd ${cls} ${d===TODAY?"today":""}"><i>${ic}</i>${"월화수목금토일"[i]}</div>`}).join("");
   const ws=sum(entriesIn(wr),e=>e.amount),y=cycleSummary();
@@ -730,7 +742,7 @@ function renderToday(){
   const isToday=selDate===TODAY;$("dayTitle").textContent=isToday?"오늘 기록":`${mdw(selDate)} 기록`;
   const list=S.entries.filter(e=>e.date===selDate).sort((a,b)=>(a.createdAt||"")<(b.createdAt||"")?-1:1);
   $("dayTotal").textContent=won(sum(list,e=>e.amount));
-  $("dayList").innerHTML=list.length?list.map(e=>{const[em,col]=look(e.cat);return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":`⚠️ 할부 ${e.months}개월${e.free?" 무이자":""}`}</div></button><div class="a">${num(e.amount)}</div></div>`}).join("")
+  $("dayList").innerHTML=list.length?list.map(e=>{const[em,col]=look(e.cat);return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":`⚠️ 할부 ${e.months}개월${e.free?" 무이자":""}`}${e.excl?" · 🎒 예산 제외":""}</div></button><div class="a">${num(e.amount)}</div></div>`}).join("")
     :`<p class="empty">${isToday?"아직 기록이 없어요. 위에서 금액과 카테고리를 고르고 기록하세요.":"이날 기록이 없어요."}</p>`;
   const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;
   ns.textContent=dd.noSpend?"🥚 무지출로 표시했어요 · 취소":isToday?"🥚 오늘은 안 썼어요 (무지출)":"🥚 이날은 안 썼어요 (무지출)";
@@ -790,7 +802,7 @@ function coachData(){
 async function askCoach(){
   if(!sample||coachBusy)return;coachBusy=true;coachCtl=new AbortController();
   $("coachBtn").disabled=true;$("coachStop").hidden=false;$("coachBody").innerHTML='<p class="muted">🤔 오늘 숫자를 보고 있어요…</p>';
-  const prompt=`너는 빚을 갚고 목돈 5천만 원을 모으는 사람의 다정하지만 솔직한 머니 코치야. 인바디 코칭처럼 오늘 숫자를 근거로 짧게 코칭해.
+  const prompt=`너는 빚을 갚고 ${ST().targetYm||"2027-12"}까지 순자산 +${man(ST().targetGain||0)}원, 최종 ${man(ST().finalTarget||1e8)}원을 모으려는 사람의 다정하지만 솔직한 머니 코치야. 인바디 코칭처럼 오늘 숫자를 근거로 짧게 코칭해.
 규칙: 생활비는 카드 주기(12일~다음 달 11일)당 80만 원, 한 주 18만 원. 모든 결제는 일시불, 유이자 할부·리볼빙·분할납부·현금서비스 금지. 남는 돈은 수수료를 많이 아끼는 카드 할부부터 선결제.
 말투: 다정한 존댓말, 이모지 1~2개, 숫자는 원 단위로 구체적으로. 비난하지 말고 다음 행동을 제시해. 아래 JSON 데이터만 근거로 쓰고 없는 사실은 지어내지 마.
 ${JSON.stringify(coachData())}
@@ -823,7 +835,7 @@ function renderCoach(){
 
 /* ---------- 주간 점검 ---------- */
 function weeklyCompare(w){
-  const cu=cycleOf(payYmOf(w.date)),expUse=sum(entriesIn({start:cu.start,end:w.date},e=>e.method!=="cash"),e=>e.amount),expBill=estBill(w.payYm,w.date);
+  const cu=cycleOf(payYmOf(w.date)),expUse=sum(cardIn({start:cu.start,end:w.date},e=>e.method!=="cash"),e=>e.amount),expBill=estBill(w.payYm,w.date);
   const tol=v=>Math.max(ST().warnDiff||30000,Math.abs(v)*0.05),items=[];
   if(w.usage>0)items.push({k:"이번 주기 이용금액",act:w.usage,exp:expUse});
   if(w.nextBill>0)items.push({k:`${Number(w.payYm.slice(5))}/${CARD()} 결제예정액`,act:w.nextBill,exp:expBill});
@@ -880,7 +892,7 @@ function renderMonth(){
     :`<div class="row"><h2><span class="step">2</span>결제일 이후: 선결제 실행</h2><span class="chip good">${ymKo(M)}</span></div><p class="small muted">카드 앱에서 아래 건을 '건별 선결제'하고, 할 때마다 '기록'을 눌러 주세요.</p>`;
   const src=pl.cardSrc==="app"?"카드 앱 입력값":pl.cardSrc==="est-open"?"추정 · 남은 생활비 포함":"가계부 추정";
   const flow=`<div class="flow"><div class="fl"><span>💵 실수령${ST().raiseFromYm&&M>=ST().raiseFromYm?" (인상 반영)":""}</span><span class="num">${num(pl.inc)}</span></div><div class="fl"><span>💳 카드값 (${md(ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div><div class="fl"><span>🏠 고정비</span><span class="num">−${num(pl.fixed)}</span></div>
-    ${pl.cashRes?`<div class="fl"><span>🏦 체크·현금 생활비 예비</span><span class="num">−${num(pl.cashRes)}</span></div>`:""}${ST().buffer?`<div class="fl"><span>🛟 버퍼</span><span class="num">−${num(ST().buffer)}</span></div>`:""}
+    ${pl.cashRes?`<div class="fl"><span>🏦 케뱅에 남길 체크카드 생활비 <span class="tiny muted">${pl.resSrc}</span></span><span class="num">−${num(pl.cashRes)}</span></div>`:""}${ST().buffer?`<div class="fl"><span>🛟 버퍼</span><span class="num">−${num(ST().buffer)}</span></div>`:""}
     <div class="fl total"><span>⚔️ 선결제·상환 가능</span><span class="${pl.avail<0?"bad-t":"good-t"}">${won(pl.avail)}</span></div></div>`;
   let body="";
   if(pl.avail<0)body='<p class="note bad">고정비와 카드값을 다 덮지 못해요. 생활비를 줄여 메우고, 리볼빙·분할납부는 누르지 마세요.</p>';
@@ -914,9 +926,9 @@ function fillTargets(keep){
 }
 function pfAuto(){
   const v=$("pfTarget").value,date=$("pfDate").value||TODAY;
-  if(v.startsWith("i:")){const x=ITEMS().find(i=>i.id===v.slice(2));if(!x)return;$("pfAmount").value=num(prepayAmt(x,date));$("pfAmount").readOnly=true;
-    $("pfHint").textContent=`건별 선결제는 남은 원금 전액이에요. ${ymKo(fromOf(date))} 결제분부터 이 건 청구가 사라지고 수수료 ${won(prepaySave(x,date))}을 아껴요.`}
-  else{$("pfAmount").readOnly=false;$("pfHint").textContent="대출은 일부만 갚아도 돼요. NH는 중도상환수수료를 먼저 확인하세요."}
+  if(v.startsWith("i:")){const x=ITEMS().find(i=>i.id===v.slice(2));if(!x)return;$("pfAmount").value=num(prepayAmt(x,date));
+    $("pfHint").textContent=`남은 원금 전액을 미리 채워 뒀어요. 카드 앱에서 실제로 낸 금액이 다르면 그 금액으로 고쳐 주세요. ${ymKo(fromOf(date))} 결제분부터 이 건 청구가 사라지고 수수료 약 ${won(prepaySave(x,date))}을 아껴요.`}
+  else{$("pfHint").textContent="대출은 일부만 갚아도 돼요. NH는 중도상환수수료를 먼저 확인하세요."}
 }
 function openPay(target,amt){
   if(view!=="month")go("month");
@@ -932,12 +944,12 @@ function renderDash(){
   $("dbFree").textContent=sim.free?`이대로면 유이자 카드 할부는 ${ymKo(sim.cardDone)}, 모든 빚은 ${ymKo(sim.free)}에 끝나요.`:"지금 숫자로는 완납 시점을 계산할 수 없어요.";
   const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),lastCash=cashNow(),now=(st.deposit||0)+(lastCash||0)-T;
   $("nwNow").textContent=won(now);
-  const startNet=snaps.length?snaps[0].net:now,gain=st.targetGain||0,target=startNet+gain,fin=st.finalTarget||5e7;
+  const startNet=snaps.length?snaps[0].net:now,gain=st.targetGain||0,target=startNet+gain,fin=st.finalTarget||1e8;
   const lo=Math.min(startNet,now,0),span=Math.max(1,fin-lo),pos=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
   $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div><div class="mk lo" style="left:${pos(target)}%"><b>🏁</b>${man(target)}</div><div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div><div class="me" style="left:${pos(now)}%">🐷</div>`;
   const chips=[];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip warn">세 통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
   if(snaps.length){const sYm=snaps[0].ym,tYm=st.targetYm||"2027-12",sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
-  chips.push(`<span class="chip plain">🏁 ${ymKo(st.targetYm||"2027-12")} 목표 +${man(gain)}</span><span class="chip plain">🏆 5천만까지 ${man(Math.max(0,fin-now))}</span>`);$("nwChips").innerHTML=chips.join("");
+  chips.push(`<span class="chip plain">🏁 ${ymKo(st.targetYm||"2027-12")} 목표 +${man(gain)}</span><span class="chip plain">🏆 ${man(fin)}까지 ${man(Math.max(0,fin-now))}</span>`);$("nwChips").innerHTML=chips.join("");
   drawChart(snaps,snaps.length?snaps[0].ym:ymOf(TODAY),st.targetYm||"2027-12",snaps.length?startNet:null,snaps.length?target:null);
   const bs=badges();$("badgeCount").textContent=`${bs.filter(b=>b.on).length}/${bs.length}`;
   $("badges").innerHTML=bs.map(b=>`<div class="bd ${b.on?"on":"off"}"><span class="e">${b.e}</span>${esc(b.t)}</div>`).join("");
@@ -975,7 +987,7 @@ function drawChart(snaps,startYm,tYm,startNet,target){
 const moneyIn=(id,v)=>`<input type="text" inputmode="numeric" id="${id}" value="${v!=null&&v!==""?num(v):""}">`;
 function renderSettings(){
   const s=ST(),f=(id,label,v,type)=>`<label class="field"><span>${label}</span>${type==="month"?`<input type="month" id="${id}" value="${esc(v||"")}">`:type==="pct"?`<input type="number" step="0.1" id="${id}" value="${v??""}">`:moneyIn(id,v)}</label>`;
-  $("setBase").innerHTML=`<h2>💵 수입·목표</h2><div class="fields">${f("s_income","월 실수령",s.income)}${f("s_raise","인상률 (%)",s.raisePct,"pct")}${f("s_raiseFrom","인상 적용 시작월",s.raiseFromYm,"month")}${f("s_buffer","월급날 남겨둘 버퍼",s.buffer)}${f("s_cycle","카드 주기당 생활비",s.cycleBudget)}${f("s_week","주간 한도",s.weekBudget)}${f("s_deposit","보증금 (자산)",s.deposit)}${f("s_startDebt","시작 시점 빚 합계",s.startDebt)}${f("s_gain","목표 증가액",s.targetGain)}${f("s_tYm","목표 시점",s.targetYm,"month")}${f("s_final","최종 목표",s.finalTarget)}${f("s_warn","주간 점검 경고 기준",s.warnDiff)}</div><button class="btn" type="submit">저장</button>`;
+  $("setBase").innerHTML=`<h2>💵 수입·목표</h2><div class="fields">${f("s_income","월 실수령",s.income)}${f("s_raise","인상률 (%)",s.raisePct,"pct")}${f("s_raiseFrom","인상 적용 시작월",s.raiseFromYm,"month")}${f("s_buffer","월급날 남겨둘 버퍼",s.buffer)}${f("s_cycle","카드 주기당 생활비",s.cycleBudget)}${f("s_week","주간 한도",s.weekBudget)}${f("s_deposit","보증금 (자산)",s.deposit)}${f("s_startDebt","시작 시점 빚 합계",s.startDebt)}${f("s_gain","목표 증가액",s.targetGain)}${f("s_tYm","목표 시점",s.targetYm,"month")}${f("s_final","최종 목표",s.finalTarget)}${f("s_warn","주간 점검 경고 기준",s.warnDiff)}<label class="field" style="grid-column:1/-1"><span>월급날 케뱅에 남길 체크카드 생활비 (비우면 지난 주기 사용액)</span>${moneyIn("s_res",s.cashReserve)}</label></div><button class="btn" type="submit">저장</button>`;
   $("setBudget").innerHTML=`<h2>🗂️ 생활비 예산 (카드 주기당)</h2>`+CATS().map(c=>`<div class="set-row"><span>${look(c.id)[0]} ${esc(c.name)}${c.accumulate?' <span class="tiny muted">적립식</span>':""}</span>${moneyIn("b_"+c.id,c.amount)}</div>`).join("")+`<div class="set-row"><strong>합계</strong><strong style="text-align:right">${num(sum(CATS(),c=>c.amount||0))}</strong></div><button class="btn" type="submit">저장</button>`;
   const fx=(S.fixed&&S.fixed.items)||[];
   $("setFixed").innerHTML=`<h2>🏠 고정비 (월)</h2>`+fx.map(it=>{const ch=(it.changes||[])[0]||{};return `<div class="sub"><div class="set-row"><span>${esc(it.name)}</span>${moneyIn("f_"+it.id,it.amount)}</div><div class="fields"><label class="field"><span>변경 시작월 (선택)</span><input type="month" id="fc_${it.id}" value="${esc(ch.fromYm||"")}"></label><label class="field"><span>변경 후 금액</span>${moneyIn("fa_"+it.id,ch.amount)}</label></div></div>`}).join("")+`<p class="small muted">이번 달 ${won(fixedTotal(ymOf(TODAY)))} · 다음 달 ${won(fixedTotal(ymAdd(ymOf(TODAY),1)))}</p><button class="btn" type="submit">저장</button>`;
@@ -1026,12 +1038,12 @@ $("enDate").addEventListener("change",e=>{selDate=e.target.value||TODAY;if(editi
 $("wkDate").addEventListener("change",renderWeek);
 function startEdit(en){
   editingId=en.id;selDate=en.date;selCat=en.cat;selMethod=en.method;
-  $("enAmount").value=num(en.amount);$("enMemo").value=en.memo||"";$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;
+  $("enAmount").value=num(en.amount);$("enMemo").value=en.memo||"";$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;$("enExcl").checked=!!en.excl;
   document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===selMethod));$("instBox").hidden=selMethod!=="inst";
   $("entryTitle").textContent="기록 고치기";$("enSave").textContent="수정 저장";$("enCancel").hidden=false;$("enDel").hidden=false;
   renderToday();$("entryForm").scrollIntoView({behavior:"smooth",block:"start"});
 }
-function cancelEdit(){editingId=null;$("entryTitle").textContent="쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value=""}
+function cancelEdit(){editingId=null;$("entryTitle").textContent="쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
 $("enCancel").addEventListener("click",()=>{cancelEdit();renderToday()});
 $("enDel").addEventListener("click",async()=>{const b=$("enDel");if(!confirmTap(b))return;const id=editingId;cancelEdit();try{await del("entries/"+id);toast("지웠어요")}catch(_){}});
 $("entryForm").addEventListener("submit",async e=>{
@@ -1041,6 +1053,7 @@ $("entryForm").addEventListener("submit",async e=>{
   const date=$("enDate").value||TODAY,prev=editingId?S.entries.find(x=>x.id===editingId):null,id=editingId||newId(),wasEdit=!!editingId;
   const doc={date,cat:selCat,amount,method:selMethod,memo:$("enMemo").value.trim(),createdAt:prev?prev.createdAt:new Date().toISOString()};
   if(prev&&prev.cardItem)doc.cardItem=prev.cardItem;
+  if($("enExcl").checked)doc.excl=true;
   if(selMethod==="inst"){doc.months=Math.max(2,Math.min(36,Number($("enMonths").value)||3));doc.free=$("enFree").checked}
   $("enSave").disabled=true;
   try{await put("entries/"+id,doc);
@@ -1084,7 +1097,7 @@ $("nwForm").addEventListener("submit",async e=>{
 });
 const val=id=>$(id)?$(id).value:"";
 $("setBase").addEventListener("submit",async e=>{e.preventDefault();
-  const s={...ST(),income:parseNum(val("s_income")),raisePct:Number(val("s_raise"))||0,raiseFromYm:val("s_raiseFrom"),buffer:parseNum(val("s_buffer")),cycleBudget:parseNum(val("s_cycle")),weekBudget:parseNum(val("s_week")),deposit:parseNum(val("s_deposit")),startDebt:parseNum(val("s_startDebt")),targetGain:parseNum(val("s_gain")),targetYm:val("s_tYm"),finalTarget:parseNum(val("s_final")),warnDiff:parseNum(val("s_warn"))};
+  const s={...ST(),income:parseNum(val("s_income")),raisePct:Number(val("s_raise"))||0,raiseFromYm:val("s_raiseFrom"),buffer:parseNum(val("s_buffer")),cycleBudget:parseNum(val("s_cycle")),weekBudget:parseNum(val("s_week")),deposit:parseNum(val("s_deposit")),startDebt:parseNum(val("s_startDebt")),targetGain:parseNum(val("s_gain")),targetYm:val("s_tYm"),finalTarget:parseNum(val("s_final")),warnDiff:parseNum(val("s_warn")),cashReserve:val("s_res").trim()===""?null:parseNum(val("s_res"))};
   try{await put("config/settings",s);toast("수입·목표를 저장했어요")}catch(_){}});
 $("setBudget").addEventListener("submit",async e=>{e.preventDefault();const cats=CATS().map(c=>({...c,amount:parseNum(val("b_"+c.id))}));try{await put("config/budget",{cats});toast(`예산 저장 · 합계 ${won(sum(cats,c=>c.amount))}`)}catch(_){}});
 $("setFixed").addEventListener("submit",async e=>{e.preventDefault();
