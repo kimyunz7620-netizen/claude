@@ -672,18 +672,17 @@ const TASKS=[
   {id:"w2",t:"9/12~10/11 주기 마감: 넘친 카테고리만 메모",n:"10/1~10/7만 기록돼 있어서 실제보다 적게 보여요"}]},
  {g:"새 주기",label:"10/12 새 카드 주기 시작",d:"2026-10-12",items:[{id:"n1",t:"생활비 80만 · 주 18만, 롯데카드 일시불로 쓰기",n:"매일 '오늘 쓸 수 있는 돈' 안에서"}]},
  {g:"여행",label:"10/15~10/18 상해 여행",d:"2026-10-15",items:[
-  {id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"경비는 계모임 돈으로"},
-  {id:"t2",t:"여행비를 롯데카드로 냈다면 '예산에서 빼기'로 기록",n:"11/25 카드값에 들어가니 계모임 돈을 케이뱅크에 채워 두기"}]},
+  {id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"항공·숙박은 이미 할부 목록에 있어요. 현지 경비는 계모임 돈으로"}]},
  {g:"월급날",label:"10/21 월급날",d:"2026-10-21",items:[
   {id:"a1",t:"하나은행 → 케이뱅크로 10/26 카드값 2,355,079원 이체"},
   {id:"a2",t:"고정비 약 129만원 출금 가능한지 확인",n:"NH 이자도 26일 출금"},
-  {id:"a3",t:"남는 돈은 우리은행으로 (선결제용)"}]},
+  {id:"a3",t:"카드값·고정비 빼고 남는 약 30만원은 우리은행으로",n:"26일 결제 끝나면 바로 선결제에 써요"}]},
  {g:"파킹통장",label:"10/22 파킹통장 개설",d:"2026-10-22",items:[{id:"p4",t:"파킹통장 개설하고 우리은행 저축분 옮기기",n:"월말 잔액 기록의 '우리은행' 칸을 파킹통장으로 쓰면 돼요"}]},
- {g:"카드 결제일",label:"10/26(월) 카드 결제일",d:"2026-10-26",items:[{id:"b1",t:"카드값 · NH 이자 정상 출금 확인",n:"25일이 일요일이라 26일 출금"}]},
+ {g:"카드 결제일",label:"10/26(월) 카드 결제일",d:"2026-10-26",items:[{id:"b1",t:"카드값 · NH 이자 정상 출금 확인",n:"25일이 일요일이라 26일 출금"},{id:"b2",t:"첫 선결제 2건: 철길부산집 120,000 · 아파트 관리비(9/18) 178,610",n:"수수료 약 6.7만원 절약 · 월급·상환 탭에서 기록"}]},
  {g:"월말",label:"10/31 월말",d:"2026-10-31",items:[{id:"m1",t:"하나·케이뱅크·우리은행 잔액 기록",n:"첫 순자산 기록이 목표 경로의 출발점이 돼요"}]},
  {g:"카드 주기 마감",label:"11/11 카드 주기 마감",d:"2026-11-11",items:[{id:"c1",t:"10/12~11/11 생활비 80만원 이하인지 확인"}]},
  {g:"월급날",label:"11/20 월급날 (21일이 토요일)",d:"2026-11-20",items:[{id:"d1",t:"하나은행 → 케이뱅크로 11/25 카드값 이체"},{id:"d2",t:"고정비 약 121만원 확인",n:"계모임 24만원으로 줄어듦"}]},
- {g:"선결제",label:"11/25 결제 직후 첫 선결제",d:"2026-11-25",items:[{id:"e1",t:"월급·상환 탭 추천대로 할부 선결제",n:"철길부산집·관리비(9/18)·ZARA·당근·쿠팡 2건 · 수수료 약 11만원 절약"}]},
+ {g:"선결제",label:"11/25 결제 직후 첫 선결제",d:"2026-11-25",items:[{id:"e1",t:"월급·상환 탭 추천대로 할부 선결제",n:"월급·상환 탭의 추천 순서대로. 남는 돈은 파킹통장에"}]},
  {g:"카드 주기 마감",label:"12/11 카드 주기 마감",d:"2026-12-11",items:[{id:"f1",t:"11/12~12/11 생활비 80만원 이하인지 확인"}]},
  {g:"선결제",label:"12/25 결제 직후 선결제",d:"2026-12-25",items:[{id:"g1",t:"추천대로 선결제, 이마트용으로 모으기 시작",n:"이마트 선결제 시 수수료 약 32만원 절약"}]},
  {g:"연말정산",label:"27년 2월 연말정산 환급",d:"2027-02-28",items:[{id:"h1",t:"연말정산 환급금 전액 상환",n:"규칙: 인상분·성과급·환급은 전액 상환·저축"}]}
@@ -899,7 +898,7 @@ function renderMonth(){
   else{const rows=allocate(phase==="repay"?pl.rest:pl.avail,phase==="repay"?TODAY:ymDay(M,CARD()));
     body=(phase==="repay"&&pl.paid?`<p class="small muted">이번 달 이미 기록한 상환 ${won(pl.paid)} · 남은 ${won(pl.rest)}</p>`:"")+`<h3>${phase==="repay"?"🗡️ 이렇게 넣으세요":"🗡️ 25일 뒤 넣을 곳 (예정)"}</h3>`+
       (rows.length?`<div class="list">${rows.map(r=>r.kind==="item"?`<div class="li"><span class="av">💳</span><div><div class="t">${esc(r.x.name)}</div><div class="s">${md(r.x.date)} 할부 · 수수료 ${won(r.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(r.amt)}</div>${phase==="repay"?`<button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(r.x.id)}">기록</button>`:""}</div></div>`
-        :r.kind==="pot"?`<div class="li"><span class="av">🐷</span><div><div class="t">모아 두기</div><div class="s">다음 달 ${esc(r.target.x.name)} 선결제(${won(r.target.amt)})용 · 수수료 ${won(r.target.save)} 절약 예정</div></div><div class="a">${num(r.amt)}</div></div>`
+        :r.kind==="pot"?`<div class="li"><span class="av">🐷</span><div><div class="t">파킹통장에 모아 두기</div><div class="s">다음 ${esc(r.target.x.name)} 선결제(${won(r.target.amt)})용 · 수수료 ${won(r.target.save)} 절약 예정</div></div><div class="a">${num(r.amt)}</div></div>`
         :`<div class="li"><span class="av">🏦</span><div><div class="t">${esc(r.d.name)}</div><div class="s">${esc(r.d.rate||"")}${r.d.last?" · 비상금 역할이라 마지막":""}</div></div><div style="text-align:right"><div class="a">${num(r.amt)}</div>${phase==="repay"?`<button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="d:${esc(r.d.id)}" data-amt="${Math.round(r.amt)}">기록</button>`:""}</div></div>`).join("")}</div>`
         :`<p class="empty">${phase==="repay"&&pl.paid?"이번 달 상환을 다 기록했어요 🎉":"넣을 곳이 없어요."}</p>`)}
   const secureBox=phase==="secure"?`<label class="check"><input type="checkbox" data-task="${sk}" ${S.tasks[sk]?"checked":""}><span>카드값은 케이뱅크로 옮기고, 고정비도 남겨 뒀어요</span></label>`:"";
