@@ -144,6 +144,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .hb .e{font-size:1.5rem}
 .hb span{font-size:.78rem;font-weight:600;line-height:1.3}
 .hb.on{background:var(--mint-soft);border-color:var(--mint)}
+.hb.auto{cursor:default}
 .hb.on::after{content:"✓";position:absolute;right:10px;color:var(--mint);font-weight:800}
 .hb:focus-within{outline:2px solid var(--grape);outline-offset:2px}
 .gauge{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid var(--line)}
@@ -304,6 +305,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     <div class="card">
       <div class="row"><h2 id="dayTitle">🧾 오늘 기록</h2><span class="disp" id="dayTotal"></span></div>
       <div class="list" id="dayList"></div>
+      <div id="dayCats"></div>
       <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
     </div>
 
@@ -311,7 +313,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="row"><h2 id="questTitle">🎯 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
       <div class="quest" id="quest"></div>
       <div class="habits" id="habits" aria-label="습관 체크">
-        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건</span></label>
+        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건 <small class="tiny muted">자동</small></span></label>
         <label class="hb"><input type="checkbox" id="hk_noRevolve"><span>🙅 리볼빙·현금서비스 X</span></label>
         <label class="hb"><input type="checkbox" id="hk_appCheck"><span>📱 카드 앱 확인</span></label>
         <label class="hb"><input type="checkbox" id="hk_48h"><span>⏳ 48시간 룰</span></label>
@@ -667,6 +669,9 @@ function cashNow(){const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),la
 
 /* ---------- days, streaks, badges ---------- */
 const HK=["noInst","noRevolve","appCheck","48h"];
+/* habits the ledger already knows: no paid installment that day, and a weekly card check saved that day */
+function habitAuto(d){return{noInst:!S.entries.some(e=>e.date===d&&e.method==="inst"&&!e.free),appCheck:S.weekly.some(w=>!w.seed&&w.date===d)}}
+function habitsOn(d){const a=habitAuto(d),c=(S.days[d]&&S.days[d].checks)||{};return{noInst:a.noInst,noRevolve:!!c.noRevolve,appCheck:a.appCheck||!!c.appCheck,"48h":!!c["48h"]}}
 const recorded=d=>S.entries.some(e=>e.date===d)||!!(S.days[d]&&(S.days[d].noSpend||HK.some(k=>S.days[d].checks&&S.days[d].checks[k])));
 function streakNow(){let s=0,d=TODAY;if(!recorded(d))d=addDays(d,-1);while(recorded(d)){s++;d=addDays(d,-1)}return s}
 function bestRun(pred){const days=new Set();S.entries.forEach(e=>days.add(e.date));Object.keys(S.days).forEach(d=>days.add(d));
@@ -678,20 +683,10 @@ const TASKS=[
   {id:"p1",t:"롯데카드 자동할부·할부전환 서비스 해지",n:"9월 중순 이후 7건이 자동으로 유이자 할부가 됐어요. 가장 급해요"},
   {id:"p2",t:"간편결제 기본 결제를 일시불로 변경",n:"네이버페이 · 토스 · 쿠팡 · 당근"},
   {id:"p3",t:"무이자 할부 건 확인",n:"33건 중 헥토파이낸셜 1건만 무이자예요"}]},
- {g:"새 주기",label:"10/12 새 카드 주기 시작",d:"2026-10-12",items:[{id:"n1",t:"생활비 80만 · 주 18만, 롯데카드 일시불로 쓰기",n:"하루 2.6만 한도 안에서"}]},
- {g:"여행",label:"10/15~10/18 상해 여행",d:"2026-10-15",items:[
+ {g:"여행",label:"10/15~10/18 상해 여행",d:"2026-10-15",end:"2026-10-18",items:[
   {id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"항공·숙박은 이미 할부 목록에 있어요. 현지 경비는 계모임 돈으로"}]},
- {g:"월급날",label:"10/21 월급날",d:"2026-10-21",items:[
-  {id:"a1",t:"하나은행 → 케이뱅크로 10/26 카드값 2,355,079원 이체"},
-  {id:"a2",t:"고정비 약 129만원 출금 가능한지 확인",n:"NH 이자도 26일 출금"},
-  {id:"a3",t:"카드값·고정비 빼고 남는 약 30만원은 우리은행으로",n:"26일 결제 끝나면 바로 선결제에 써요"}]},
  {g:"파킹통장",label:"10/22 파킹통장 개설",d:"2026-10-22",items:[{id:"p4",t:"파킹통장 개설하고 우리은행 저축분 옮기기",n:"월말 잔액 기록의 '우리은행' 칸을 파킹통장으로 쓰면 돼요"}]},
- {g:"카드 결제일",label:"10/26(월) 카드 결제일",d:"2026-10-26",items:[{id:"b1",t:"카드값 · NH 이자 정상 출금 확인",n:"25일이 일요일이라 26일 출금"},{id:"b2",t:"첫 선결제 2건: 철길부산집 120,000 · 아파트 관리비(9/18) 178,610",n:"수수료 약 6.7만원 절약 · 월급·상환 탭에서 기록"}]},
- {g:"월말",label:"10/31 월말",d:"2026-10-31",items:[{id:"m1",t:"하나·케이뱅크·우리은행 잔액 기록",n:"첫 순자산 기록이 목표 경로의 출발점이 돼요"}]},
- {g:"카드 주기 마감",label:"11/11 카드 주기 마감",d:"2026-11-11",items:[{id:"c1",t:"10/12~11/11 생활비 80만원 이하인지 확인"}]},
- {g:"월급날",label:"11/20 월급날 (21일이 토요일)",d:"2026-11-20",items:[{id:"d1",t:"하나은행 → 케이뱅크로 11/25 카드값 이체"},{id:"d2",t:"고정비 약 121만원 확인",n:"계모임 24만원으로 줄어듦"}]},
- {g:"선결제",label:"11/25 결제 직후 첫 선결제",d:"2026-11-25",items:[{id:"e1",t:"월급·상환 탭 추천대로 할부 선결제",n:"월급·상환 탭의 추천 순서대로. 남는 돈은 파킹통장에"}]},
- {g:"카드 주기 마감",label:"12/11 카드 주기 마감",d:"2026-12-11",items:[{id:"f1",t:"11/12~12/11 생활비 80만원 이하인지 확인"}]},
+ {g:"카드 결제일",label:"10/26(월) 카드 결제일",d:"2026-10-26",items:[{id:"b1",t:"카드값 · NH 이자 정상 출금 확인",n:"25일이 일요일이라 26일 출금"}]},
  {g:"선결제",label:"12/25 결제 직후 선결제",d:"2026-12-25",items:[{id:"g1",t:"추천대로 선결제, 이마트용으로 모으기 시작",n:"이마트 선결제 시 수수료 약 32만원 절약"}]},
  {g:"연말정산",label:"27년 2월 연말정산 환급",d:"2027-02-28",items:[{id:"h1",t:"연말정산 환급금 전액 상환",n:"규칙: 인상분·성과급·환급은 전액 상환·저축"}]}
 ];
@@ -747,10 +742,12 @@ function renderToday(){
   $("dayTotal").textContent=won(sum(list,e=>e.amount));
   $("dayList").innerHTML=list.length?list.map(entryRow).join("")
     :`<p class="empty">${isToday?"아직 없어요.":"이날 기록이 없어요."}</p>`;
+  const dc=cycleOf(payYmOf(selDate)),df=Math.min(1,(dayDiff(dc.start,selDate)+1)/(dayDiff(dc.start,dc.end)+1)),used=[...new Set(list.filter(e=>!e.excl).map(e=>e.cat))].map(id=>CATS().find(c=>c.id===id)).filter(Boolean);
+  $("dayCats").innerHTML=used.length?`<p class="tiny muted">이번 주기(${md(dc.start)}~${md(dc.end)}) 카테고리 상태</p><div class="chips">${used.map(c=>{const sp=sum(entriesIn(dc,e=>e.cat===c.id),e=>e.amount),b=c.amount||0,cls=sp>b?"bad":sp>b*df*1.1?"warn":"good";return `<span class="chip ${cls}">${look(c.id)[0]} ${esc(c.name)} ${num(sp)}/${num(b)}${sp>b?` · ${num(sp-b)} 초과`:cls==="warn"?" · 빠름":""}</span>`}).join("")}</div>`:"";
   const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;$("backToday").hidden=isToday;
   ns.textContent=dd.noSpend?"🥚 무지출 · 취소":isToday?"🥚 오늘은 안 썼어요":"🥚 이날은 안 썼어요";
-  if(!$("habits").contains(document.activeElement))HK.forEach(k=>$("hk_"+k).checked=!!(dd.checks&&dd.checks[k]));
-  HK.forEach(k=>$("hk_"+k).closest(".hb").classList.toggle("on",$("hk_"+k).checked));
+  const ho=habitsOn(selDate),ha=habitAuto(selDate);
+  HK.forEach(k=>{const el=$("hk_"+k),auto=k==="noInst"||(k==="appCheck"&&ha.appCheck);el.checked=ho[k];el.disabled=auto;el.closest(".hb").classList.toggle("on",ho[k]);el.closest(".hb").classList.toggle("auto",auto)});
 
   renderCal();
   const un=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).sort((a,b)=>a.date<b.date?-1:1);
@@ -786,11 +783,11 @@ function questItems(){
   else if(prevSun>=(ST().appStart||"2026-10-07")&&!(last&&last>=addDays(prevSun,-6)))it.push({e:"💳",done:false,urgent:true,t:"주간 카드 점검 (밀림)",s:`${md(prevSun)} 일요일 점검을 아직 안 했어요`,btn:["시작","go:week"]});
   if(d>=CYC()&&d<=CYC()+2){const k="cycle-"+M,c=cycleOf(M),sp=sum(entriesIn(c),e=>e.amount),B=ST().cycleBudget||0;
     it.push({e:"🗓️",task:k,done:!!S.tasks[k],t:"카드 주기 마감 확인",s:`${md(c.start)}~${md(c.end)} ${won(sp)} / ${won(B)}${sp>B?` · ${won(sp-B)} 초과`:" 👍"}`})}
-  if(d>=PAY()&&d<CARD()){const k="secure-"+M,pl=payPlan(M);it.push({e:"💰",task:k,done:!!S.tasks[k],t:"월급날: 카드값·고정비 확보",s:`카드 ${won(pl.card)} + 고정비 ${won(pl.fixed)}`})}
+  if(d>=PAY()&&d<CARD()){const k="secure-"+M,pl=payPlan(M);it.push({e:"💰",task:k,done:!!S.tasks[k],t:"월급날: 카드값·고정비 확보",s:`하나→케이뱅크 카드값 ${won(pl.card)} · 고정비 ${won(pl.fixed)} 남기기${ST().incomeActual&&ST().incomeActual[M]!=null?"":" · 받은 실수령 적기"}`})}
   if(d>=CARD()){const pl=payPlan(M);if(pl.avail>0){const done=pl.rest<=0;it.push({e:"⚔️",done,t:"선결제하고 기록",s:done?"이번 달 상환 끝":`${won(pl.rest)} 남음`,btn:done?null:["열기","go:month"]})}}
   const L=Number(ymDay(M,31).slice(8));
   if(d>=L-1||d<=3){const ym=d<=3?ymAdd(M,-1):M,done=S.networth.some(n=>n.ym===ym);it.push({e:"🐷",done,t:`${ymKo(ym)} 월말 잔액 기록`,s:done?"기록했어요":"저축·현금 잔액 한 줄",btn:done?null:["기록","nw:"+ym]})}
-  TASKS.forEach(g=>g.items.forEach(i=>{const n=dayDiff(TODAY,g.d);if(!S.tasks[i.id]&&n<=3)it.push({e:"📌",task:i.id,done:false,urgent:n<0,t:i.t,s:`${g.label||md(g.d)+" "+g.g} · ${n<0?`${-n}일 지남`:n===0?"오늘":"D-"+n}`})}));
+  TASKS.forEach(g=>g.items.forEach(i=>{const n=dayDiff(TODAY,g.d);if(!S.tasks[i.id]&&n<=3&&dayDiff(g.end||g.d,TODAY)<=(g.end?0:3))it.push({e:"📌",task:i.id,done:false,urgent:n<0,t:i.t,s:`${g.label||md(g.d)+" "+g.g} · ${n<0?`${-n}일 지남`:n===0?"오늘":"D-"+n}`})}));
   return it;
 }
 function renderQuest(){
@@ -811,7 +808,7 @@ function coachData(){
     오늘하루가용액:Math.round(todayAllowance()),이번주:{기간:`${wr.start}~${wr.end}`,사용:sum(entriesIn(wr),e=>e.amount),한도:ST().weekBudget},
     카드주기:{기간:`${y.c.start}~${y.c.end}`,사용:y.spent,예산:y.B,남은일수:y.left,오늘까지적정사용:Math.round(y.pace)},
     카테고리:CATS().map(c=>({이름:c.name,주기예산:c.amount,주기사용:sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount)})),
-    오늘습관:HK.filter(k=>day.checks&&day.checks[k]).map(k=>({noInst:"신규 할부 0건",noRevolve:"리볼빙·분할납부·현금서비스 안 씀",appCheck:"카드 앱 확인","48h":"쇼핑 48시간 룰"})[k]),
+    오늘습관:HK.filter(k=>habitsOn(TODAY)[k]).map(k=>({noInst:"신규 할부 0건",noRevolve:"리볼빙·분할납부·현금서비스 안 씀",appCheck:"카드 앱 확인","48h":"쇼핑 48시간 룰"})[k]),
     연속기록일:streakNow(),일정:{월급날:PAY()+"일",카드결제일:CARD()+"일",이번달선결제가능액:Math.round(pl.avail)},
     빚:{합계:Math.round(totalDebt()),카드할부잔액:Math.round(cardDebt()),선결제1순위:top?{건:top.x.name,금액:top.amt,아끼는수수료:top.save}:null},
     어제미션:prev&&prev.mission?{내용:prev.mission,결과:prev.missionDone==null?"미확인":prev.missionDone?"성공":"실패"}:null};
@@ -1071,7 +1068,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.act==="pay-open"){openPay(t.dataset.target,Number(t.dataset.amt)||0);return}
   if(t.dataset.mission!=null){const d=addDays(TODAY,-1),c=S.coach[d];if(!c)return;const doc={...c,missionDone:t.dataset.mission==="1"};S.coach={...S.coach,[d]:doc};render();toast(doc.missionDone?"💪 미션 성공! 멋져요":"괜찮아요. 오늘 다시 해 봐요");try{await put("coach/"+d,doc)}catch(_){}return}
   if(t.dataset.day){calSel=calSel===t.dataset.day?null:t.dataset.day;renderCal();return}
-  if(t.dataset.addday){selDate=t.dataset.addday;if(editingId)cancelEdit();renderToday();$("entryForm").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(t.dataset.addday){selDate=t.dataset.addday;if(editingId)cancelEdit();go("today");renderToday();$("entryForm").scrollIntoView({behavior:"smooth",block:"start"});return}
   if(t.id==="backToday"){selDate=TODAY;calYm=ymOf(TODAY);if(editingId)cancelEdit();renderToday();return}
   if(t.id==="calPrev"){calYm=ymAdd(calYm,-1);calSel=null;renderCal();return}
   if(t.id==="calNext"){calYm=ymAdd(calYm,1);calSel=null;renderCal();return}
@@ -1108,7 +1105,7 @@ function startEdit(en){
   $("entryTitle").textContent="✏️ 기록 고치기";$("enMore").open=true;$("enSave").textContent="수정 저장";$("enCancel").hidden=false;$("enDel").hidden=false;
   renderToday();$("entryForm").scrollIntoView({behavior:"smooth",block:"start"});
 }
-function cancelEdit(){editingId=null;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
+function cancelEdit(){editingId=null;selCat=null;selMethod="lotte";document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m==="lotte"));$("instBox").hidden=true;$("enMore").open=false;$("enFree").checked=false;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
 $("enCancel").addEventListener("click",()=>{cancelEdit();renderToday()});
 $("enDel").addEventListener("click",async()=>{const b=$("enDel");if(!confirmTap(b))return;const id=editingId;cancelEdit();try{await del("entries/"+id);toast("지웠어요")}catch(_){}});
 $("entryForm").addEventListener("submit",async e=>{
@@ -1123,16 +1120,16 @@ $("entryForm").addEventListener("submit",async e=>{
   $("enSave").disabled=true;
   try{await put("entries/"+id,doc);
     const allow=todayAllowance(),todaySum=sum(S.entries.filter(x=>x.date===TODAY&&x.id!==id),x=>x.amount)+(date===TODAY?amount:0);
-    toast(`${look(selCat)[0]} ${catName(selCat)} ${won(amount)} ${wasEdit?"고쳤어요":"기록!"}${date===TODAY?` · 오늘 남은 돈 ${won(Math.max(0,allow-todaySum))}`:""}`);
-    if(selMethod==="inst"&&!doc.free){const d0=S.days[date]||{};await put("days/"+date,{...d0,checks:{...(d0.checks||{}),noInst:false}})}
+    const cc=cycleOf(payYmOf(date)),cb=(CATS().find(c=>c.id===selCat)||{}).amount||0,cs=sum(entriesIn(cc,x=>x.cat===selCat&&x.id!==id),x=>x.amount)+(date>=cc.start&&date<=cc.end?amount:0);
+    toast(`${look(selCat)[0]} ${catName(selCat)} ${won(amount)} ${wasEdit?"고쳤어요":"기록!"}${!doc.excl&&cb&&cs>cb?` · ${catName(selCat)} 이번 주기 ${won(cs-cb)} 초과`:date===TODAY&&allow>0?` · 오늘 남은 돈 ${won(Math.max(0,allow-todaySum))}`:""}`);
     cancelEdit();selDate=date;$("hero").classList.remove("pop");void $("hero").offsetWidth;$("hero").classList.add("pop");renderToday();
   }catch(_){}
   $("enSave").disabled=false;
 });
 function saveDay(){
-  const date=selDate,checks={};HK.forEach(k=>checks[k]=$("hk_"+k).checked);
+  const date=selDate,checks={};HK.forEach(k=>{if(!$("hk_"+k).disabled)checks[k]=$("hk_"+k).checked});
   const doc={...(S.days[date]||{}),checks,savedAt:new Date().toISOString()};
-  S.days={...S.days,[date]:doc};render();if(HK.every(k=>checks[k]))toast("✅ 습관 4개 모두 체크! 최고예요");
+  S.days={...S.days,[date]:doc};render();if(HK.every(k=>habitsOn(date)[k]))toast("✅ 습관 4개 모두 체크! 최고예요");
   dayWriting=dayWriting.then(()=>put("days/"+date,doc).catch(()=>{}));
 }
 async function saveFixedOverride(id,ym,amount){
