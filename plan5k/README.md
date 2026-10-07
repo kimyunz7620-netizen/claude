@@ -27,6 +27,8 @@ claude.ai 아티팩트로 동작합니다: https://claude.ai/artifact/ARaBL6enkx
 
 계좌번호·카드번호는 저장하지 않아요.
 
+글꼴은 SUIT(SUNN, SIL Open Font License 1.1)를 자주 쓰는 한글 2,350자와 영문만 남기고 줄여서(약 370KB) 페이지 안에 넣었어요. 아티팩트는 Google Fonts 외의 글꼴 주소를 막기 때문이에요. 드문 글자는 기기 기본 글꼴로 보여요.
+
 ## 계산 방식
 
 - 카드 주기: 12일~다음 달 11일 사용분이 그 달 25일에 결제
