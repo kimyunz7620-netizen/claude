@@ -562,10 +562,10 @@ const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 /* ---------- settings & look ---------- */
 const ST=()=>S.settings||{};
 const CYC=()=>ST().cycleDay||12, CARD=()=>ST().cardDay||25, PAY=()=>ST().payday||21;
-const CATS=()=>(S.budget&&S.budget.cats)||[];
+const ALLCATS=()=>(S.budget&&S.budget.cats)||[],CATS=()=>ALLCATS().filter(c=>!c.hidden);
 const LOOK={lunch:["🍱","#F2A000"],dinner:["🍲","#F25555"],coffee:["☕","#A0703C"],grocery:["🥬","#14B886"],living:["🧻","#2F9BFF"],leisure:["🛍️","#6E56F8"],beauty:["💇","#E64980"],transit:["🚇","#4C6EF5"],health:["💪","#0CA678"],subs:["📺","#868E96"],gift:["🎁","#E8590C"]};
 const look=id=>LOOK[id]||["🧾","#868E96"];
-const catName=id=>{const c=CATS().find(c=>c.id===id);return c?c.name:"미분류"};
+const catName=id=>{const c=ALLCATS().find(c=>c.id===id);return c?c.name:"미분류"};
 const LOANS=()=>S.debts||[];
 
 /* ---------- card calendar ---------- */
@@ -903,7 +903,7 @@ function weeklyCompare(w){
   items.forEach(x=>{x.diff=x.act-x.exp;x.bad=Math.abs(x.diff)>tol(x.act)});return items;
 }
 function compareHTML(w){
-  if(w.seed)return'<p class="note">기존 트래커에서 옮긴 값이라 비교는 생략했어요.</p>';
+  if(w.seed)return`<p class="note">📦 ${Number(w.payYm.slice(5))}월 카드값 ${won(w.nextBill)}은 기존 트래커에서 옮긴 값이에요. 월급날 계산에 쓰여서 지우지 말아 주세요. 첫 주간 점검을 하면 여기에 그 결과가 나와요.</p>`;
   return weeklyCompare(w).map(x=>`<div class="note ${x.bad?"bad":"good"}"><div class="row"><strong>${x.bad?"🔍":"✅"} ${x.k}</strong><span class="num">${signed(x.diff)}</span></div>
     <div class="small">카드 앱 ${num(x.act)} · 가계부 예상 ${num(x.exp)}</div>
     <div class="small">${!x.bad?"가계부와 맞아요!":x.diff>0?"가계부에 빠진 지출이나 모르는 할부가 있을 수 있어요. 카드 앱 이용내역을 열어 확인하세요.":"가계부엔 있는데 카드엔 아직 안 잡힌 금액이에요. 승인 대기·취소 건인지 확인하세요."}</div></div>`).join("");
@@ -921,7 +921,7 @@ function renderWeek(){
   const ws=S.weekly.slice().sort((a,b)=>a.date<b.date?1:-1);
   if(!$("wkForm").contains(document.activeElement))$("wkResult").innerHTML=ws[0]?`<div class="tiny muted">${mdw(ws[0].date)} 점검 결과</div>`+compareHTML(ws[0]):'<p class="empty">1번에 숫자를 적으면 결과가 여기 나와요.</p>';
   $("wkHist").innerHTML=ws.length?ws.slice(0,10).map(w=>{const bad=!w.seed&&weeklyCompare(w).some(x=>x.bad);
-    return `<div class="li"><span class="av">${w.seed?"📦":bad?"🔍":"✅"}</span><div><div class="t">${mdw(w.date)}</div><div class="s">이용 ${w.usage?num(w.usage):"-"} · 결제예정 ${w.nextBill?num(w.nextBill):"-"}</div></div><button type="button" class="btn danger" data-del-week="${esc(w.id)}">삭제</button></div>`}).join(""):'<p class="empty">일요일마다 카드 앱 숫자를 적으면 여기에 쌓여요.</p>';
+    return `<div class="li"><span class="av">${w.seed?"📦":bad?"🔍":"✅"}</span><div><div class="t">${w.seed?`${Number(w.payYm.slice(5))}월 카드값 (기존 트래커에서 옮김)`:mdw(w.date)}</div><div class="s">이용 ${w.usage?num(w.usage):"-"} · 결제예정 ${w.nextBill?num(w.nextBill):"-"}</div></div>${w.seed?"<span></span>":`<button type="button" class="btn danger" data-del-week="${esc(w.id)}">삭제</button>`}</div>`}).join(""):'<p class="empty">일요일마다 카드 앱 숫자를 적으면 여기에 쌓여요.</p>';
   const ref=ws[0]&&!ws[0].seed&&dayDiff(ws[0].date,TODAY)<7?ws[0].date:TODAY,wr=weekRange(ref),W=ST().weekBudget||0,sp=sum(entriesIn(wr),e=>e.amount);
   $("rvRange").textContent=`${md(wr.start)}~${md(wr.end)}`;$("rvSpent").textContent=won(sp);$("rvSpent").className="disp"+(sp>W?" bad-t":"");$("rvLimit").textContent=won(W);paintBar($("rvBar"),sp,W,null);
   const y=cycleSummary(),daysLeft=Math.max(1,dayDiff(addDays(wr.end,1),y.c.end)+1),remain=y.B-sum(entriesIn({start:y.c.start,end:wr.end}),e=>e.amount);
@@ -952,7 +952,7 @@ function renderMonth(){
     :phase==="secure"?`<div class="row"><h2><span class="step">1</span>월급날: 먼저 확보할 돈</h2><span class="chip warn">결제일 ${md(ymDay(M,CARD()))}</span></div><p class="small muted">하나은행(급여)에서 카드값을 케이뱅크 결제계좌로 옮기고, 고정비는 빠져나갈 통장에 남겨 두세요. 선결제는 25일 결제가 끝난 뒤에 해요.</p>`
     :`<div class="row"><h2><span class="step">2</span>결제일 이후: 선결제 실행</h2><span class="chip good">${ymKo(M)}</span></div><p class="small muted">카드 앱에서 아래 건을 '건별 선결제'하고, 할 때마다 '기록'을 눌러 주세요.</p>`;
   const src=pl.cardSrc==="app"?"카드 앱 입력값":pl.cardSrc==="est-open"?"추정 · 남은 생활비 포함":"가계부 추정";
-  const flow=`<div class="flow"><div class="fl"><span>💵 실수령${ST().raiseFromYm&&M>=ST().raiseFromYm?" (인상 반영)":""}</span><span class="num">${num(pl.inc)}</span></div><div class="fl"><span>💳 카드값 (${md(ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div><div class="fl"><span>🏠 고정비${fixedCard(M)?" <span class=\"tiny muted\">카드 결제분은 카드값에</span>":""}</span><span class="num">−${num(pl.fixed)}</span></div>
+  const flow=`<div class="flow"><div class="fl"><span>💵 실수령${ST().raiseFromYm&&M>=ST().raiseFromYm?" (인상 반영)":""}</span><span class="num">${num(pl.inc)}</span></div><div class="fl"><span>💳 카드값 (${md(ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div><details class="more"><summary class="fl" style="display:flex;justify-content:space-between;color:var(--ink);font-weight:400"><span>🏠 고정비 ▾${fixedCard(M)?" <span class=\"tiny muted\">카드 결제분은 카드값에</span>":""}</span><span class="num" style="font-weight:800">−${num(pl.fixed)}</span></summary><div class="list small">${(()=>{const its=(S.fixed&&S.fixed.items)||[];return fixedAt(M).map((x,i)=>`<div class="li"><span class="av">${x.card?"💳":"🏦"}</span><div><div class="t">${esc(x.name)}</div><div class="s">${esc((its[i]&&its[i].note)||"")}${x.card?" · 카드값에 포함":""}</div></div><div class="a">${num(x.amount)}</div></div>`).join("")})()}</div></details>
     ${pl.cashRes?`<div class="fl"><span>🏦 케뱅에 남길 체크카드 생활비 <span class="tiny muted">${pl.resSrc}</span></span><span class="num">−${num(pl.cashRes)}</span></div>`:""}${ST().buffer?`<div class="fl"><span>🛟 버퍼</span><span class="num">−${num(ST().buffer)}</span></div>`:""}
     <div class="fl total"><span>⚔️ 선결제·상환 가능</span><span class="${pl.avail<0?"bad-t":"good-t"}">${won(pl.avail)}</span></div></div>`;
   let body="";
@@ -1057,7 +1057,7 @@ function renderSettings(){
   $("setBase").innerHTML=`<h2>💵 수입·목표</h2><div class="fields">${f("s_income","월 실수령",s.income)}${f("s_raise","인상률 (%)",s.raisePct,"pct")}${f("s_raiseFrom","인상 적용 시작월",s.raiseFromYm,"month")}${f("s_buffer","월급날 남겨둘 버퍼",s.buffer)}${f("s_cycle","카드 주기당 생활비",s.cycleBudget)}${f("s_week","주간 한도",s.weekBudget)}${f("s_deposit","보증금 (자산)",s.deposit)}${f("s_startDebt","시작 시점 빚 합계",s.startDebt)}${f("s_gain","목표 증가액",s.targetGain)}${f("s_tYm","목표 시점",s.targetYm,"month")}${f("s_final","최종 목표",s.finalTarget)}${f("s_warn","주간 점검 경고 기준",s.warnDiff)}<label class="field" style="grid-column:1/-1"><span>월급날 케뱅에 남길 체크카드 생활비 (비우면 지난 주기 사용액)</span>${moneyIn("s_res",s.cashReserve)}</label></div><button class="btn" type="submit">저장</button>`;
   $("setBudget").innerHTML=`<h2>🗂️ 생활비 예산 (카드 주기당)</h2>`+CATS().map(c=>`<div class="set-row"><span>${look(c.id)[0]} ${esc(c.name)}${c.accumulate?' <span class="tiny muted">적립식</span>':""}</span>${moneyIn("b_"+c.id,c.amount)}</div>`).join("")+`<div class="set-row"><strong>합계</strong><strong style="text-align:right">${num(sum(CATS(),c=>c.amount||0))}</strong></div><button class="btn" type="submit">저장</button>`;
   const fx=(S.fixed&&S.fixed.items)||[];
-  $("setFixed").innerHTML=`<h2>🏠 고정비 (월)</h2><p class="small muted">고정비는 생활비 80만에 들어가지 않고 월급날 따로 빼요. 가계부에 적지 않아도 돼요. 롯데카드로 나가는 항목만 체크해 주세요. 카드값 예상에 자동으로 더해요.</p>`+fx.map(it=>{const ch=(it.changes||[])[0]||{};return `<div class="sub"><div class="set-row"><span>${esc(it.name)}</span>${moneyIn("f_"+it.id,it.amount)}</div><label class="check"><input type="checkbox" id="fk_${it.id}" ${it.card?"checked":""}><span class="small">💳 롯데카드로 결제돼요</span></label><div class="fields"><label class="field"><span>변경 시작월 (선택)</span><input type="month" id="fc_${it.id}" value="${esc(ch.fromYm||"")}"></label><label class="field"><span>변경 후 금액</span>${moneyIn("fa_"+it.id,ch.amount)}</label></div></div>`}).join("")+`<p class="small muted">이번 달 ${won(fixedTotal(ymOf(TODAY)))} · 다음 달 ${won(fixedTotal(ymAdd(ymOf(TODAY),1)))}</p><button class="btn" type="submit">저장</button>`;
+  $("setFixed").innerHTML=`<h2>🏠 고정비 (월)</h2><p class="small muted">고정비는 생활비 80만에 들어가지 않고 월급날 따로 빼요. 가계부에 적지 않아도 돼요. 롯데카드로 나가는 항목만 체크해 주세요. 카드값 예상에 자동으로 더해요.</p>`+fx.map(it=>{const ch=(it.changes||[])[0]||{};return `<div class="sub"><div class="set-row"><span>${esc(it.name)}${it.note?`<br><span class="tiny muted">${esc(it.note)}</span>`:""}</span>${moneyIn("f_"+it.id,it.amount)}</div><label class="check"><input type="checkbox" id="fk_${it.id}" ${it.card?"checked":""}><span class="small">💳 롯데카드로 결제돼요</span></label><div class="fields"><label class="field"><span>변경 시작월 (선택)</span><input type="month" id="fc_${it.id}" value="${esc(ch.fromYm||"")}"></label><label class="field"><span>변경 후 금액</span>${moneyIn("fa_"+it.id,ch.amount)}</label></div></div>`}).join("")+`<p class="small muted">이번 달 ${won(fixedTotal(ymOf(TODAY)))} · 다음 달 ${won(fixedTotal(ymAdd(ymOf(TODAY),1)))}</p><button class="btn" type="submit">저장</button>`;
   $("setLoans").innerHTML=`<h2>🏦 대출</h2>`+LOANS().map(d=>`<div class="sub"><strong>${esc(d.name)}</strong><div class="fields"><label class="field"><span>잔액</span>${moneyIn("l_bal_"+d.id,d.balance)}</label><label class="field"><span>금리 (%)</span><input type="number" step="0.01" id="l_apr_${d.id}" value="${d.apr??""}"></label><label class="field" style="grid-column:1/-1"><span>메모</span><input type="text" id="l_note_${d.id}" value="${esc(d.note||"")}"></label></div><p class="tiny muted">지금 계산 잔액 ${won(loanBal(d))}</p></div>`).join("")+`<button class="btn" type="submit">저장</button>`;
 }
 
@@ -1172,7 +1172,7 @@ const val=id=>$(id)?$(id).value:"";
 $("setBase").addEventListener("submit",async e=>{e.preventDefault();
   const s={...ST(),income:parseNum(val("s_income")),raisePct:Number(val("s_raise"))||0,raiseFromYm:val("s_raiseFrom"),buffer:parseNum(val("s_buffer")),cycleBudget:parseNum(val("s_cycle")),weekBudget:parseNum(val("s_week")),deposit:parseNum(val("s_deposit")),startDebt:parseNum(val("s_startDebt")),targetGain:parseNum(val("s_gain")),targetYm:val("s_tYm"),finalTarget:parseNum(val("s_final")),warnDiff:parseNum(val("s_warn")),cashReserve:val("s_res").trim()===""?null:parseNum(val("s_res"))};
   try{await put("config/settings",s);toast("수입·목표를 저장했어요")}catch(_){}});
-$("setBudget").addEventListener("submit",async e=>{e.preventDefault();const cats=CATS().map(c=>({...c,amount:parseNum(val("b_"+c.id))}));try{await put("config/budget",{cats});toast(`예산 저장 · 합계 ${won(sum(cats,c=>c.amount))}`)}catch(_){}});
+$("setBudget").addEventListener("submit",async e=>{e.preventDefault();const cats=ALLCATS().map(c=>c.hidden?c:{...c,amount:parseNum(val("b_"+c.id))});try{await put("config/budget",{cats});toast(`예산 저장 · 합계 ${won(sum(cats,c=>c.amount))}`)}catch(_){}});
 $("setFixed").addEventListener("submit",async e=>{e.preventDefault();
   const items=((S.fixed&&S.fixed.items)||[]).map(it=>{const fc=val("fc_"+it.id),fa=val("fa_"+it.id),o={...it,amount:parseNum(val("f_"+it.id)),card:!!($("fk_"+it.id)&&$("fk_"+it.id).checked)};o.changes=fc&&fa!==""?[{fromYm:fc,amount:parseNum(fa)}]:[];return o});
   try{await put("config/fixed",{items});toast("고정비를 저장했어요")}catch(_){}});
