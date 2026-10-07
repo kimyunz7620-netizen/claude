@@ -1,0 +1,8 @@
+{"items":[
+{"id":"agoda","name":"아고다 할부 (12개월)","kind":"card","rate":"연 약 19.6%","balance":605500,"asOfYm":"2026-11","monthly":86500,"bill":97818,"lastYm":"2027-06","setAt":"2026-10-07T00:00:00Z","note":"11/25 결제 후 잔액 · 월 청구액은 할부표에서 역산"},
+{"id":"emart","name":"이마트 할부 (24개월)","kind":"card","rate":"연 약 19.6% 추정","balance":1635382,"asOfYm":"2026-11","monthly":116813,"bill":116813,"lastYm":"2028-01","setAt":"2026-10-07T00:00:00Z","note":"남은 14회 청구액 합 · 카드앱 실제 잔액으로 수정"},
+{"id":"yeogi","name":"여기어때 할부 (24개월)","kind":"card","rate":"유이자 추정","balance":167544,"asOfYm":"2026-11","monthly":18616,"bill":18616,"lastYm":"2027-08","setAt":"2026-10-07T00:00:00Z","note":"남은 9회 청구액 합"},
+{"id":"hyundai","name":"현대아울렛 할부 (2건)","kind":"card","rate":"연 약 19.6%","balance":399332,"asOfYm":"2026-11","monthly":0,"bill":0,"lastYm":"","setAt":"2026-10-07T00:00:00Z","note":"잔액 122,400 + 다른 건 · 건별 월 청구액 입력 필요"},
+{"id":"nh","name":"NH 올원 직장인대출","kind":"loan","rate":"연 7.03%","balance":8000000,"setAt":"2026-10-07T00:00:00Z","note":"중도상환수수료 확인"},
+{"id":"mt","name":"마이너스통장","kind":"loan","rate":"연 6.64%","balance":1980263,"setAt":"2026-10-07T00:00:00Z","note":"한도 200만 · 비상금 역할로 마지막"}
+]}

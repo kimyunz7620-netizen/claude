@@ -1,0 +1,1 @@
+{"items":[{"id":"house","name":"주거비","amount":686000},{"id":"util","name":"공과금","amount":150000},{"id":"ins","name":"보험","amount":38110},{"id":"tel","name":"통신","amount":30030},{"id":"gye","name":"계모임","amount":320000,"changes":[{"fromYm":"2026-11","amount":240000}]},{"id":"int","name":"이자/수수료","amount":65000}]}
