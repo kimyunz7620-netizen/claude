@@ -349,8 +349,9 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <div class="btns" style="align-items:center"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><strong class="small" id="calLabel"></strong><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
       <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
       <div class="cal" id="cal"></div>
+      <div id="calDay"></div>
       <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>기록한 날 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
-      <div class="row"><span class="tiny muted">🟢 하루 한도 안 · 🟡 1.5배까지 · 🔴 그 이상 · 날짜를 누르면 그날 내역이 위에 떠요</span><button type="button" class="btn ghost" id="calCats">카테고리별 보기</button></div>
+      <div class="row"><span class="tiny muted">🟢 하루 한도 안 · 🟡 1.5배까지 · 🔴 그 이상</span><button type="button" class="btn ghost" id="calCats">카테고리별 보기</button></div>
     </div>
     <div class="card">
       <div class="row"><div class="title"><span class="em">🗓️</span><h2>이번 카드 주기</h2></div><span class="muted small" id="cyRange"></span></div>
@@ -542,7 +543,7 @@ const dom=s=>Number(s.slice(8));
 
 /* ---------- state ---------- */
 const S={settings:null,budget:null,fixed:null,schedule:null,inst:null,debts:null,tasks:{},entries:[],days:{},weekly:[],payments:[],networth:[],coach:{},accounts:null};
-let calYm=null,db=null,sample=null,view="today",selDate=TODAY,selCat=null,selMethod="lotte",editingId=null,bdMode="cycle",bdKey=null;
+let calSel=null,calYm=null,db=null,sample=null,view="today",selDate=TODAY,selCat=null,selMethod="lotte",editingId=null,bdMode="cycle",bdKey=null;
 let dayWriting=Promise.resolve(),taskWriting=Promise.resolve();
 const LS={get(k,f){try{const v=localStorage.getItem("plan5k3:"+k);return v?JSON.parse(v):f}catch(e){return f}},
           set(k,v){try{localStorage.setItem("plan5k3:"+k,JSON.stringify(v))}catch(e){}}};
@@ -575,8 +576,10 @@ const monthRange=ym=>({start:ym+"-01",end:ymDay(ym,31)});
 const inRange=(s,r)=>s>=r.start&&s<=r.end;
 const fromOf=date=>dom(date)<CYC()?ymOf(date):ymAdd(ymOf(date),1); // first bill a prepayment changes
 function incomeAt(ym){const s=ST();const b=s.income||0;return s.raiseFromYm&&ym>=s.raiseFromYm?Math.round(b*(1+(s.raisePct||0)/100)):b}
-function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amount||0;(it.changes||[]).slice().sort((x,y)=>x.fromYm<y.fromYm?-1:1).forEach(c=>{if(c.fromYm<=ym)a=c.amount});return{name:it.name,amount:a}})}
+function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amount||0;(it.changes||[]).slice().sort((x,y)=>x.fromYm<y.fromYm?-1:1).forEach(c=>{if(c.fromYm<=ym)a=c.amount});return{name:it.name,amount:a,card:!!it.card}})}
 const fixedTotal=ym=>sum(fixedAt(ym),x=>x.amount);
+// fixed costs charged to the Lotte card are part of the card bill, not paid from salary separately
+const fixedCash=ym=>sum(fixedAt(ym).filter(x=>!x.card),x=>x.amount),fixedCard=ym=>sum(fixedAt(ym).filter(x=>x.card),x=>x.amount);
 
 /* ---------- entries ---------- */
 // cardIn: everything that hits the card; entriesIn: what counts against the living budget (excl = 계모임·회사 경비 등)
@@ -622,7 +625,7 @@ const loanTotal=()=>sum(LOANS(),loanBal);
 const totalDebt=()=>cardDebt()+loanTotal();
 const loanOrder=()=>LOANS().filter(d=>loanBal(d)>0).slice().sort((a,b)=>(a.last?1:0)-(b.last?1:0)||(b.apr||0)-(a.apr||0));
 function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort((a,b)=>a.date<b.date?1:-1)[0];return w?w.nextBill:null}
-function estBill(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"),e=>e.amount)+effSched(ym)}
+function estBill(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"),e=>e.amount)+effSched(ym)+fixedCard(ym)}
 
 /* pick the card items to prepay with the money at hand so the fee saved is as large as possible (0/1 knapsack in 1,000원 steps) */
 function bestSet(opts,money){
@@ -650,7 +653,7 @@ function simulate(){
   for(let i=0;i<84;i++){
     const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym);
     const ab=Object.keys(closed).length?null:appBill(ym);
-    pot+=ab!=null?incomeAt(ym)-fixedTotal(ym)-ab-buf:incomeAt(ym)-fixedTotal(ym)-living-inst-buf;
+    pot+=ab!=null?incomeAt(ym)-fixedCash(ym)-ab-buf:incomeAt(ym)-fixedTotal(ym)-living-inst-buf;
     const next=ymAdd(ym,1);
     const opts=order.filter(x=>!closed[x.id]).map(x=>{const ms=itemMonths(x).filter(m=>m>=next);return{x,amt:sum(ms,m=>itemRaw(x,m).p),save:sum(ms,m=>itemRaw(x,m).fee)}}).filter(o=>o.amt>0);
     for(const o of bestSet(opts,pot)){closed[o.x.id]=next;pot-=o.amt}
@@ -669,7 +672,7 @@ function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
   const card=ab!=null?ab:estBill(M)+(open?Math.max(0,(st.cycleBudget||0)-spent):0);
   const autoRes=sum(entriesIn(c,e=>e.method==="cash"),e=>e.amount),manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
-  const fixed=fixedTotal(M),inc=incomeAt(M),avail=inc-card-fixed-cashRes-(st.buffer||0);
+  const fixed=fixedCash(M),inc=incomeAt(M),avail=inc-card-fixed-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
   return{M,inc,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
 }
@@ -753,6 +756,7 @@ function paintBar(el,spent,budget,pace){
   el.querySelector("i").style.width=(budget>0?Math.min(100,spent/budget*100):0)+"%";
   const b=el.querySelector("b");if(b)b.style.left=(budget>0&&pace!=null?Math.min(100,pace/budget*100):0)+"%";
 }
+function entryRow(e){const[em,col]=look(e.cat);return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":`⚠️ 할부 ${e.months}개월${e.free?" 무이자":""}`}${e.excl?" · 🎒 예산 제외":""}</div></button><div class="a">${num(e.amount)}</div></div>`}
 function renderToday(){
   const allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=won(Math.max(0,left));
@@ -780,7 +784,7 @@ function renderToday(){
   const isToday=selDate===TODAY;$("dayTitle").textContent=isToday?"오늘 기록":`${mdw(selDate)} 기록`;
   const list=S.entries.filter(e=>e.date===selDate).sort((a,b)=>(a.createdAt||"")<(b.createdAt||"")?-1:1);
   $("dayTotal").textContent=won(sum(list,e=>e.amount));
-  $("dayList").innerHTML=list.length?list.map(e=>{const[em,col]=look(e.cat);return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":`⚠️ 할부 ${e.months}개월${e.free?" 무이자":""}`}${e.excl?" · 🎒 예산 제외":""}</div></button><div class="a">${num(e.amount)}</div></div>`}).join("")
+  $("dayList").innerHTML=list.length?list.map(entryRow).join("")
     :`<p class="empty">${isToday?"아직 기록이 없어요. 위에서 금액과 카테고리를 고르고 기록하세요.":"이날 기록이 없어요."}</p>`;
   const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;$("backToday").hidden=isToday;
   ns.textContent=dd.noSpend?"🥚 무지출로 표시했어요 · 취소":isToday?"🥚 오늘은 안 썼어요 (무지출)":"🥚 이날은 안 썼어요 (무지출)";
@@ -806,8 +810,11 @@ function renderCal(){
     if(!fut&&rec){recDays++;tot+=s;if(s===0)zero++}
     const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b";
     const v=fut?"":s>0?(s>=10000?man1(s):num(s)):ns?"🥚":rec?"0":"";
-    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span></button>`}
+    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===calSel?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span></button>`}
   $("cal").innerHTML=html;
+  if(!calSel||ymOf(calSel)!==calYm)$("calDay").innerHTML='<p class="tiny muted">날짜를 누르면 여기에 그날 내역이 나와요.</p>';
+  else{const es=S.entries.filter(e=>e.date===calSel).sort((a,b)=>(a.createdAt||"")<(b.createdAt||"")?-1:1),ns=S.days[calSel]&&S.days[calSel].noSpend;
+    $("calDay").innerHTML=`<div class="sub"><div class="row"><strong>${mdw(calSel)}</strong><span class="disp">${won(sum(es.filter(e=>!e.excl),e=>e.amount))}</span></div><div class="list">${es.length?es.map(entryRow).join(""):`<p class="empty">${ns?"🥚 무지출 데이":"기록이 없어요."}</p>`}</div><button type="button" class="btn ghost" data-addday="${calSel}">+ 이 날 지출 추가</button></div>`}
   $("calSum").textContent=won(tot);$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
 }
 
@@ -945,7 +952,7 @@ function renderMonth(){
     :phase==="secure"?`<div class="row"><h2><span class="step">1</span>월급날: 먼저 확보할 돈</h2><span class="chip warn">결제일 ${md(ymDay(M,CARD()))}</span></div><p class="small muted">하나은행(급여)에서 카드값을 케이뱅크 결제계좌로 옮기고, 고정비는 빠져나갈 통장에 남겨 두세요. 선결제는 25일 결제가 끝난 뒤에 해요.</p>`
     :`<div class="row"><h2><span class="step">2</span>결제일 이후: 선결제 실행</h2><span class="chip good">${ymKo(M)}</span></div><p class="small muted">카드 앱에서 아래 건을 '건별 선결제'하고, 할 때마다 '기록'을 눌러 주세요.</p>`;
   const src=pl.cardSrc==="app"?"카드 앱 입력값":pl.cardSrc==="est-open"?"추정 · 남은 생활비 포함":"가계부 추정";
-  const flow=`<div class="flow"><div class="fl"><span>💵 실수령${ST().raiseFromYm&&M>=ST().raiseFromYm?" (인상 반영)":""}</span><span class="num">${num(pl.inc)}</span></div><div class="fl"><span>💳 카드값 (${md(ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div><div class="fl"><span>🏠 고정비</span><span class="num">−${num(pl.fixed)}</span></div>
+  const flow=`<div class="flow"><div class="fl"><span>💵 실수령${ST().raiseFromYm&&M>=ST().raiseFromYm?" (인상 반영)":""}</span><span class="num">${num(pl.inc)}</span></div><div class="fl"><span>💳 카드값 (${md(ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div><div class="fl"><span>🏠 고정비${fixedCard(M)?" <span class=\"tiny muted\">카드 결제분은 카드값에</span>":""}</span><span class="num">−${num(pl.fixed)}</span></div>
     ${pl.cashRes?`<div class="fl"><span>🏦 케뱅에 남길 체크카드 생활비 <span class="tiny muted">${pl.resSrc}</span></span><span class="num">−${num(pl.cashRes)}</span></div>`:""}${ST().buffer?`<div class="fl"><span>🛟 버퍼</span><span class="num">−${num(ST().buffer)}</span></div>`:""}
     <div class="fl total"><span>⚔️ 선결제·상환 가능</span><span class="${pl.avail<0?"bad-t":"good-t"}">${won(pl.avail)}</span></div></div>`;
   let body="";
@@ -1050,7 +1057,7 @@ function renderSettings(){
   $("setBase").innerHTML=`<h2>💵 수입·목표</h2><div class="fields">${f("s_income","월 실수령",s.income)}${f("s_raise","인상률 (%)",s.raisePct,"pct")}${f("s_raiseFrom","인상 적용 시작월",s.raiseFromYm,"month")}${f("s_buffer","월급날 남겨둘 버퍼",s.buffer)}${f("s_cycle","카드 주기당 생활비",s.cycleBudget)}${f("s_week","주간 한도",s.weekBudget)}${f("s_deposit","보증금 (자산)",s.deposit)}${f("s_startDebt","시작 시점 빚 합계",s.startDebt)}${f("s_gain","목표 증가액",s.targetGain)}${f("s_tYm","목표 시점",s.targetYm,"month")}${f("s_final","최종 목표",s.finalTarget)}${f("s_warn","주간 점검 경고 기준",s.warnDiff)}<label class="field" style="grid-column:1/-1"><span>월급날 케뱅에 남길 체크카드 생활비 (비우면 지난 주기 사용액)</span>${moneyIn("s_res",s.cashReserve)}</label></div><button class="btn" type="submit">저장</button>`;
   $("setBudget").innerHTML=`<h2>🗂️ 생활비 예산 (카드 주기당)</h2>`+CATS().map(c=>`<div class="set-row"><span>${look(c.id)[0]} ${esc(c.name)}${c.accumulate?' <span class="tiny muted">적립식</span>':""}</span>${moneyIn("b_"+c.id,c.amount)}</div>`).join("")+`<div class="set-row"><strong>합계</strong><strong style="text-align:right">${num(sum(CATS(),c=>c.amount||0))}</strong></div><button class="btn" type="submit">저장</button>`;
   const fx=(S.fixed&&S.fixed.items)||[];
-  $("setFixed").innerHTML=`<h2>🏠 고정비 (월)</h2>`+fx.map(it=>{const ch=(it.changes||[])[0]||{};return `<div class="sub"><div class="set-row"><span>${esc(it.name)}</span>${moneyIn("f_"+it.id,it.amount)}</div><div class="fields"><label class="field"><span>변경 시작월 (선택)</span><input type="month" id="fc_${it.id}" value="${esc(ch.fromYm||"")}"></label><label class="field"><span>변경 후 금액</span>${moneyIn("fa_"+it.id,ch.amount)}</label></div></div>`}).join("")+`<p class="small muted">이번 달 ${won(fixedTotal(ymOf(TODAY)))} · 다음 달 ${won(fixedTotal(ymAdd(ymOf(TODAY),1)))}</p><button class="btn" type="submit">저장</button>`;
+  $("setFixed").innerHTML=`<h2>🏠 고정비 (월)</h2><p class="small muted">고정비는 생활비 80만에 들어가지 않고 월급날 따로 빼요. 가계부에 적지 않아도 돼요. 롯데카드로 나가는 항목만 체크해 주세요. 카드값 예상에 자동으로 더해요.</p>`+fx.map(it=>{const ch=(it.changes||[])[0]||{};return `<div class="sub"><div class="set-row"><span>${esc(it.name)}</span>${moneyIn("f_"+it.id,it.amount)}</div><label class="check"><input type="checkbox" id="fk_${it.id}" ${it.card?"checked":""}><span class="small">💳 롯데카드로 결제돼요</span></label><div class="fields"><label class="field"><span>변경 시작월 (선택)</span><input type="month" id="fc_${it.id}" value="${esc(ch.fromYm||"")}"></label><label class="field"><span>변경 후 금액</span>${moneyIn("fa_"+it.id,ch.amount)}</label></div></div>`}).join("")+`<p class="small muted">이번 달 ${won(fixedTotal(ymOf(TODAY)))} · 다음 달 ${won(fixedTotal(ymAdd(ymOf(TODAY),1)))}</p><button class="btn" type="submit">저장</button>`;
   $("setLoans").innerHTML=`<h2>🏦 대출</h2>`+LOANS().map(d=>`<div class="sub"><strong>${esc(d.name)}</strong><div class="fields"><label class="field"><span>잔액</span>${moneyIn("l_bal_"+d.id,d.balance)}</label><label class="field"><span>금리 (%)</span><input type="number" step="0.01" id="l_apr_${d.id}" value="${d.apr??""}"></label><label class="field" style="grid-column:1/-1"><span>메모</span><input type="text" id="l_note_${d.id}" value="${esc(d.note||"")}"></label></div><p class="tiny muted">지금 계산 잔액 ${won(loanBal(d))}</p></div>`).join("")+`<button class="btn" type="submit">저장</button>`;
 }
 
@@ -1075,10 +1082,11 @@ document.addEventListener("click",async e=>{
     return}
   if(t.dataset.act==="pay-open"){openPay(t.dataset.target,Number(t.dataset.amt)||0);return}
   if(t.dataset.mission!=null){const d=addDays(TODAY,-1),c=S.coach[d];if(!c)return;const doc={...c,missionDone:t.dataset.mission==="1"};S.coach={...S.coach,[d]:doc};render();toast(doc.missionDone?"💪 미션 성공! 멋져요":"괜찮아요. 오늘 다시 해 봐요");try{await put("coach/"+d,doc)}catch(_){}return}
-  if(t.dataset.day){selDate=t.dataset.day;if(editingId)cancelEdit();renderToday();$("dayTitle").closest(".card").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(t.dataset.day){calSel=calSel===t.dataset.day?null:t.dataset.day;renderCal();return}
+  if(t.dataset.addday){selDate=t.dataset.addday;if(editingId)cancelEdit();renderToday();$("entryForm").scrollIntoView({behavior:"smooth",block:"start"});return}
   if(t.id==="backToday"){selDate=TODAY;calYm=ymOf(TODAY);if(editingId)cancelEdit();renderToday();return}
-  if(t.id==="calPrev"){calYm=ymAdd(calYm,-1);renderCal();return}
-  if(t.id==="calNext"){calYm=ymAdd(calYm,1);renderCal();return}
+  if(t.id==="calPrev"){calYm=ymAdd(calYm,-1);calSel=null;renderCal();return}
+  if(t.id==="calNext"){calYm=ymAdd(calYm,1);calSel=null;renderCal();return}
   if(t.id==="calCats"){bdMode="month";bdKey=calYm;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode==="month"));go("week");$("bdMode").scrollIntoView({block:"start"});return}
   if(t.dataset.cat){selCat=t.dataset.cat;renderToday();return}
   if(t.dataset.freq){const[c,a]=t.dataset.freq.split("|");selCat=c;$("enAmount").value=num(a);renderToday();return}
@@ -1166,7 +1174,7 @@ $("setBase").addEventListener("submit",async e=>{e.preventDefault();
   try{await put("config/settings",s);toast("수입·목표를 저장했어요")}catch(_){}});
 $("setBudget").addEventListener("submit",async e=>{e.preventDefault();const cats=CATS().map(c=>({...c,amount:parseNum(val("b_"+c.id))}));try{await put("config/budget",{cats});toast(`예산 저장 · 합계 ${won(sum(cats,c=>c.amount))}`)}catch(_){}});
 $("setFixed").addEventListener("submit",async e=>{e.preventDefault();
-  const items=((S.fixed&&S.fixed.items)||[]).map(it=>{const fc=val("fc_"+it.id),fa=val("fa_"+it.id),o={...it,amount:parseNum(val("f_"+it.id))};o.changes=fc&&fa!==""?[{fromYm:fc,amount:parseNum(fa)}]:[];return o});
+  const items=((S.fixed&&S.fixed.items)||[]).map(it=>{const fc=val("fc_"+it.id),fa=val("fa_"+it.id),o={...it,amount:parseNum(val("f_"+it.id)),card:!!($("fk_"+it.id)&&$("fk_"+it.id).checked)};o.changes=fc&&fa!==""?[{fromYm:fc,amount:parseNum(fa)}]:[];return o});
   try{await put("config/fixed",{items});toast("고정비를 저장했어요")}catch(_){}});
 $("setLoans").addEventListener("submit",async e=>{e.preventDefault();
   const items=LOANS().map(d=>{const bal=parseNum(val("l_bal_"+d.id)),o={...d,balance:bal,apr:Number(val("l_apr_"+d.id))||0,note:val("l_note_"+d.id).trim()};if(bal!==d.balance)o.setAt=new Date().toISOString();return o});
