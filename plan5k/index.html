@@ -1,7 +1,7 @@
 <title>머니플랜</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gothic+A1:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
 <style>
 /* Layout: a friendly daily money buddy — colourful hero with today's allowance, quest list and coach up top, quick entry below; four rhythm tabs (매일 / 일요일 / 월급날 / 현황) in a bottom bar */
 :root{
@@ -9,8 +9,8 @@
   --grape:#6E56F8; --grape-soft:#ECE8FF; --sky:#2F9BFF; --sky-soft:#E0F0FF;
   --mint:#14B886; --mint-soft:#DAF6EC; --sun:#F2A000; --sun-soft:#FFF1D2; --coral:#F25555; --coral-soft:#FFE4E4;
   --hero-a:#6E56F8; --hero-b:#2F9BFF;
-  --f-display:"Jua","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  --f-body:"Gothic A1","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-display:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --r:18px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -27,18 +27,18 @@
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:14px 120px;display:flex;flex-direction:column;gap:14px}
-h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
-h1{font-size:1.5rem} h2{font-size:1.18rem} h3{font-size:1rem}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h1{font-size:1.4rem} h2{font-size:1.08rem} h3{font-size:.96rem}
 p{margin:0}
 .num{font-variant-numeric:tabular-nums}
-.disp{font-family:var(--f-display)}
+.disp{font-family:var(--f-display);font-weight:800;letter-spacing:-.02em}
 .muted{color:var(--muted)} .small{font-size:.84rem} .tiny{font-size:.75rem}
 .good-t{color:var(--mint)} .warn-t{color:var(--sun)} .bad-t{color:var(--coral)}
 header.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 header.top .hi{display:flex;flex-direction:column;min-width:0}
 header.top .hi .date{font-size:.82rem;color:var(--muted)}
 .hdr-r{display:flex;gap:8px;align-items:center}
-.streak{font-family:var(--f-display);background:var(--sun-soft);color:var(--sun);border-radius:999px;padding:6px 12px;font-size:.95rem;white-space:nowrap}
+.streak{font-weight:800;background:var(--sun-soft);color:var(--sun);border-radius:999px;padding:6px 12px;font-size:.95rem;white-space:nowrap}
 .icon-btn{font:inherit;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;flex:none}
 .icon-btn svg{width:20px;height:20px}
 details.rules{background:var(--coral-soft);color:var(--ink);border-radius:14px;padding:10px 14px;font-size:.85rem}
@@ -53,8 +53,8 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .title .em{font-size:1.25rem;line-height:1}
 .hero{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));color:#fff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
 .hero .lbl{font-size:.85rem;opacity:.92}
-.hero .big{font-family:var(--f-display);font-size:2.5rem;line-height:1.08}
-.hero .mood{font-family:var(--f-display);font-size:1.05rem}
+.hero .big{font-family:var(--f-display);font-size:2.3rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.hero .mood{font-weight:700;font-size:.98rem}
 .hero-top{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:12px;align-items:center}
 .ring{width:92px;height:92px;position:relative}
 .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
@@ -66,7 +66,11 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .wd.w i{background:#FFE08A;color:#7A5200}
 .wd.b i{background:#FF9A9A;color:#7A1010}
 .wd.today i{outline:2px solid #fff;outline-offset:2px}
-.hero .wk{display:flex;justify-content:space-between;gap:8px;font-size:.85rem;flex-wrap:wrap}
+.limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;background:rgba(255,255,255,.14);border-radius:16px;padding:10px}
+.lm{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lm .k{font-size:.72rem;opacity:.9}
+.lm .v{font-size:.82rem;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+.lm .bar>i.over{background:#FFB3B3}
 .hero .bar{background:rgba(255,255,255,.25)}
 .hero .bar>i{background:#fff}
 .bar{position:relative;height:12px;border-radius:999px;background:var(--line);overflow:hidden}
@@ -87,14 +91,14 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:var(--grape-soft);color:var(--grape);font-size:.78rem;font-weight:600;white-space:nowrap}
 .chip.good{background:var(--mint-soft);color:var(--mint)} .chip.warn{background:var(--sun-soft);color:var(--sun)} .chip.bad{background:var(--coral-soft);color:var(--coral)} .chip.plain{background:var(--bg);color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.party{text-align:center;font-family:var(--f-display);font-size:1.05rem;color:var(--mint);padding:6px 0}
+.party{text-align:center;font-weight:800;font-size:1.05rem;color:var(--mint);padding:6px 0}
 .coach{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;border:2px solid var(--grape-soft)}
 .coach .bub{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;align-items:start}
 .coach .av{width:44px;height:44px;border-radius:50%;background:var(--grape-soft);display:grid;place-items:center;font-size:1.5rem}
-.coach .head{font-family:var(--f-display);font-size:1.12rem;line-height:1.35}
+.coach .head{font-weight:700;font-size:1.04rem;line-height:1.35}
 .coach ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:.92rem}
 .mission{background:var(--sun-soft);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
-.mission strong{font-family:var(--f-display);font-weight:400;color:var(--sun)}
+.mission strong{font-weight:800;color:var(--sun)}
 .coach.good{border-color:var(--mint)} .coach.warn{border-color:var(--sun)} .coach.bad{border-color:var(--coral)}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>span{font-size:.82rem;color:var(--muted);font-weight:600}
@@ -102,7 +106,7 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 input[type=number],input[type=date],input[type=text],input[type=month],select{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;min-width:0;height:48px;line-height:1.2}
 input[type=date],input[type=month]{-webkit-appearance:none;appearance:none;display:block;text-align:left}
 input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
-input.amount{font-family:var(--f-display);font-size:2rem;height:auto;padding:10px 14px;text-align:right;background:var(--surface);border-color:var(--grape-soft)}
+input.amount{font-weight:800;letter-spacing:-.02em;font-size:1.9rem;height:auto;padding:10px 14px;text-align:right;background:var(--surface);border-color:var(--grape-soft)}
 input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--grape);outline-offset:2px}
 .btn{font:inherit;font-weight:800;border:0;border-radius:14px;padding:13px 16px;background:var(--grape);color:#fff;cursor:pointer}
 .btn.ghost{background:var(--grape-soft);color:var(--grape);padding:8px 14px;font-size:.86rem;font-weight:600}
@@ -150,17 +154,17 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .zones{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:.7rem;color:var(--muted)}
 .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .stepc{background:var(--surface);border-radius:14px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;font-size:.76rem;min-width:0;border:2px solid transparent}
-.stepc strong{font-family:var(--f-display);font-weight:400;font-size:.95rem}
+.stepc strong{font-weight:800;font-size:.9rem}
 .stepc span{color:var(--muted)}
 .stepc.cur{border-color:var(--grape)}
 .stepc.done{background:var(--mint-soft)}
 .stepc.done strong::after{content:" ✓";color:var(--mint)}
-.step{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--grape);color:#fff;font-family:var(--f-display);font-size:.85rem;margin-right:8px;vertical-align:2px}
+.step{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--grape);color:#fff;font-weight:800;font-size:.8rem;margin-right:8px;vertical-align:2px}
 .intro{display:flex;flex-direction:column;gap:2px}
 .flow{display:flex;flex-direction:column}
 .flow .fl{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:.92rem}
 .flow .fl .num{font-weight:800}
-.flow .fl.total{border-top:2px dashed var(--line);margin-top:4px;padding-top:10px;font-family:var(--f-display);font-size:1.1rem}
+.flow .fl.total{border-top:2px dashed var(--line);margin-top:4px;padding-top:10px;font-weight:800;font-size:1.04rem}
 .hp .bar{height:18px}
 .hp .bar>i{background:linear-gradient(90deg,var(--coral),var(--sun))}
 .road{position:relative;height:58px;margin:4px 14px 0}
@@ -219,7 +223,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 .mstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .mstats div{background:var(--bg);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
 .mstats span{font-size:.72rem;color:var(--muted)}
-.mstats strong{font-family:var(--f-display);font-weight:400;font-size:1.05rem}
+.mstats strong{font-weight:800;font-size:1rem}
 @media (prefers-reduced-motion: no-preference){
   .bar>i,.gauge .trk i{transition:width .5s ease}
   .pop{animation:pop .5s ease}
@@ -242,7 +246,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <li>카드 앱의 <strong>자동할부·할부전환</strong> 서비스는 꺼 두기</li>
       <li>월급날 고정비·카드값 먼저 확보, 남는 돈은 바로 선결제·상환</li>
       <li>연봉 인상분·성과급·연말정산 환급은 전액 상환·저축</li>
-      <li>생활비는 카드 주기(12일~11일)당 80만, 주 18만</li>
+      <li>생활비 한도: 하루 2.6만 · 주 18만 · 카드 주기(12일~11일) 80만</li>
     </ul>
   </details>
 
@@ -263,15 +267,13 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         </div>
       </div>
       <div class="week" id="weekDots"></div>
-      <div class="wk"><span id="weekTxt"></span><span id="cycleTxt"></span></div>
-      <div class="bar thin" aria-hidden="true"><i id="weekBar" style="width:0"></i></div>
+      <div class="limits">
+        <div class="lm"><span class="k">하루 한도</span><span class="v" id="lmD"></span><div class="bar thin"><i id="lmDb" style="width:0"></i></div></div>
+        <div class="lm"><span class="k">주 한도</span><span class="v" id="lmW"></span><div class="bar thin"><i id="lmWb" style="width:0"></i></div></div>
+        <div class="lm"><span class="k" id="lmCk">주기 한도</span><span class="v" id="lmC"></span><div class="bar thin"><i id="lmCb" style="width:0"></i></div></div>
+      </div>
     </div>
 
-    <div class="coach" id="coach">
-      <div class="row"><div class="title"><span class="em">🧑‍🏫</span><h2>오늘의 머니 코치</h2></div><span class="tiny muted" id="coachWhen"></span></div>
-      <div id="coachBody"></div>
-      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">오늘 코칭 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
-    </div>
 
     <div class="card">
       <div class="row"><div class="title"><span class="em">🎯</span><h2>오늘의 퀘스트</h2></div><span class="chip" id="questCount"></span></div>
@@ -325,14 +327,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요 (무지출)</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로 돌아가기</button></div>
     </div>
 
-    <div class="card" id="calCard">
-      <div class="row"><div class="title"><span class="em">📅</span><h2>지난 기록</h2></div>
-        <div class="btns" style="align-items:center"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><strong class="small" id="calLabel"></strong><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
-      <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
-      <div class="cal" id="cal"></div>
-      <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>기록한 날 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
-      <div class="row"><span class="tiny muted">🟢 하루 한도 안 · 🟡 1.5배까지 · 🔴 그 이상 · 날짜를 누르면 그날 내역이 위에 떠요</span><button type="button" class="btn ghost" id="calCats">카테고리별 보기</button></div>
-    </div>
+
 
     <div class="card" id="habitPanel">
       <div class="row"><div class="title"><span class="em">✅</span><h2>습관 체크</h2></div><span class="chip good" id="habitCount"></span></div>
@@ -344,7 +339,19 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
       <input type="text" id="dayMemo" placeholder="하루 메모 (넘친 항목, 이유)" aria-label="하루 메모">
     </div>
-
+    <div class="coach" id="coach">
+      <div class="row"><div class="title"><span class="em">🧑‍🏫</span><h2>오늘의 머니 코치</h2></div><span class="tiny muted" id="coachWhen"></span></div>
+      <div id="coachBody"></div>
+      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">오늘 코칭 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
+    </div>
+    <div class="card" id="calCard">
+      <div class="row"><div class="title"><span class="em">📅</span><h2>지난 기록</h2></div>
+        <div class="btns" style="align-items:center"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><strong class="small" id="calLabel"></strong><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
+      <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+      <div class="cal" id="cal"></div>
+      <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>기록한 날 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
+      <div class="row"><span class="tiny muted">🟢 하루 한도 안 · 🟡 1.5배까지 · 🔴 그 이상 · 날짜를 누르면 그날 내역이 위에 떠요</span><button type="button" class="btn ghost" id="calCats">카테고리별 보기</button></div>
+    </div>
     <div class="card">
       <div class="row"><div class="title"><span class="em">🗓️</span><h2>이번 카드 주기</h2></div><span class="muted small" id="cyRange"></span></div>
       <div class="row"><span class="disp" style="font-size:1.6rem" id="cySpent">0원</span><span class="muted small">/ <span id="cyBudget">-</span></span></div>
@@ -702,7 +709,7 @@ const TASKS=[
  {g:"첫 주간 점검",label:"10/11(일) 첫 주간 점검",d:"2026-10-11",items:[
   {id:"w1",t:"카드 앱 이용금액·결제예정액 적고 가계부와 비교",n:"주간 점검 탭에서 5분"},
   {id:"w2",t:"9/12~10/11 주기 마감: 넘친 카테고리만 메모",n:"10/1~10/7만 기록돼 있어서 실제보다 적게 보여요"}]},
- {g:"새 주기",label:"10/12 새 카드 주기 시작",d:"2026-10-12",items:[{id:"n1",t:"생활비 80만 · 주 18만, 롯데카드 일시불로 쓰기",n:"매일 '오늘 쓸 수 있는 돈' 안에서"}]},
+ {g:"새 주기",label:"10/12 새 카드 주기 시작",d:"2026-10-12",items:[{id:"n1",t:"생활비 80만 · 주 18만, 롯데카드 일시불로 쓰기",n:"하루 2.6만 한도 안에서"}]},
  {g:"여행",label:"10/15~10/18 상해 여행",d:"2026-10-15",items:[
   {id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"항공·숙박은 이미 할부 목록에 있어요. 현지 경비는 계모임 돈으로"}]},
  {g:"월급날",label:"10/21 월급날",d:"2026-10-21",items:[
@@ -748,10 +755,10 @@ function paintBar(el,spent,budget,pace){
 }
 function renderToday(){
   const allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
-  $("heroLeft").textContent=left>=0?won(left):"−"+won(-left);
-  $("heroLbl").textContent=allow>0?`오늘 쓸 수 있는 돈 · 하루 ${man1(allow)} 중`:"이번 주 한도를 이미 다 썼어요";
+  $("heroLeft").textContent=won(Math.max(0,left));
+  $("heroLbl").textContent=allow>0?`오늘 남은 돈 · 오늘 쓴 돈 ${won(spentT)}`:`오늘 남은 돈 · 이번 주 한도를 이미 다 썼어요`;
   const ratio=allow>0?spentT/allow:spentT>0?2:0;
-  const[face,mood]=day.noSpend&&!todays.length?["🥚","무지출 데이! 최고예요"]:spentT===0?["😎","아직 0원! 이대로 가요"]:ratio<=.5?["🙂","여유 있어요"]:ratio<=1?["😬","오늘 한도에 거의 다 왔어요"]:["🚨","오늘 한도를 넘었어요. 내일 줄여요"];
+  const[face,mood]=day.noSpend&&!todays.length?["🥚","무지출 데이! 최고예요"]:spentT===0?["😎","아직 0원! 이대로 가요"]:ratio<=.5?["🙂","여유 있어요"]:ratio<=1?["😬","오늘 한도에 거의 다 왔어요"]:allow>0?["🚨",`오늘 ${won(spentT-allow)} 넘었어요. 내일 줄여요`]:["🚨",`오늘 ${won(spentT)} 썼어요. 일요일까지 무지출 도전 💪`];
   $("ringFace").textContent=face;$("heroMood").textContent=mood;
   $("ringArc").style.strokeDashoffset=String(238.8*(1-Math.min(1,ratio)));$("ringArc").style.stroke=ratio>1?"#FFB3B3":"#fff";
   const wr=weekRange(TODAY),W=ST().weekBudget||0,dayB=W/7;
@@ -759,8 +766,8 @@ function renderToday(){
     const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b",ic=fut?"":!rec?"·":s===0?(ns?"🥚":"✓"):s<=dayB?"✓":s<=dayB*1.5?"!":"✕";
     return `<div class="wd ${cls} ${d===TODAY?"today":""}"><i>${ic}</i>${"월화수목금토일"[i]}</div>`}).join("");
   const ws=sum(entriesIn(wr),e=>e.amount),y=cycleSummary();
-  $("weekTxt").textContent=`이번 주 ${man1(ws)} / ${man(W)}`;$("cycleTxt").textContent=`주기 남은 돈 ${man1(y.remain)}`;
-  $("weekBar").style.width=(W?Math.min(100,ws/W*100):0)+"%";
+  const lim=(id,used,cap)=>{$(id).textContent=`${man1(used)} / ${man1(cap)}`;const b=$(id+"b");b.style.width=(cap?Math.min(100,used/cap*100):0)+"%";b.classList.toggle("over",used>cap)};
+  lim("lmD",spentT,dayB);lim("lmW",ws,W);lim("lmC",y.spent,y.B);$("lmCk").textContent=`주기 ${md(y.c.start)}~${md(y.c.end)}`;
 
   const cats=$("enCats"),sig=CATS().map(c=>c.id).join()+"|"+selCat;
   if(cats.dataset.sig!==sig){cats.dataset.sig=sig;cats.innerHTML=CATS().length?CATS().map(c=>{const[e,col]=look(c.id);return `<button type="button" class="cat" style="--c:${col}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="e">${e}</span>${esc(c.name)}</button>`}).join(""):'<p class="empty" style="grid-column:1/-1">카테고리를 불러오는 중이에요.</p>'}
@@ -956,9 +963,15 @@ function renderMonth(){
     return `<div class="li"><span class="av">${x?"💳":"🏦"}</span><div><div class="t">${esc(x?x.name:dl?dl.name:"(삭제된 항목)")}</div><div class="s">${mdw(p.date)}${x?` · ${ymShort(p.fromYm)}부터 청구 없음`:""}${p.memo?" · "+esc(p.memo):""}</div></div><div style="text-align:right"><div class="a">${num(p.amount)}</div><button type="button" class="btn danger" style="margin-top:4px" data-del-pay="${esc(p.id)}">삭제</button></div></div>`}).join("")
     :'<p class="empty">선결제나 상환을 기록하면 빚 HP와 할부 일정이 다시 계산돼요.</p>';
   let n=0,dn=0;
-  $("tasks").innerHTML=TASKS.slice().sort((a,b)=>a.d<b.d?-1:1).map(g=>{const all=g.items.every(i=>S.tasks[i.id]),diff=dayDiff(TODAY,g.d);
+  const grp=g=>{const all=g.items.every(i=>S.tasks[i.id]),diff=dayDiff(TODAY,g.d);
     const tag=all?'<span class="chip good">완료</span>':diff<0?'<span class="chip bad">지남</span>':diff===0?'<span class="chip warn">오늘</span>':`<span class="chip plain">D-${diff}</span>`;
-    return `<div class="sub"><div class="row"><strong>${esc(g.label||`${md(g.d)} ${g.g}`)}</strong>${tag}</div>`+g.items.map(i=>{n++;if(S.tasks[i.id])dn++;return `<label class="check"><input type="checkbox" data-task="${i.id}" ${S.tasks[i.id]?"checked":""}><span><span style="${S.tasks[i.id]?"text-decoration:line-through;color:var(--muted)":""}">${esc(i.t)}</span>${i.n?`<br><span class="tiny muted">${esc(i.n)}</span>`:""}</span></label>`}).join("")+"</div>"}).join("");
+    return `<div class="sub"><div class="row"><strong>${esc(g.label||`${md(g.d)} ${g.g}`)}</strong>${tag}</div>`+g.items.map(i=>{return `<label class="check"><input type="checkbox" data-task="${i.id}" ${S.tasks[i.id]?"checked":""}><span><span style="${S.tasks[i.id]?"text-decoration:line-through;color:var(--muted)":""}">${esc(i.t)}</span>${i.n?`<br><span class="tiny muted">${esc(i.n)}</span>`:""}</span></label>`}).join("")+"</div>"};
+  const gs=TASKS.slice().sort((a,b)=>a.d<b.d?-1:1),allDone=g=>g.items.every(i=>S.tasks[i.id]);
+  const now=gs.filter(g=>!allDone(g)&&dayDiff(TODAY,g.d)<=21),later=gs.filter(g=>!allDone(g)&&dayDiff(TODAY,g.d)>21),fin=gs.filter(allDone);
+  $("tasks").innerHTML=(now.map(grp).join("")||'<p class="empty">3주 안에 할 일이 없어요 🎉</p>')+
+    (later.length?`<details class="more"><summary>나중 할 일 ${later.length}묶음</summary>${later.map(grp).join("")}</details>`:"")+
+    (fin.length?`<details class="more"><summary>끝낸 할 일 ${fin.length}묶음</summary>${fin.map(grp).join("")}</details>`:"");
+  gs.forEach(g=>g.items.forEach(i=>{n++;if(S.tasks[i.id])dn++}));
   $("taskCount").textContent=`${dn}/${n} 완료`;
   if(!$("payForm").hidden&&!$("payForm").contains(document.activeElement))fillTargets();
   if(!$("nwMonth").value)$("nwMonth").value=ymOf(TODAY);
