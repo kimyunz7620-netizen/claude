@@ -1,1 +1,61 @@
-{"cats":[{"id":"lunch","name":"점심식비","amount":100000},{"id":"dinner","name":"저녁식비","amount":100000},{"id":"coffee","name":"커피","amount":30000},{"id":"grocery","name":"식재료","amount":130000},{"id":"living","name":"생활용품","amount":70000},{"id":"leisure","name":"여행/문화/쇼핑","amount":100000},{"id":"beauty","name":"미용비","amount":50000},{"id":"transit","name":"교통","amount":50000},{"id":"health","name":"운동/병원/약","amount":100000},{"id":"subs","name":"렌탈/구독료","amount":20000},{"id":"gift","name":"경조사/선물","amount":50000,"accumulate":true}]}
+{
+  "cats": [
+    {
+      "amount": 100000,
+      "id": "lunch",
+      "name": "점심식비"
+    },
+    {
+      "amount": 130000,
+      "id": "dinner",
+      "name": "저녁식비"
+    },
+    {
+      "amount": 40000,
+      "id": "coffee",
+      "name": "커피"
+    },
+    {
+      "amount": 130000,
+      "id": "grocery",
+      "name": "식재료"
+    },
+    {
+      "amount": 90000,
+      "id": "living",
+      "name": "생활용품"
+    },
+    {
+      "amount": 70000,
+      "id": "leisure",
+      "name": "여행/문화/쇼핑"
+    },
+    {
+      "amount": 50000,
+      "id": "beauty",
+      "name": "미용비"
+    },
+    {
+      "amount": 80000,
+      "id": "transit",
+      "name": "교통"
+    },
+    {
+      "amount": 50000,
+      "id": "health",
+      "name": "운동/병원/약"
+    },
+    {
+      "amount": 0,
+      "hidden": true,
+      "id": "subs",
+      "name": "렌탈/구독료"
+    },
+    {
+      "accumulate": true,
+      "amount": 60000,
+      "id": "gift",
+      "name": "경조사/선물"
+    }
+  ]
+}

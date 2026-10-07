@@ -1,1 +1,21 @@
-{"income": 3950000, "raisePct": 5, "raiseFromYm": "2027-05", "payday": 21, "cardDay": 25, "cycleDay": 12, "cycleBudget": 800000, "weekBudget": 180000, "buffer": 0, "deposit": 10000000, "startYm": "2026-10", "startDebt": 16477625, "targetGain": 30000000, "targetYm": "2027-12", "finalTarget": 100000000, "accumulateFrom": "2026-10-12", "warnDiff": 30000, "appStart": "2026-10-07", "cashReserve": 0}
+{
+  "accumulateFrom": "2026-10-12",
+  "appStart": "2026-10-07",
+  "buffer": 0,
+  "cardDay": 25,
+  "cashReserve": 0,
+  "cycleBudget": 800000,
+  "cycleDay": 12,
+  "deposit": 10000000,
+  "finalTarget": 100000000,
+  "income": 3950000,
+  "payday": 21,
+  "raiseFromYm": "2027-05",
+  "raisePct": 5,
+  "startDebt": 16477625,
+  "startYm": "2026-10",
+  "targetGain": 30000000,
+  "targetYm": "2027-12",
+  "warnDiff": 30000,
+  "weekBudget": 180000
+}

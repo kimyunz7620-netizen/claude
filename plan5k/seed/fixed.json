@@ -1,1 +1,70 @@
-{"items":[{"id":"house","name":"주거비","amount":686000},{"id":"util","name":"공과금","amount":150000},{"id":"ins","name":"보험","amount":38110},{"id":"tel","name":"통신","amount":30030},{"id":"gye","name":"계모임","amount":320000,"changes":[{"fromYm":"2026-11","amount":240000}]},{"id":"int","name":"이자/수수료","amount":65000}]}
+{
+  "items": [
+    {
+      "amount": 686000,
+      "card": false,
+      "changes": [
+        {
+          "amount": 699000,
+          "fromYm": "2026-11"
+        }
+      ],
+      "id": "house",
+      "name": "주거비",
+      "note": "21일 월세 · 입출금"
+    },
+    {
+      "amount": 150000,
+      "card": true,
+      "changes": [],
+      "id": "util",
+      "name": "공과금",
+      "note": "21일 관리비 · 롯데카드"
+    },
+    {
+      "amount": 37910,
+      "card": false,
+      "changes": [],
+      "id": "ins",
+      "name": "보험",
+      "note": "5일 우체국보험 · 입출금"
+    },
+    {
+      "amount": 30030,
+      "card": true,
+      "changes": [],
+      "id": "tel",
+      "name": "통신",
+      "note": "9일 통신비 · 롯데카드"
+    },
+    {
+      "amount": 320000,
+      "card": false,
+      "changes": [
+        {
+          "amount": 240000,
+          "fromYm": "2026-11"
+        }
+      ],
+      "id": "gye",
+      "name": "계모임",
+      "note": "21일 모임통장 · 입출금 · 11월부터 24만"
+    },
+    {
+      "amount": 65000,
+      "card": false,
+      "changes": [],
+      "id": "int",
+      "name": "이자/수수료",
+      "note": "21일 NH 대출 50,000 · 마이너스통장(광주) 15,000 · 대략치"
+    },
+    {
+      "amount": 32890,
+      "card": false,
+      "changes": [],
+      "id": "subs",
+      "name": "렌탈/구독료",
+      "note": "1일 카톡서랍 · 5일 아이클라우드 · 15일 쿠팡와우(케뱅체크) 등"
+    }
+  ]
+}
