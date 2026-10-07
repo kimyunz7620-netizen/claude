@@ -25,36 +25,38 @@
   --hero-a:#5A44D8; --hero-b:#1F79CC; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:14px 120px;display:flex;flex-direction:column;gap:14px}
 h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
-h1{font-size:1.4rem} h2{font-size:1.08rem} h3{font-size:.96rem}
+h1{font-size:1.15rem} h2{font-size:.95rem} h3{font-size:.88rem}
 p{margin:0}
 .num{font-variant-numeric:tabular-nums}
-.disp{font-family:var(--f-display);font-weight:800;letter-spacing:-.02em}
+.disp{font-family:var(--f-display);font-weight:800;letter-spacing:-.02em;font-size:1.15rem}
 .muted{color:var(--muted)} .small{font-size:.84rem} .tiny{font-size:.75rem}
 .good-t{color:var(--mint)} .warn-t{color:var(--sun)} .bad-t{color:var(--coral)}
 header.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 header.top .hi{display:flex;flex-direction:column;min-width:0}
 header.top .hi .date{font-size:.82rem;color:var(--muted)}
 .hdr-r{display:flex;gap:8px;align-items:center}
-.streak{font-weight:800;background:var(--sun-soft);color:var(--sun);border-radius:999px;padding:6px 12px;font-size:.95rem;white-space:nowrap}
+.streak{font-weight:800;background:var(--sun-soft);color:var(--sun);border-radius:999px;padding:5px 10px;font-size:.8rem;white-space:nowrap}
 .icon-btn{font:inherit;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;flex:none}
 .icon-btn svg{width:20px;height:20px}
 details.rules{background:var(--coral-soft);color:var(--ink);border-radius:14px;padding:10px 14px;font-size:.85rem}
 details.rules summary{cursor:pointer;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
 details.rules summary::-webkit-details-marker{display:none}
 details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:column;gap:4px}
-.view{display:flex;flex-direction:column;gap:14px}
-.card{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:0 1px 0 var(--line)}
+.view{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;box-shadow:0 1px 0 var(--line)}
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap}
 .row>*{min-width:0}
 .title{display:flex;align-items:center;gap:8px}
 .title .em{font-size:1.25rem;line-height:1}
-.hero{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));color:#fff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.hero{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));color:#fff;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
 .hero .lbl{font-size:.85rem;opacity:.92}
-.hero .big{font-family:var(--f-display);font-size:2.3rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
-.hero .mood{font-weight:700;font-size:.98rem}
+.hero .big{font-family:var(--f-display);font-size:1.9rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.hero .mood{font-weight:600;font-size:.85rem;opacity:.95}
+.hero-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hero .face{font-size:1.9rem;line-height:1}
 .hero-top{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:12px;align-items:center}
 .ring{width:92px;height:92px;position:relative}
 .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
@@ -79,9 +81,9 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .bar.warn>i{background:var(--sun)} .bar.bad>i{background:var(--coral)}
 .bar.thin{height:8px}
 .quest{display:flex;flex-direction:column}
-.q{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px dashed var(--line)}
+.q{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 0;border-top:1px dashed var(--line)}
 .q:first-child{border-top:0}
-.q .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:1.2rem;background:var(--grape-soft)}
+.q .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:.95rem;background:var(--grape-soft)}
 .q.done .ic{background:var(--mint-soft)}
 .q.urgent .ic{background:var(--sun-soft)}
 .q strong{font-weight:600}
@@ -92,10 +94,10 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .chip.good{background:var(--mint-soft);color:var(--mint)} .chip.warn{background:var(--sun-soft);color:var(--sun)} .chip.bad{background:var(--coral-soft);color:var(--coral)} .chip.plain{background:var(--bg);color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .party{text-align:center;font-weight:800;font-size:1.05rem;color:var(--mint);padding:6px 0}
-.coach{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;border:2px solid var(--grape-soft)}
+.coach{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;border:2px solid var(--grape-soft)}
 .coach .bub{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;align-items:start}
 .coach .av{width:44px;height:44px;border-radius:50%;background:var(--grape-soft);display:grid;place-items:center;font-size:1.5rem}
-.coach .head{font-weight:700;font-size:1.04rem;line-height:1.35}
+.coach .head{font-weight:700;font-size:.95rem;line-height:1.35}
 .coach ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:.92rem}
 .mission{background:var(--sun-soft);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
 .mission strong{font-weight:800;color:var(--sun)}
@@ -106,7 +108,7 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 input[type=number],input[type=date],input[type=text],input[type=month],select{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;min-width:0;height:48px;line-height:1.2}
 input[type=date],input[type=month]{-webkit-appearance:none;appearance:none;display:block;text-align:left}
 input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
-input.amount{font-weight:800;letter-spacing:-.02em;font-size:1.9rem;height:auto;padding:10px 14px;text-align:right;background:var(--surface);border-color:var(--grape-soft)}
+input.amount{font-weight:800;letter-spacing:-.02em;font-size:1.5rem;height:auto;padding:10px 14px;text-align:right;background:var(--surface);border-color:var(--grape-soft)}
 input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--grape);outline-offset:2px}
 .btn{font:inherit;font-weight:800;border:0;border-radius:14px;padding:13px 16px;background:var(--grape);color:#fff;cursor:pointer}
 .btn.ghost{background:var(--grape-soft);color:var(--grape);padding:8px 14px;font-size:.86rem;font-weight:600}
@@ -118,7 +120,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .pill{font:inherit;font-size:.85rem;border:0;background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer;font-weight:600}
 .cats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .cat{font:inherit;border:2px solid transparent;border-radius:14px;padding:8px 2px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--c) 14%,var(--surface));min-width:0;overflow-wrap:anywhere;text-align:center}
-.cat .e{font-size:1.35rem;line-height:1.2}
+.cat .e{font-size:1.1rem;line-height:1.2}
 .cat[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 30%,var(--surface))}
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--bg);border-radius:14px;padding:4px;gap:4px}
 .seg button{font:inherit;font-size:.84rem;font-weight:600;border:0;border-radius:10px;padding:9px 4px;background:transparent;color:var(--muted);cursor:pointer}
@@ -136,13 +138,13 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .li .a{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
 .li button.link{font:inherit;background:none;border:0;padding:0;color:inherit;cursor:pointer;text-align:left;min-width:0}
 .empty{color:var(--muted);font-size:.88rem}
-.habits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.hb{position:relative;display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:16px;background:var(--bg);cursor:pointer;border:2px solid transparent;min-height:88px}
+.habits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;border-top:1px dashed var(--line);padding-top:10px}
+.hb{position:relative;display:flex;align-items:center;padding:8px 10px;border-radius:12px;background:var(--bg);cursor:pointer;border:2px solid transparent}
 .hb input{position:absolute;opacity:0;pointer-events:none}
 .hb .e{font-size:1.5rem}
-.hb span{font-size:.82rem;font-weight:600;line-height:1.35}
+.hb span{font-size:.78rem;font-weight:600;line-height:1.3}
 .hb.on{background:var(--mint-soft);border-color:var(--mint)}
-.hb.on::after{content:"✓";position:absolute;top:8px;right:12px;color:var(--mint);font-weight:800}
+.hb.on::after{content:"✓";position:absolute;right:10px;color:var(--mint);font-weight:800}
 .hb:focus-within{outline:2px solid var(--grape);outline-offset:2px}
 .gauge{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
 .gauge:first-child{border-top:0}
@@ -255,65 +257,57 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
   <!-- 오늘 -->
   <section class="view" id="v-today" aria-label="오늘">
     <div class="hero" id="hero">
-      <div class="hero-top">
-        <div>
-          <div class="lbl" id="heroLbl">오늘 쓸 수 있는 돈</div>
-          <div class="big" id="heroLeft">-</div>
-          <div class="mood" id="heroMood"></div>
-        </div>
-        <div class="ring" aria-hidden="true">
-          <svg viewBox="0 0 92 92"><circle cx="46" cy="46" r="38" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="10"/><circle id="ringArc" cx="46" cy="46" r="38" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-dasharray="238.8" stroke-dashoffset="238.8"/></svg>
-          <div class="face" id="ringFace">😎</div>
-        </div>
-      </div>
-      <div class="week" id="weekDots"></div>
+      <div class="lbl" id="heroLbl">오늘 남은 돈</div>
+      <div class="hero-row"><div class="big" id="heroLeft">-</div><span class="face" id="ringFace">😎</span></div>
+      <div class="mood" id="heroMood"></div>
       <div class="limits">
-        <div class="lm"><span class="k">하루 한도</span><span class="v" id="lmD"></span><div class="bar thin"><i id="lmDb" style="width:0"></i></div></div>
-        <div class="lm"><span class="k">주 한도</span><span class="v" id="lmW"></span><div class="bar thin"><i id="lmWb" style="width:0"></i></div></div>
-        <div class="lm"><span class="k" id="lmCk">주기 한도</span><span class="v" id="lmC"></span><div class="bar thin"><i id="lmCb" style="width:0"></i></div></div>
+        <div class="lm"><span class="k">하루</span><span class="v" id="lmD"></span><div class="bar thin"><i id="lmDb" style="width:0"></i></div></div>
+        <div class="lm"><span class="k">이번 주</span><span class="v" id="lmW"></span><div class="bar thin"><i id="lmWb" style="width:0"></i></div></div>
+        <div class="lm"><span class="k" id="lmCk">이번 주기</span><span class="v" id="lmC"></span><div class="bar thin"><i id="lmCb" style="width:0"></i></div></div>
       </div>
     </div>
 
-
     <div class="card">
-      <div class="row"><div class="title"><span class="em">🎯</span><h2>오늘의 퀘스트</h2></div><span class="chip" id="questCount"></span></div>
+      <div class="row"><h2>🎯 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
       <div class="quest" id="quest"></div>
-      <details class="more"><summary>언제 어느 탭을 여나요?</summary>
-        <div class="list small" style="margin-top:6px">
-          <div class="li"><span class="av">✏️</span><div><div class="t">매일 · 오늘</div><div class="s">쓴 돈 기록, 습관 체크, 코칭</div></div><span></span></div>
-          <div class="li"><span class="av">💳</span><div><div class="t">일요일 · 주간 점검</div><div class="s">카드 앱 숫자 입력 → 비교 → 한 주 돌아보기</div></div><span></span></div>
-          <div class="li"><span class="av">💰</span><div><div class="t">21일 · 25일 · 월말 · 월급·상환</div><div class="s">돈 확보 → 선결제 → 월말 잔액</div></div><span></span></div>
-          <div class="li"><span class="av">📈</span><div><div class="t">궁금할 때 · 현황</div><div class="s">빚 HP, 순자산, 배지, 할부 목록</div></div><span></span></div>
-        </div></details>
+      <div class="habits" id="habits" aria-label="습관 체크">
+        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건</span></label>
+        <label class="hb"><input type="checkbox" id="hk_noRevolve"><span>🙅 리볼빙·현금서비스 X</span></label>
+        <label class="hb"><input type="checkbox" id="hk_appCheck"><span>📱 카드 앱 확인</span></label>
+        <label class="hb"><input type="checkbox" id="hk_48h"><span>⏳ 48시간 룰</span></label>
+      </div>
     </div>
 
     <form class="card" id="entryForm" autocomplete="off">
-      <div class="row"><div class="title"><span class="em">✏️</span><h2 id="entryTitle">쓴 돈 기록</h2></div><span class="chip plain" id="enDateChip"></span></div>
+      <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span></div>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
       <div class="pills">
         <button type="button" class="pill" data-add="1000">+1천</button>
         <button type="button" class="pill" data-add="5000">+5천</button>
         <button type="button" class="pill" data-add="10000">+1만</button>
-        <button type="button" class="pill" data-add="50000">+5만</button>
         <button type="button" class="pill" data-add="clear">지우기</button>
+        <span id="freq" class="pills" aria-label="자주 쓰는 금액"></span>
       </div>
-      <div class="pills" id="freq" aria-label="자주 쓰는 금액"></div>
       <div class="cats" id="enCats" role="group" aria-label="카테고리"></div>
-      <div class="seg" id="enMethod" role="group" aria-label="결제수단">
-        <button type="button" data-m="lotte" aria-pressed="true">💳 롯데 일시불</button>
-        <button type="button" data-m="cash" aria-pressed="false">🏦 체크·현금</button>
-        <button type="button" data-m="inst" aria-pressed="false">⚠️ 할부</button>
-      </div>
-      <div id="instBox" hidden class="fields">
-        <label class="field"><span>할부 개월</span><input type="number" id="enMonths" inputmode="numeric" min="2" max="36" value="3"></label>
-        <label class="check" style="align-self:end"><input type="checkbox" id="enFree"><span>무이자 할부</span></label>
-        <p class="note bad" style="grid-column:1/-1">🚨 할부는 무이자일 때만! 유이자 할부를 기록하면 '신규 할부 0건' 체크가 꺼져요.</p>
-      </div>
-      <label class="check"><input type="checkbox" id="enExcl"><span>🎒 생활비 예산에서 빼기 <span class="tiny muted">(계모임·회사 경비처럼 다른 돈으로 채우는 지출. 카드값 계산에는 들어가요)</span></span></label>
-      <div class="fields">
-        <label class="field"><span>날짜</span><input type="date" id="enDate"></label>
-        <label class="field"><span>메모</span><input type="text" id="enMemo" placeholder="선택"></label>
-      </div>
+      <details class="more" id="enMore"><summary id="enMoreSum">결제수단 · 날짜 · 메모</summary>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+          <div class="seg" id="enMethod" role="group" aria-label="결제수단">
+            <button type="button" data-m="lotte" aria-pressed="true">💳 롯데 일시불</button>
+            <button type="button" data-m="cash" aria-pressed="false">🏦 체크·현금</button>
+            <button type="button" data-m="inst" aria-pressed="false">⚠️ 할부</button>
+          </div>
+          <div id="instBox" hidden class="fields">
+            <label class="field"><span>할부 개월</span><input type="number" id="enMonths" inputmode="numeric" min="2" max="36" value="3"></label>
+            <label class="check" style="align-self:end"><input type="checkbox" id="enFree"><span>무이자</span></label>
+            <p class="note bad" style="grid-column:1/-1">할부는 무이자일 때만. 유이자 할부를 기록하면 '할부 0건' 체크가 꺼져요.</p>
+          </div>
+          <div class="fields">
+            <label class="field"><span>날짜</span><input type="date" id="enDate"></label>
+            <label class="field"><span>메모</span><input type="text" id="enMemo" placeholder="선택"></label>
+          </div>
+          <label class="check"><input type="checkbox" id="enExcl"><span class="small">생활비 예산에서 빼기 <span class="muted">(계모임·다른 사람 몫 등)</span></span></label>
+        </div>
+      </details>
       <div class="btns">
         <button class="btn" type="submit" id="enSave" style="flex:1">기록하기</button>
         <button class="btn ghost" type="button" id="enCancel" hidden>취소</button>
@@ -322,46 +316,43 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     </form>
 
     <div class="card">
-      <div class="row"><div class="title"><span class="em">🧾</span><h2 id="dayTitle">오늘 기록</h2></div><span class="disp" id="dayTotal"></span></div>
+      <div class="row"><h2 id="dayTitle">🧾 오늘 기록</h2><span class="disp" id="dayTotal"></span></div>
       <div class="list" id="dayList"></div>
-      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요 (무지출)</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로 돌아가기</button></div>
+      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
     </div>
 
-
-
-    <div class="card" id="habitPanel">
-      <div class="row"><div class="title"><span class="em">✅</span><h2>습관 체크</h2></div><span class="chip good" id="habitCount"></span></div>
-      <div class="habits" id="habits">
-        <label class="hb"><input type="checkbox" id="hk_noInst"><span class="e">💳</span><span>신규 할부 0건, 모두 일시불</span></label>
-        <label class="hb"><input type="checkbox" id="hk_noRevolve"><span class="e">🙅</span><span>리볼빙·분할납부·현금서비스 안 씀</span></label>
-        <label class="hb"><input type="checkbox" id="hk_appCheck"><span class="e">📱</span><span>카드 앱에서 이용금액 확인</span></label>
-        <label class="hb"><input type="checkbox" id="hk_48h"><span class="e">⏳</span><span>쇼핑 48시간 룰 지킴</span></label>
-      </div>
-      <input type="text" id="dayMemo" placeholder="하루 메모 (넘친 항목, 이유)" aria-label="하루 메모">
-    </div>
     <div class="coach" id="coach">
-      <div class="row"><div class="title"><span class="em">🧑‍🏫</span><h2>오늘의 머니 코치</h2></div><span class="tiny muted" id="coachWhen"></span></div>
+      <div class="row"><h2>🧑‍🏫 머니 코치</h2><span class="tiny muted" id="coachWhen"></span></div>
       <div id="coachBody"></div>
       <div class="btns"><button type="button" class="btn ghost" id="coachBtn">오늘 코칭 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
     </div>
+
+    <button type="button" class="btn ghost" data-go="records">📅 지난 기록 · 이번 주기 보기</button>
+  </section>
+
+  <!-- 기록 (오늘 탭에서 들어가는 화면) -->
+  <section class="view" id="v-records" aria-label="지난 기록" hidden>
+    <div class="row"><h1>📅 지난 기록</h1><button type="button" class="btn ghost" data-go="today">‹ 오늘</button></div>
+
     <div class="card" id="uncatCard" hidden>
-      <div class="row"><div class="title"><span class="em">🧩</span><h2>분류가 필요한 지출</h2></div><span class="chip warn" id="uncatCount"></span></div>
-      <p class="small muted">카드 내역에는 있는데 가계부에 없던 지출이에요. 눌러서 카테고리를 골라 주세요. 다른 사람 몫이면 '생활비 예산에서 빼기'를 체크하세요.</p>
+      <div class="row"><h2>🧩 분류가 필요한 지출</h2><span class="chip warn" id="uncatCount"></span></div>
+      <p class="small muted">카드에만 있던 지출이에요. 눌러서 카테고리를 골라 주세요.</p>
       <div class="list" id="uncatList"></div>
     </div>
 
     <div class="card" id="calCard">
-      <div class="row"><div class="title"><span class="em">📅</span><h2>지난 기록</h2></div>
-        <div class="btns" style="align-items:center"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><strong class="small" id="calLabel"></strong><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
+      <div class="row"><strong id="calLabel"></strong>
+        <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
       <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
       <div class="cal" id="cal"></div>
       <div id="calDay"></div>
-      <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>기록한 날 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
-      <div class="row"><span class="tiny muted">🟢 하루 한도 안 · 🟡 1.5배까지 · 🔴 그 이상</span><button type="button" class="btn ghost" id="calCats">카테고리별 보기</button></div>
+      <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>하루 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
+      <button type="button" class="btn ghost" id="calCats">이 달 카테고리별 보기</button>
     </div>
+
     <div class="card">
-      <div class="row"><div class="title"><span class="em">🗓️</span><h2>이번 카드 주기</h2></div><span class="muted small" id="cyRange"></span></div>
-      <div class="row"><span class="disp" style="font-size:1.6rem" id="cySpent">0원</span><span class="muted small">/ <span id="cyBudget">-</span></span></div>
+      <div class="row"><h2>🗓️ 이번 카드 주기</h2><span class="muted small" id="cyRange"></span></div>
+      <div class="row"><span class="disp" id="cySpent">0원</span><span class="muted small">/ <span id="cyBudget">-</span></span></div>
       <div class="bar" id="cyBar"><i style="width:0"></i><b style="left:0"></b></div>
       <p class="small muted" id="cyPace"></p>
       <div class="chips" id="cyOver"></div>
@@ -370,7 +361,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 
   <!-- 주간 점검 -->
   <section class="view" id="v-week" aria-label="주간 점검" hidden>
-    <div class="intro"><h1>💳 주간 점검</h1><p class="small muted">매주 일요일, 롯데카드 앱을 열어 두고 순서대로 하세요. 5분이면 끝나요.</p></div>
+    <div class="intro"><h1>💳 주간 점검</h1><p class="small muted">일요일, 카드 앱을 열고 순서대로 5분.</p></div>
     <form class="card" id="wkForm" autocomplete="off">
       <div class="row"><h2><span class="step">1</span>카드 앱 숫자 적기</h2><span class="chip warn" id="wkSunday" hidden>오늘은 점검일</span></div>
       <label class="field"><span>점검 날짜</span><input type="date" id="wkDate"></label>
@@ -384,16 +375,12 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     </div>
     <div class="card">
       <div class="row"><h2><span class="step">3</span>이번 주 돌아보기</h2><span class="muted small" id="rvRange"></span></div>
-      <div class="row"><span class="disp" style="font-size:1.6rem" id="rvSpent">-</span><span class="muted small">/ <span id="rvLimit">-</span></span></div>
+      <div class="row"><span class="disp" id="rvSpent">-</span><span class="muted small">/ <span id="rvLimit">-</span></span></div>
       <div class="bar" id="rvBar"><i style="width:0"></i></div>
-      <div class="fields">
-        <div class="field"><span>다음 주 하루 가용</span><strong class="disp" style="font-size:1.2rem" id="rvNext">-</strong></div>
-        <div class="field"><span>주기 남은 돈</span><strong class="disp" style="font-size:1.2rem" id="rvLeft">-</strong></div>
-      </div>
       <div id="rvOver"></div>
     </div>
     <div class="card">
-      <div class="title"><span class="em">📊</span><h2>카테고리 체성분표</h2></div>
+      <h2>📊 카테고리</h2>
       <div class="seg" id="bdMode" role="group" aria-label="기준">
         <button type="button" data-mode="cycle" aria-pressed="true">카드 주기</button>
         <button type="button" data-mode="month" aria-pressed="false">달력 월</button>
@@ -403,21 +390,18 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <strong class="small" id="bdLabel"></strong>
         <button type="button" class="btn ghost" id="bdNext">다음 ›</button>
       </div>
-      <div class="row"><span class="disp" style="font-size:1.5rem" id="bdSpent">0원</span><span class="muted small" id="bdOf"></span></div>
+      <div class="row"><span class="disp" id="bdSpent">0원</span><span class="muted small" id="bdOf"></span></div>
       <div class="bar" id="bdBar"><i style="width:0"></i><b style="left:0"></b></div>
       <p class="small muted" id="bdPace"></p>
-      <div class="zones"><span>🟢 적정 (오늘까지 페이스)</span><span>🟡 주의</span><span>🔴 초과</span></div>
       <div id="bdCats"></div>
+      <details class="more"><summary id="bdAllSum">전체 카테고리 보기</summary><div id="bdAll"></div></details>
     </div>
-    <div class="card">
-      <h2>지난 점검 기록</h2>
-      <div class="list" id="wkHist"></div>
-    </div>
+    <details class="card more"><summary>지난 점검 기록</summary><div class="list" id="wkHist"></div></details>
   </section>
 
   <!-- 월급·상환 -->
   <section class="view" id="v-month" aria-label="월급·상환" hidden>
-    <div class="intro"><h1>💰 월급·상환</h1><p class="small muted">한 달에 세 번 열어요. 21일 월급날, 25일 카드 결제 뒤, 그리고 월말.</p></div>
+    <div class="intro"><h1>💰 월급·상환</h1></div>
     <div class="steps" id="monthSteps"></div>
     <div class="card" id="payPanel"></div>
     <form class="card" id="payForm" hidden autocomplete="off">
@@ -431,9 +415,8 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <input type="text" id="pfMemo" placeholder="메모 (선택)" aria-label="메모">
       <button class="btn mint" type="submit">기록</button>
     </form>
-    <form class="card" id="nwForm" autocomplete="off">
-      <h2><span class="step">3</span>월말 잔액 기록</h2>
-      <p class="small muted">월말에 세 통장 잔액을 앱에서 보고 그대로 적어 주세요. 합계가 저축·현금이 되고, 보증금은 자동으로 더해요. 중간에 고쳐 적어도 돼요.</p>
+    <details class="card more" id="nwBox"><summary><span class="step">3</span>월말 잔액 기록</summary><form id="nwForm" autocomplete="off" style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+      <p class="small muted">세 통장 잔액을 그대로 적어 주세요. 보증금은 자동으로 더해요.</p>
       <label class="field"><span>월</span><input type="month" id="nwMonth"></label>
       <div class="fields">
         <label class="field"><span>🏦 하나은행 (급여)</span><input type="text" inputmode="numeric" id="acHana" placeholder="0"></label>
@@ -443,23 +426,17 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
       <p class="tiny muted" id="acAsOf"></p>
       <div class="btns"><button class="btn" type="submit" style="flex:1">월말 잔액으로 기록</button><button class="btn ghost" type="button" id="acSave">잔액만 저장</button></div>
-    </form>
-    <div class="card">
-      <h2>🧾 상환 기록</h2>
-      <div class="list" id="pmList"></div>
-      <button type="button" class="btn ghost" data-act="pay-open">+ 선결제·상환 직접 기록</button>
-    </div>
-    <div class="card">
-      <div class="row"><h2>📌 날짜별 할 일</h2><span class="muted small" id="taskCount"></span></div>
-      <div id="tasks"></div>
-    </div>
+    </form></details>
+    <details class="card more"><summary>🧾 상환 기록</summary><div class="list" id="pmList"></div>
+      <button type="button" class="btn ghost" data-act="pay-open" style="margin-top:8px">+ 선결제·상환 직접 기록</button></details>
+    <details class="card more"><summary>📌 날짜별 할 일 <span class="muted small" id="taskCount"></span></summary><div id="tasks"></div></details>
   </section>
 
   <!-- 현황 -->
   <section class="view" id="v-dash" aria-label="현황" hidden>
     <div class="card hp">
       <div class="row"><div class="title"><span class="em">👾</span><h2>빚 몬스터 HP</h2></div><span class="chip good" id="hpPct"></span></div>
-      <div class="row"><span class="disp" style="font-size:1.8rem" id="dbTotal">-</span><span class="muted small">시작 <span id="dbStart"></span></span></div>
+      <div class="row"><span class="disp" id="dbTotal">-</span><span class="muted small">시작 <span id="dbStart"></span></span></div>
       <div class="bar"><i id="hpBar" style="width:100%"></i></div>
       <p class="small muted" id="dbFree"></p>
     </div>
@@ -467,20 +444,16 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="row"><div class="title"><span class="em">🐷</span><h2>순자산 여정</h2></div><span class="disp" id="nwNow">-</span></div>
       <div class="road" id="road"></div>
       <div class="chips" id="nwChips"></div>
-      <p class="tiny muted">순자산 = 보증금 + 저축·현금 잔액 − (카드 할부 잔액 + 대출 + 마이너스통장)</p>
+      
     </div>
-    <div class="card chart">
-      <div class="row"><h2>📈 월별 순자산</h2><div class="legend"><span><i></i>순자산</span><span><i class="dash"></i>목표 경로</span></div></div>
+    <details class="card chart more"><summary>📈 월별 순자산 그래프</summary>
+      <div class="row"><div class="legend"><span><i></i>순자산</span><span><i class="dash"></i>목표 경로</span></div></div>
       <div id="nwChart"></div>
       <div class="tiny muted" id="nwTip">점을 누르면 그 달 숫자가 보여요.</div>
-    </div>
-    <div class="card">
-      <div class="row"><div class="title"><span class="em">🏅</span><h2>배지</h2></div><span class="chip" id="badgeCount"></span></div>
-      <div class="badges" id="badges"></div>
-    </div>
+    </details>
     <div class="card">
       <div class="row"><div class="title"><span class="em">💳</span><h2>카드 할부 <span id="instCount"></span></h2></div><span class="muted small" id="instSum"></span></div>
-      <p class="small muted">모두 연 19.6% 유이자예요. 선결제하면 <strong>아끼는 수수료가 큰 순서</strong>로 정렬했어요. 월급·상환 탭은 그달 가진 돈으로 아낄 수 있는 수수료 합계가 가장 큰 조합을 추천해요.</p>
+      <p class="small muted">연 19.6% 유이자 · 아끼는 수수료 큰 순</p>
       <div class="list" id="instList"></div>
       <details class="more" id="instMoreBox"><summary id="instMoreSum">나머지 보기</summary><div class="list" id="instMore"></div></details>
       <details class="more"><summary>끝난 할부 보기</summary><div class="list" id="instDone"></div></details>
@@ -700,18 +673,6 @@ function streakNow(){let s=0,d=TODAY;if(!recorded(d))d=addDays(d,-1);while(recor
 function bestRun(pred){const days=new Set();S.entries.forEach(e=>days.add(e.date));Object.keys(S.days).forEach(d=>days.add(d));
   let best=0;[...days].forEach(d=>{if(!pred(d)||pred(addDays(d,1)))return;let n=1,x=addDays(d,-1);while(pred(x)){n++;x=addDays(x,-1)}best=Math.max(best,n)});return best}
 function weekRange(s){const d=parse(s);const mon=addDays(s,-((d.getDay()+6)%7));return{start:mon,end:addDays(mon,6)}}
-function badges(){
-  const W=ST().weekBudget||180000,rec=bestRun(recorded),noInst=bestRun(d=>!!(S.days[d]&&S.days[d].checks&&S.days[d].checks.noInst));
-  const noSpend=Object.values(S.days).filter(d=>d.noSpend).length;
-  let goodWeeks=0;for(let i=1;i<=52;i++){const r=weekRange(addDays(TODAY,-7*i));if([...Array(7)].map((_,k)=>addDays(r.start,k)).filter(recorded).length>=5&&sum(entriesIn(r),e=>e.amount)<=W)goodWeeks++}
-  const prepaid=S.payments.filter(p=>p.itemId).length,doneItems=ITEMS().filter(x=>closedFrom(x)||itemEnd(x)<=lastPassed()).length;
-  const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),last=snaps[snaps.length-1];
-  return[{e:"✍️",t:"첫 기록",on:S.entries.length>0},{e:"🔥",t:"3일 연속",on:rec>=3},{e:"🔥",t:"7일 연속",on:rec>=7},{e:"🌋",t:"30일 연속",on:rec>=30},
-    {e:"🥚",t:`무지출 ${noSpend}일`,on:noSpend>0},{e:"🛡️",t:`한도 지킨 주 ${goodWeeks}`,on:goodWeeks>0},{e:"💳",t:"할부 0 7일",on:noInst>=7},
-    {e:"⚔️",t:`선결제 ${prepaid}건`,on:prepaid>0},{e:"🧹",t:`할부 정리 ${doneItems}건`,on:doneItems>=10},
-    {e:"🌤️",t:"순자산 플러스",on:!!last&&last.net>0},{e:"🏁",t:"27년 목표",on:!!last&&last.net>=snaps[0].net+(ST().targetGain||0)},{e:"🏆",t:`${man(ST().finalTarget||1e8)} 달성`,on:!!last&&last.net>=(ST().finalTarget||1e8)}];
-}
-
 /* ---------- tasks ---------- */
 const TASKS=[
  {g:"지금 바로",label:"10/8까지 카드 설정",d:"2026-10-08",items:[
@@ -769,38 +730,34 @@ function entryRow(e){const[em,col]=look(e.cat);return `<div class="li" style="--
 function renderToday(){
   const allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=won(Math.max(0,left));
-  $("heroLbl").textContent=allow>0?`오늘 남은 돈 · 오늘 쓴 돈 ${won(spentT)}`:`오늘 남은 돈 · 이번 주 한도를 이미 다 썼어요`;
+  $("heroLbl").textContent=allow>0?`오늘 남은 돈 · 오늘 ${won(spentT)} 씀`:"오늘 남은 돈 · 이번 주 한도 다 씀";
   const ratio=allow>0?spentT/allow:spentT>0?2:0;
   const[face,mood]=day.noSpend&&!todays.length?["🥚","무지출 데이! 최고예요"]:spentT===0?["😎","아직 0원! 이대로 가요"]:ratio<=.5?["🙂","여유 있어요"]:ratio<=1?["😬","오늘 한도에 거의 다 왔어요"]:allow>0?["🚨",`오늘 ${won(spentT-allow)} 넘었어요. 내일 줄여요`]:["🚨",`오늘 ${won(spentT)} 썼어요. 일요일까지 무지출 도전 💪`];
   $("ringFace").textContent=face;$("heroMood").textContent=mood;
-  $("ringArc").style.strokeDashoffset=String(238.8*(1-Math.min(1,ratio)));$("ringArc").style.stroke=ratio>1?"#FFB3B3":"#fff";
   const wr=weekRange(TODAY),W=ST().weekBudget||0,dayB=W/7;
-  $("weekDots").innerHTML=[...Array(7)].map((_,i)=>{const d=addDays(wr.start,i),s=sum(S.entries.filter(e=>e.date===d&&!e.excl),e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,fut=d>TODAY,rec=recorded(d);
-    const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b",ic=fut?"":!rec?"·":s===0?(ns?"🥚":"✓"):s<=dayB?"✓":s<=dayB*1.5?"!":"✕";
-    return `<div class="wd ${cls} ${d===TODAY?"today":""}"><i>${ic}</i>${"월화수목금토일"[i]}</div>`}).join("");
+
   const ws=sum(entriesIn(wr),e=>e.amount),y=cycleSummary();
   const lim=(id,used,cap)=>{$(id).textContent=`${man1(used)} / ${man1(cap)}`;const b=$(id+"b");b.style.width=(cap?Math.min(100,used/cap*100):0)+"%";b.classList.toggle("over",used>cap)};
-  lim("lmD",spentT,dayB);lim("lmW",ws,W);lim("lmC",y.spent,y.B);$("lmCk").textContent=`주기 ${md(y.c.start)}~${md(y.c.end)}`;
+  lim("lmD",spentT,dayB);lim("lmW",ws,W);lim("lmC",y.spent,y.B);$("lmCk").textContent=`주기 ~${md(y.c.end)}`;
 
   const cats=$("enCats"),sig=CATS().map(c=>c.id).join()+"|"+selCat;
   if(cats.dataset.sig!==sig){cats.dataset.sig=sig;cats.innerHTML=CATS().length?CATS().map(c=>{const[e,col]=look(c.id);return `<button type="button" class="cat" style="--c:${col}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="e">${e}</span>${esc(c.name)}</button>`}).join(""):'<p class="empty" style="grid-column:1/-1">카테고리를 불러오는 중이에요.</p>'}
-  const since=addDays(TODAY,-90),cnt={};S.entries.forEach(e=>{if(e.date>=since&&e.cat&&e.amount>0){const k=e.cat+"|"+e.amount;cnt[k]=(cnt[k]||0)+1}});
-  const top=Object.entries(cnt).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const since=addDays(TODAY,-90),cnt={};S.entries.forEach(e=>{if(e.date>=since&&e.cat&&e.amount>0&&!e.excl&&e.method!=="inst"){const k=e.cat+"|"+e.amount;cnt[k]=(cnt[k]||0)+1}});
+  const top=Object.entries(cnt).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]).slice(0,3);
   $("freq").innerHTML=top.map(([k])=>{const[c,a]=k.split("|");return `<button type="button" class="pill" data-freq="${esc(k)}">${look(c)[0]} ${num(a)}</button>`}).join("");$("freq").hidden=!top.length;
   if(document.activeElement!==$("enDate"))$("enDate").value=selDate;$("enDate").max=TODAY;
   $("enDateChip").textContent=selDate===TODAY?"오늘":mdw(selDate);
+  $("enMoreSum").textContent=`${selMethod==="lotte"?"💳 롯데 일시불":selMethod==="cash"?"🏦 체크·현금":"⚠️ 할부"} · ${selDate===TODAY?"오늘":md(selDate)} · 바꾸기`;
 
-  const isToday=selDate===TODAY;$("dayTitle").textContent=isToday?"오늘 기록":`${mdw(selDate)} 기록`;
+  const isToday=selDate===TODAY;$("dayTitle").textContent=isToday?"🧾 오늘 기록":`🧾 ${mdw(selDate)} 기록`;
   const list=S.entries.filter(e=>e.date===selDate).sort((a,b)=>(a.createdAt||"")<(b.createdAt||"")?-1:1);
   $("dayTotal").textContent=won(sum(list,e=>e.amount));
   $("dayList").innerHTML=list.length?list.map(entryRow).join("")
-    :`<p class="empty">${isToday?"아직 기록이 없어요. 위에서 금액과 카테고리를 고르고 기록하세요.":"이날 기록이 없어요."}</p>`;
+    :`<p class="empty">${isToday?"아직 없어요.":"이날 기록이 없어요."}</p>`;
   const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;$("backToday").hidden=isToday;
-  ns.textContent=dd.noSpend?"🥚 무지출로 표시했어요 · 취소":isToday?"🥚 오늘은 안 썼어요 (무지출)":"🥚 이날은 안 썼어요 (무지출)";
+  ns.textContent=dd.noSpend?"🥚 무지출 · 취소":isToday?"🥚 오늘은 안 썼어요":"🥚 이날은 안 썼어요";
   if(!$("habits").contains(document.activeElement))HK.forEach(k=>$("hk_"+k).checked=!!(dd.checks&&dd.checks[k]));
   HK.forEach(k=>$("hk_"+k).closest(".hb").classList.toggle("on",$("hk_"+k).checked));
-  if(document.activeElement!==$("dayMemo"))$("dayMemo").value=dd.memo||"";
-  $("habitCount").textContent=`${HK.filter(k=>$("hk_"+k).checked).length}/4`;
 
   $("cyRange").textContent=`${md(y.c.start)}~${md(y.c.end)} → ${md(y.c.pay)} 결제`;
   $("cySpent").textContent=won(y.spent);$("cyBudget").textContent=won(y.B);paintBar($("cyBar"),y.spent,y.B,y.pace);
@@ -836,10 +793,7 @@ function questItems(){
   const it=[],d=dom(TODAY),M=ymOf(TODAY),day=S.days[TODAY]||{},todays=S.entries.filter(e=>e.date===TODAY);
   it.push({e:"✏️",done:todays.length>0||!!day.noSpend,t:"쓴 돈 기록",s:todays.length?`${todays.length}건 · ${won(sum(todays,e=>e.amount))}`:day.noSpend?"무지출 데이 🥚":"안 쓴 날은 '무지출'만 눌러도 돼요",btn:todays.length||day.noSpend?null:["기록","scroll:entryForm"]});
   const unc=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).length;
-  if(unc)it.push({e:"🧩",done:false,urgent:true,t:`분류가 필요한 지출 ${unc}건`,s:"카드에만 있던 지출이에요",btn:["정리","scroll:uncatCard"]});
-  const hk=HK.filter(k=>day.checks&&day.checks[k]).length;
-  it.push({e:"✅",done:hk===4,t:"습관 체크",s:`${hk}/4`,btn:hk===4?null:["체크","scroll:habitPanel"]});
-  if(sample||S.coach[TODAY])it.push({e:"🧑‍🏫",done:!!S.coach[TODAY],t:"코칭 받기",s:S.coach[TODAY]?"오늘 코칭 완료":"오늘 숫자로 한마디 듣기",btn:S.coach[TODAY]?null:["받기","coach"]});
+  if(unc)it.push({e:"🧩",done:false,urgent:true,t:`분류가 필요한 지출 ${unc}건`,s:"카드에만 있던 지출이에요",btn:["정리","go:records"]});
   const wr=weekRange(TODAY),isSun=parse(TODAY).getDay()===0,prevSun=addDays(wr.start,-1),last=S.weekly.filter(w=>!w.seed).map(w=>w.date).sort().pop();
   if(isSun){const done=!!last&&last>=wr.start;it.push({e:"💳",done,t:"주간 카드 점검",s:done?"이번 주 점검 끝":"롯데카드 앱 열고 5분",btn:done?null:["시작","go:week"]})}
   else if(prevSun>=(ST().appStart||"2026-10-07")&&!(last&&last>=addDays(prevSun,-6)))it.push({e:"💳",done:false,urgent:true,t:"주간 카드 점검 (밀림)",s:`${md(prevSun)} 일요일 점검을 아직 안 했어요`,btn:["시작","go:week"]});
@@ -903,9 +857,9 @@ function renderCoach(){
   $("coachBtn").hidden=!sample;$("coachBtn").textContent=c?"다시 받기":"오늘 코칭 받기";
   $("coachWhen").textContent=c?new Date(c.createdAt).toLocaleTimeString("ko-KR",{hour:"numeric",minute:"2-digit"}):"";
   let h="";
-  if(yd&&yd.mission&&yd.missionDone==null)h+=`<div class="mission"><strong>🎯 어제 미션</strong><span>${esc(yd.mission)}</span><div class="btns"><button type="button" class="btn ghost" data-mission="1">성공했어요 💪</button><button type="button" class="btn ghost" data-mission="0">못 했어요</button></div></div>`;
-  if(c)h+=`<div class="bub"><span class="av">${{good:"🥳",ok:"🙂",warn:"🤔",bad:"🫣"}[c.mood]||"🙂"}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div class="head">${esc(c.headline)}</div><ul>${c.points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div></div>`+(c.mission?`<div class="mission"><strong>🎯 오늘의 미션</strong><span>${esc(c.mission)}</span></div>`:"");
-  else h+=sample?'<p class="small muted">오늘 기록을 마치고 눌러 보세요. 지출·예산·습관·빚 숫자를 보고 코치가 한마디 해 줘요.</p>':'<p class="small muted">코칭은 claude.ai에서 로그인한 상태로 열었을 때 쓸 수 있어요.</p>';
+  if(yd&&yd.mission&&yd.missionDone==null)h+=`<div class="mission"><span><strong>🎯 어제 미션</strong> ${esc(yd.mission)}</span><div class="btns"><button type="button" class="btn ghost" data-mission="1">성공 💪</button><button type="button" class="btn ghost" data-mission="0">못 했어요</button></div></div>`;
+  if(c)h+=`<div class="bub"><span class="av">${{good:"🥳",ok:"🙂",warn:"🤔",bad:"🫣"}[c.mood]||"🙂"}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div class="head">${esc(c.headline)}</div>${c.mission?`<div class="small"><strong class="warn-t">🎯 미션</strong> ${esc(c.mission)}</div>`:""}${c.points.length?`<details class="more"><summary>자세히</summary><ul style="margin-top:6px">${c.points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></details>`:""}</div></div>`;
+  else h+=sample?'<p class="small muted">하루 기록을 마치고 눌러 보세요.</p>':'<p class="small muted">코칭은 claude.ai에서 로그인한 상태로 열었을 때 쓸 수 있어요.</p>';
   $("coachBody").innerHTML=h;
 }
 
@@ -946,7 +900,6 @@ function renderWeek(){
   const ref=ws[0]&&!ws[0].seed&&dayDiff(ws[0].date,TODAY)<7?ws[0].date:TODAY,wr=weekRange(ref),W=ST().weekBudget||0,sp=sum(entriesIn(wr),e=>e.amount);
   $("rvRange").textContent=`${md(wr.start)}~${md(wr.end)}`;$("rvSpent").textContent=won(sp);$("rvSpent").className="disp"+(sp>W?" bad-t":"");$("rvLimit").textContent=won(W);paintBar($("rvBar"),sp,W,null);
   const y=cycleSummary(),daysLeft=Math.max(1,dayDiff(addDays(wr.end,1),y.c.end)+1),remain=y.B-sum(entriesIn({start:y.c.start,end:wr.end}),e=>e.amount);
-  $("rvNext").textContent=won(Math.max(0,Math.min(W/7,remain/daysLeft)));$("rvLeft").textContent=won(remain);
   const frac=Math.min(1,(dayDiff(y.c.start,TODAY)+1)/(dayDiff(y.c.start,y.c.end)+1));
   const ov=CATS().map(c=>({c,s:sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount),b:c.amount||0})).filter(x=>x.s>x.b*frac*1.1&&x.s>0);
   $("rvOver").innerHTML=ov.length?`<div class="chips">${ov.map(x=>`<span class="chip ${x.s>x.b?"bad":"warn"}">${look(x.c.id)[0]} ${esc(x.c.name)} ${num(x.s)}/${num(x.b)}</span>`).join("")}</div>`:'<span class="chip good">초과·과속 카테고리 없음 👏</span>';
@@ -957,12 +910,14 @@ function renderWeek(){
   const bdGap=partial(r)?" · ⏳ "+gapTxt(r):"";
   $("bdPace").textContent=(f>0&&f<1?`기간 ${Math.round(f*100)}% 지남 · ${Sp>B*f?`페이스보다 ${won(Sp-B*f)} 빠름`:`${won(B*f-Sp)} 여유`}`:f>=1?(Sp>B?`${won(Sp-B)} 초과로 끝났어요.`:`${won(B-Sp)} 남기고 끝났어요 🎉`):"아직 시작 전이에요.")+bdGap;
   const other=sum(es.filter(e=>!CATS().some(c=>c.id===e.cat)),e=>e.amount);
-  $("bdCats").innerHTML=CATS().map(c=>{const b=catBudget(c,r),s=sum(es.filter(e=>e.cat===c.id),e=>e.amount),pace=b*f,[em,col]=look(c.id);
+  const gauges=CATS().map(c=>{const b=catBudget(c,r),s=sum(es.filter(e=>e.cat===c.id),e=>e.amount),pace=b*f,[em,col]=look(c.id);
     const scale=Math.max(b*1.5,s,1),z1=Math.min(100,pace/scale*100),z2=Math.min(100,b/scale*100);
     const st=s>b?["bad-t","🚨 초과 +"+num(s-b)]:f>0&&s>pace*1.1&&s>0?["warn-t","😬 페이스보다 빠름"]:["good-t","😊 적정"];
-    return `<div class="gauge" style="--c:${col}"><div class="hd"><span class="e">${em}</span><strong class="small">${esc(c.name)}${c.accumulate&&bdMode==="cycle"?' <span class="tiny muted">적립</span>':""}</strong><span class="small"><strong>${num(s)}</strong> <span class="muted">/ ${num(b)}</span></span></div>
-      <div class="trk" style="background:linear-gradient(90deg,var(--mint-soft) 0 ${z1}%,var(--sun-soft) ${z1}% ${z2}%,var(--coral-soft) ${z2}% 100%)"><i style="width:${Math.min(100,s/scale*100)}%"></i></div><span class="st ${st[0]}">${st[1]}</span></div>`}).join("")+
-    (other?`<p class="small muted">미분류 ${won(other)}</p>`:"");
+    return{html:`<div class="gauge" style="--c:${col}"><div class="hd"><span class="e">${em}</span><strong class="small">${esc(c.name)}${c.accumulate&&bdMode==="cycle"?' <span class="tiny muted">적립</span>':""}</strong><span class="small"><strong>${num(s)}</strong> <span class="muted">/ ${num(b)}</span></span></div>
+      <div class="trk" style="background:linear-gradient(90deg,var(--mint-soft) 0 ${z1}%,var(--sun-soft) ${z1}% ${z2}%,var(--coral-soft) ${z2}% 100%)"><i style="width:${Math.min(100,s/scale*100)}%"></i></div><span class="st ${st[0]}">${st[1]}</span></div>`,hot:st[0]!=="good-t"}});
+  const hot=gauges.filter(g=>g.hot);$("bdCats").innerHTML=(hot.length?hot.map(g=>g.html).join(""):'<p class="small good-t">😊 모든 카테고리가 적정이에요</p>')+
+    (other?`<p class="small muted">미분류 ${won(other)}</p>`:"");;
+  $("bdAll").innerHTML=gauges.map(g=>g.html).join("");$("bdAllSum").textContent=`전체 카테고리 보기 (${gauges.length})`
 }
 
 /* ---------- 월급·상환 ---------- */
@@ -987,7 +942,7 @@ function renderMonth(){
         :`<p class="empty">${phase==="repay"&&pl.paid?"이번 달 상환을 다 기록했어요 🎉":"넣을 곳이 없어요."}</p>`)}
   const secureBox=phase==="secure"?`<label class="check"><input type="checkbox" data-task="${sk}" ${S.tasks[sk]?"checked":""}><span>카드값은 케이뱅크로 옮기고, 고정비도 남겨 뒀어요</span></label>`:"";
   fxOpen=fxOpen||!!($("fxBox")&&$("fxBox").open);if(document.activeElement&&document.activeElement.classList.contains("fxin"))return;
-  $("payPanel").innerHTML=head+flow+secureBox+body+'<p class="tiny muted">연봉 인상분·성과급·연말정산 환급이 들어오면 위 금액에 더해 전액 상환하세요.</p>';
+  $("payPanel").innerHTML=head+flow+secureBox+body+'';
   const ps=S.payments.slice().sort((a,b)=>a.date<b.date?1:-1);
   $("pmList").innerHTML=ps.length?ps.map(p=>{const x=p.itemId&&ITEMS().find(i=>i.id===p.itemId),dl=p.debtId&&LOANS().find(l=>l.id===p.debtId);
     return `<div class="li"><span class="av">${x?"💳":"🏦"}</span><div><div class="t">${esc(x?x.name:dl?dl.name:"(삭제된 항목)")}</div><div class="s">${mdw(p.date)}${x?` · ${ymShort(p.fromYm)}부터 청구 없음`:""}${p.memo?" · "+esc(p.memo):""}</div></div><div style="text-align:right"><div class="a">${num(p.amount)}</div><button type="button" class="btn danger" style="margin-top:4px" data-del-pay="${esc(p.id)}">삭제</button></div></div>`}).join("")
@@ -1005,6 +960,7 @@ function renderMonth(){
   $("taskCount").textContent=`${dn}/${n} 완료`;
   if(!$("payForm").hidden&&!$("payForm").contains(document.activeElement))fillTargets();
   if(!$("nwMonth").value)$("nwMonth").value=ymOf(TODAY);
+  {const L=Number(ymDay(M,31).slice(8));if((d>=L-1||d<=3)&&!$("nwBox").dataset.auto){$("nwBox").open=true;$("nwBox").dataset.auto=1}}
   if(!$("nwForm").contains(document.activeElement)){const a=S.accounts||{};ACC.forEach(([k,id])=>$(id).value=a[k]!=null?num(a[k]):"");}
   $("acSum").textContent=won(accTotal(readAcc()));
   $("acAsOf").textContent=S.accounts&&S.accounts.updatedAt?`마지막 저장 ${mdw(iso(new Date(S.accounts.updatedAt)))}`:"";
@@ -1039,16 +995,14 @@ function renderDash(){
   $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div><div class="mk lo" style="left:${pos(target)}%"><b>🏁</b>${man(target)}</div><div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div><div class="me" style="left:${pos(now)}%">🐷</div>`;
   const chips=[];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip warn">세 통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
   if(snaps.length){const sYm=snaps[0].ym,tYm=st.targetYm||"2027-12",sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
-  chips.push(`<span class="chip plain">🏁 ${ymKo(st.targetYm||"2027-12")} 목표 +${man(gain)}</span><span class="chip plain">🏆 ${man(fin)}까지 ${man(Math.max(0,fin-now))}</span>`);$("nwChips").innerHTML=chips.join("");
+  $("nwChips").innerHTML=chips.join("");
   drawChart(snaps,snaps.length?snaps[0].ym:ymOf(TODAY),st.targetYm||"2027-12",snaps.length?startNet:null,snaps.length?target:null);
-  const bs=badges();$("badgeCount").textContent=`${bs.filter(b=>b.on).length}/${bs.length}`;
-  $("badges").innerHTML=bs.map(b=>`<div class="bd ${b.on?"on":"off"}"><span class="e">${b.e}</span>${esc(b.t)}</div>`).join("");
   const order=cardOrder(TODAY).sort((a,b)=>b.save-a.save),open=ITEMS().filter(x=>itemBal(x)>0),done=ITEMS().filter(x=>itemBal(x)<=0),free=open.filter(x=>x.fee===0),nx=ymAdd(lastPassed(),1);
   $("instCount").textContent=`${open.length}건`;$("instSum").textContent=`원금 ${won(cardDebt())}`;
   const row=(o,i)=>`<div class="li"><span class="av">${["🥇","🥈","🥉"][i]||"💳"}</span><div><div class="t">${esc(o.x.name)} <span class="eff">−${man1(o.save)} 수수료</span></div><div class="s">${md(o.x.date)} 결제 · ${itemLeftN(o.x)}회 남음 · 다음 청구 ${num(itemBill(o.x,nx))} · 선결제하면 수수료 ${num(o.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(o.amt)}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(o.x.id)}">선결제</button></div></div>`;
-  $("instList").innerHTML=order.slice(0,5).map(row).join("")||'<p class="empty">선결제할 유이자 할부가 없어요 🎉</p>';
-  $("instMoreBox").hidden=order.length<=5&&!free.length;$("instMoreSum").textContent=`나머지 ${order.length-5>0?order.length-5:0}건${free.length?` + 무이자 ${free.length}건`:""} 보기`;
-  $("instMore").innerHTML=(order.slice(5).map((o,i)=>row(o,i+5)).join("")+
+  $("instList").innerHTML=order.slice(0,3).map(row).join("")||'<p class="empty">선결제할 유이자 할부가 없어요 🎉</p>';
+  $("instMoreBox").hidden=order.length<=3&&!free.length;$("instMoreSum").textContent=`나머지 ${order.length-3>0?order.length-3:0}건${free.length?` + 무이자 ${free.length}건`:""} 보기`;
+  $("instMore").innerHTML=(order.slice(3).map((o,i)=>row(o,i+3)).join("")+
     free.map(x=>`<div class="li"><span class="av">🆓</span><div><div class="t">${esc(x.name)} <span class="eff">무이자</span></div><div class="s">선결제할 필요 없어요</div></div><div class="a">${num(itemBal(x))}</div></div>`).join(""));
   $("instDone").innerHTML=done.map(x=>`<div class="li"><span class="av">✅</span><div><div class="t">${esc(x.name)}</div><div class="s">${closedFrom(x)?"선결제 완료":ymKo(itemEnd(x))+" 결제로 끝"}</div></div><span></span></div>`).join("")||'<p class="empty">아직 끝난 건이 없어요.</p>';
   $("loanList").innerHTML=LOANS().map(d=>`<div class="li"><span class="av">🏦</span><div><div class="t">${esc(d.name)}</div><div class="s">${esc([d.rate,d.note].filter(Boolean).join(" · "))}${sim.loans[d.id]?` · 완납 예상 ${ymKo(sim.loans[d.id])}`:""}</div></div><div style="text-align:right"><div class="a">${num(loanBal(d))}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="d:${esc(d.id)}">상환</button></div></div>`).join("")||'<p class="empty">대출 정보를 불러오는 중이에요.</p>';
@@ -1086,9 +1040,9 @@ function renderSettings(){
 
 /* ================= EVENTS ================= */
 function go(v){
-  if(!["today","week","month","dash","settings"].includes(v))v="today";view=v;
-  ["today","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);
-  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===v?"page":"false"));
+  if(!["today","records","week","month","dash","settings"].includes(v))v="today";view=v;
+  ["today","records","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===(v==="records"?"today":v)?"page":"false"));
   if(v==="settings")renderSettings();renderAll();window.scrollTo(0,0);
   try{localStorage.setItem("plan5k3:view",v==="settings"?"today":v)}catch(e){}
 }
@@ -1101,7 +1055,7 @@ document.addEventListener("click",async e=>{
     if(k==="go")go(v);
     if(k==="coach"){$("coach").scrollIntoView({behavior:"smooth",block:"start"});askCoach()}
     if(k==="scroll"){selDate=TODAY;renderToday();$(v).scrollIntoView({behavior:"smooth",block:"start"})}
-    if(k==="nw"){go("month");$("nwMonth").value=v;$("nwForm").scrollIntoView({block:"start"});$("nwCash").focus()}
+    if(k==="nw"){go("month");$("nwMonth").value=v;$("nwBox").open=true;$("nwBox").scrollIntoView({block:"start"})}
     return}
   if(t.dataset.act==="pay-open"){openPay(t.dataset.target,Number(t.dataset.amt)||0);return}
   if(t.dataset.mission!=null){const d=addDays(TODAY,-1),c=S.coach[d];if(!c)return;const doc={...c,missionDone:t.dataset.mission==="1"};S.coach={...S.coach,[d]:doc};render();toast(doc.missionDone?"💪 미션 성공! 멋져요":"괜찮아요. 오늘 다시 해 봐요");try{await put("coach/"+d,doc)}catch(_){}return}
@@ -1115,7 +1069,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.cat){selCat=t.dataset.cat;renderToday();return}
   if(t.dataset.freq){const[c,a]=t.dataset.freq.split("|");selCat=c;$("enAmount").value=num(a);renderToday();return}
   if(t.dataset.add){$("enAmount").value=t.dataset.add==="clear"?"":num(parseNum($("enAmount").value)+Number(t.dataset.add));return}
-  if(t.dataset.m){selMethod=t.dataset.m;document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b===t));$("instBox").hidden=selMethod!=="inst";return}
+  if(t.dataset.m){selMethod=t.dataset.m;document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b===t));$("instBox").hidden=selMethod!=="inst";renderToday();return}
   if(t.dataset.edit){const en=S.entries.find(x=>x.id===t.dataset.edit);if(en)startEdit(en);return}
   if(t.dataset.mode){bdMode=t.dataset.mode;bdKey=null;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b===t));renderWeek();return}
   if(t.dataset.delWeek){if(!confirmTap(t))return;try{await del("weekly/"+t.dataset.delWeek)}catch(_){}return}
@@ -1137,10 +1091,10 @@ function startEdit(en){
   editingId=en.id;selDate=en.date;selCat=en.cat;selMethod=en.method;
   $("enAmount").value=num(en.amount);$("enMemo").value=en.memo||"";$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;$("enExcl").checked=!!en.excl;
   document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===selMethod));$("instBox").hidden=selMethod!=="inst";
-  $("entryTitle").textContent="기록 고치기";$("enSave").textContent="수정 저장";$("enCancel").hidden=false;$("enDel").hidden=false;
+  $("entryTitle").textContent="✏️ 기록 고치기";$("enMore").open=true;$("enSave").textContent="수정 저장";$("enCancel").hidden=false;$("enDel").hidden=false;
   renderToday();$("entryForm").scrollIntoView({behavior:"smooth",block:"start"});
 }
-function cancelEdit(){editingId=null;$("entryTitle").textContent="쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
+function cancelEdit(){editingId=null;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
 $("enCancel").addEventListener("click",()=>{cancelEdit();renderToday()});
 $("enDel").addEventListener("click",async()=>{const b=$("enDel");if(!confirmTap(b))return;const id=editingId;cancelEdit();try{await del("entries/"+id);toast("지웠어요")}catch(_){}});
 $("entryForm").addEventListener("submit",async e=>{
@@ -1163,7 +1117,7 @@ $("entryForm").addEventListener("submit",async e=>{
 });
 function saveDay(){
   const date=selDate,checks={};HK.forEach(k=>checks[k]=$("hk_"+k).checked);
-  const doc={...(S.days[date]||{}),checks,memo:$("dayMemo").value.trim(),savedAt:new Date().toISOString()};
+  const doc={...(S.days[date]||{}),checks,savedAt:new Date().toISOString()};
   S.days={...S.days,[date]:doc};render();if(HK.every(k=>checks[k]))toast("✅ 습관 4개 모두 체크! 최고예요");
   dayWriting=dayWriting.then(()=>put("days/"+date,doc).catch(()=>{}));
 }
@@ -1173,7 +1127,7 @@ async function saveFixedOverride(id,ym,amount){
   try{await put("config/fixed",{items});toast(amount==null?"원래 금액으로 돌렸어요":`${ymKo(ym)} 고정비를 고쳤어요`)}catch(_){}
 }
 document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("fxin"))saveFixedOverride(el.dataset.fx,el.dataset.ym,parseNum(el.value))});
-$("habits").addEventListener("change",saveDay);$("dayMemo").addEventListener("change",saveDay);
+$("habits").addEventListener("change",saveDay);
 document.addEventListener("change",e=>{const id=e.target.dataset&&e.target.dataset.task;if(!id)return;S.tasks={...S.tasks,[id]:e.target.checked};render();const done=S.tasks;taskWriting=taskWriting.then(()=>put("plan/tasks",{done}).catch(()=>{}))});
 $("wkForm").addEventListener("submit",async e=>{
   e.preventDefault();const date=$("wkDate").value||TODAY,usage=parseNum($("wkUsage").value),nextBill=parseNum($("wkBill").value);
