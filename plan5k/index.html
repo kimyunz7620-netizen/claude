@@ -585,6 +585,9 @@ const fixedCash=ym=>sum(fixedAt(ym).filter(x=>!x.card),x=>x.amount),fixedCard=ym
 // cardIn: everything that hits the card; entriesIn: what counts against the living budget (excl = 계모임·회사 경비 등)
 const cardIn=(r,f)=>S.entries.filter(e=>inRange(e.date,r)&&(!f||f(e)));
 const entriesIn=(r,f)=>cardIn(r,e=>!e.excl&&(!f||f(e)));
+const ledgerStart=()=>ST().ledgerStart||S.entries.map(e=>e.date).sort()[0]||TODAY;
+const partial=r=>r.start<ledgerStart()&&r.end>=ledgerStart();
+const gapTxt=r=>`${md(r.start)}~${md(addDays(ledgerStart(),-1))} 기록이 없어 실제보다 적게 보여요`;
 // installments typed into the ledger; ones already in the card's list carry cardItem
 const ledgerInst=()=>S.entries.filter(e=>e.method==="inst"&&!e.cardItem&&(e.months||0)>=2);
 function newInstAt(ym){return sum(ledgerInst(),e=>{const k=ymDiff(payYmOf(e.date),ym);return k>=0&&k<e.months?Math.round(e.amount/e.months):0})}
@@ -795,7 +798,8 @@ function renderToday(){
 
   $("cyRange").textContent=`${md(y.c.start)}~${md(y.c.end)} → ${md(y.c.pay)} 결제`;
   $("cySpent").textContent=won(y.spent);$("cyBudget").textContent=won(y.B);paintBar($("cyBar"),y.spent,y.B,y.pace);
-  $("cyPace").textContent=y.spent>y.B?`한도를 ${won(y.spent-y.B)} 넘었어요. 남은 ${y.left}일은 꼭 필요한 지출만.`:y.spent>y.pace?`적정 페이스(${won(y.pace)})보다 ${won(y.spent-y.pace)} 빨라요.`:`적정 페이스 ${won(y.pace)} 안이에요 👍`;
+  const gapNote=partial(y.c)?" · ⏳ "+gapTxt(y.c):"";
+  $("cyPace").textContent=(y.spent>y.B?`한도를 ${won(y.spent-y.B)} 넘었어요. 남은 ${y.left}일은 꼭 필요한 지출만.`:y.spent>y.pace?`적정 페이스(${won(y.pace)})보다 ${won(y.spent-y.pace)} 빨라요.`:`적정 페이스 ${won(y.pace)} 안이에요 👍`)+gapNote;
   renderCal();
   $("cyOver").innerHTML=CATS().map(c=>({c,s:sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount),b:c.amount||0})).filter(x=>x.s>x.b).map(x=>`<span class="chip bad">${look(x.c.id)[0]} ${esc(x.c.name)} +${num(x.s-x.b)}</span>`).join("");
 }
@@ -896,6 +900,10 @@ function renderCoach(){
 
 /* ---------- 주간 점검 ---------- */
 function weeklyCompare(w){
+  if(cycleOf(payYmOf(w.date)).start<ledgerStart())return weeklyCompareRaw(w).map(x=>({...x,bad:false,gap:true}));
+  return weeklyCompareRaw(w);
+}
+function weeklyCompareRaw(w){
   const cu=cycleOf(payYmOf(w.date)),expUse=sum(cardIn({start:cu.start,end:w.date},e=>e.method!=="cash"),e=>e.amount),expBill=estBill(w.payYm,w.date);
   const tol=v=>Math.max(ST().warnDiff||30000,Math.abs(v)*0.05),items=[];
   if(w.usage>0)items.push({k:"이번 주기 이용금액",act:w.usage,exp:expUse});
@@ -903,6 +911,8 @@ function weeklyCompare(w){
   items.forEach(x=>{x.diff=x.act-x.exp;x.bad=Math.abs(x.diff)>tol(x.act)});return items;
 }
 function compareHTML(w){
+  const cu=cycleOf(payYmOf(w.date));
+  if(cu.start<ledgerStart()&&!w.seed)return `<div class="note warn"><strong>⏳ 가계부 시작 전 지출이 섞여 있어요</strong><div class="small">${md(cu.start)}~${md(addDays(ledgerStart(),-1))} 기록이 가계부에 없어서 이번 주기는 비교할 수 없어요. 카드 앱 숫자는 저장해 뒀어요.</div><div class="small">카드 앱 이용금액 ${num(w.usage||0)} · 가계부 ${num(weeklyCompareRaw(w)[0]?weeklyCompareRaw(w)[0].exp:0)} · 결제예정 ${num(w.nextBill||0)}</div><div class="small">${md(cycleOf(ymAdd(payYmOf(w.date),1)).start)} 새 주기부터는 정확히 비교돼요. 그 전 기록을 넣으면 지금도 맞춰져요.</div></div>`;
   if(w.seed)return`<p class="note">📦 ${Number(w.payYm.slice(5))}월 카드값 ${won(w.nextBill)}은 기존 트래커에서 옮긴 값이에요. 월급날 계산에 쓰여서 지우지 말아 주세요. 첫 주간 점검을 하면 여기에 그 결과가 나와요.</p>`;
   return weeklyCompare(w).map(x=>`<div class="note ${x.bad?"bad":"good"}"><div class="row"><strong>${x.bad?"🔍":"✅"} ${x.k}</strong><span class="num">${signed(x.diff)}</span></div>
     <div class="small">카드 앱 ${num(x.act)} · 가계부 예상 ${num(x.exp)}</div>
@@ -920,8 +930,8 @@ function renderWeek(){
   $("wkBillLabel").textContent=`다음 결제예정액 (${md(ymDay(wP,CARD()))} 결제분)`;$("wkUseRange").textContent=`(${md(wc.start)}~${md(wc.end)})`;
   const ws=S.weekly.slice().sort((a,b)=>a.date<b.date?1:-1);
   if(!$("wkForm").contains(document.activeElement))$("wkResult").innerHTML=ws[0]?`<div class="tiny muted">${mdw(ws[0].date)} 점검 결과</div>`+compareHTML(ws[0]):'<p class="empty">1번에 숫자를 적으면 결과가 여기 나와요.</p>';
-  $("wkHist").innerHTML=ws.length?ws.slice(0,10).map(w=>{const bad=!w.seed&&weeklyCompare(w).some(x=>x.bad);
-    return `<div class="li"><span class="av">${w.seed?"📦":bad?"🔍":"✅"}</span><div><div class="t">${w.seed?`${Number(w.payYm.slice(5))}월 카드값 (기존 트래커에서 옮김)`:mdw(w.date)}</div><div class="s">이용 ${w.usage?num(w.usage):"-"} · 결제예정 ${w.nextBill?num(w.nextBill):"-"}</div></div>${w.seed?"<span></span>":`<button type="button" class="btn danger" data-del-week="${esc(w.id)}">삭제</button>`}</div>`}).join(""):'<p class="empty">일요일마다 카드 앱 숫자를 적으면 여기에 쌓여요.</p>';
+  $("wkHist").innerHTML=ws.length?ws.slice(0,10).map(w=>{const bad=!w.seed&&weeklyCompare(w).some(x=>x.bad),gap=!w.seed&&weeklyCompare(w).some(x=>x.gap);
+    return `<div class="li"><span class="av">${w.seed?"📦":gap?"⏳":bad?"🔍":"✅"}</span><div><div class="t">${w.seed?`${Number(w.payYm.slice(5))}월 카드값 (기존 트래커에서 옮김)`:mdw(w.date)}</div><div class="s">이용 ${w.usage?num(w.usage):"-"} · 결제예정 ${w.nextBill?num(w.nextBill):"-"}</div></div>${w.seed?"<span></span>":`<button type="button" class="btn danger" data-del-week="${esc(w.id)}">삭제</button>`}</div>`}).join(""):'<p class="empty">일요일마다 카드 앱 숫자를 적으면 여기에 쌓여요.</p>';
   const ref=ws[0]&&!ws[0].seed&&dayDiff(ws[0].date,TODAY)<7?ws[0].date:TODAY,wr=weekRange(ref),W=ST().weekBudget||0,sp=sum(entriesIn(wr),e=>e.amount);
   $("rvRange").textContent=`${md(wr.start)}~${md(wr.end)}`;$("rvSpent").textContent=won(sp);$("rvSpent").className="disp"+(sp>W?" bad-t":"");$("rvLimit").textContent=won(W);paintBar($("rvBar"),sp,W,null);
   const y=cycleSummary(),daysLeft=Math.max(1,dayDiff(addDays(wr.end,1),y.c.end)+1),remain=y.B-sum(entriesIn({start:y.c.start,end:wr.end}),e=>e.amount);
@@ -933,7 +943,8 @@ function renderWeek(){
   const r=bdRange();$("bdLabel").textContent=r.label;
   const f=TODAY<r.start?0:TODAY>r.end?1:(dayDiff(r.start,TODAY)+1)/(dayDiff(r.start,r.end)+1),es=entriesIn(r),B=sum(CATS(),c=>c.amount||0),Sp=sum(es,e=>e.amount);
   $("bdSpent").textContent=won(Sp);$("bdOf").textContent=`/ ${won(B)}`;paintBar($("bdBar"),Sp,B,B*f);
-  $("bdPace").textContent=f>0&&f<1?`기간 ${Math.round(f*100)}% 지남 · ${Sp>B*f?`페이스보다 ${won(Sp-B*f)} 빠름`:`${won(B*f-Sp)} 여유`}`:f>=1?(Sp>B?`${won(Sp-B)} 초과로 끝났어요.`:`${won(B-Sp)} 남기고 끝났어요 🎉`):"아직 시작 전이에요.";
+  const bdGap=partial(r)?" · ⏳ "+gapTxt(r):"";
+  $("bdPace").textContent=(f>0&&f<1?`기간 ${Math.round(f*100)}% 지남 · ${Sp>B*f?`페이스보다 ${won(Sp-B*f)} 빠름`:`${won(B*f-Sp)} 여유`}`:f>=1?(Sp>B?`${won(Sp-B)} 초과로 끝났어요.`:`${won(B-Sp)} 남기고 끝났어요 🎉`):"아직 시작 전이에요.")+bdGap;
   const other=sum(es.filter(e=>!CATS().some(c=>c.id===e.cat)),e=>e.amount);
   $("bdCats").innerHTML=CATS().map(c=>{const b=catBudget(c,r),s=sum(es.filter(e=>e.cat===c.id),e=>e.amount),pace=b*f,[em,col]=look(c.id);
     const scale=Math.max(b*1.5,s,1),z1=Math.min(100,pace/scale*100),z2=Math.min(100,b/scale*100);
