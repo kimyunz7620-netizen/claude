@@ -882,6 +882,20 @@ function renderQuest(){
 
 /* ---------- 코치 ---------- */
 let coachCtl=null,coachBusy=false;
+/* the bigger picture the coach can draw on: why the debt grew, what installments cost, and what restraint buys */
+function coachInsight(){
+  const lc=cycleOf(ymAdd(payYmOf(TODAY),-1)),le=entriesIn(lc),by=m=>sum(le.filter(e=>e.method===m),e=>e.amount);
+  const cats=CATS().map(c=>({이름:c.name,사용:sum(le.filter(e=>e.cat===c.id),e=>e.amount),예산:c.amount})).filter(x=>x.사용>0).sort((a,b)=>b.사용-a.사용).slice(0,3);
+  const its=ITEMS(),dates=its.map(x=>x.date).sort(),feeLeft=sum(its,x=>prepaySave(x)),sim=simulate(),fr=sim.free,af=fr?sim.path[sim.path.findIndex(p=>p.ym===fr)+1]:null;
+  const y=cycleSummary(),cw=S.wins.filter(w=>w.date>=y.c.start&&w.date<=y.c.end),W0=ST().weekBudget||0,wl=weekLimit(TODAY);
+  return{
+    지난카드주기:{기간:`${lc.start}~${lc.end}`,생활비합계:sum(le,e=>e.amount),체크현금:by("cash"),롯데일시불:by("lotte"),할부로산것:by("inst"),많이쓴카테고리:cats,큰지출:le.slice().sort((a,b)=>b.amount-a.amount).slice(0,3).map(e=>({메모:e.memo||catName(e.cat),금액:e.amount,결제:e.method==="inst"?"할부":e.method==="lotte"?"일시불":"체크·현금"}))},
+    카드할부:{건수:its.filter(x=>itemBal(x)>0).length,원래구매총액:sum(its,x=>(x.principal||0)*(x.N||0)),구매기간:dates.length?`${dates[0].slice(0,7)}~${dates[dates.length-1].slice(0,7)}`:"",연이율:"19.6%",남은수수료:Math.round(feeLeft),선결제로아낄수있는수수료:Math.round(sim.feeSaved||0)},
+    빚이불어난이유:"소비 규모가 수입 대비 컸던 게 주된 원인이고, 유이자 할부가 그 차이를 다음 달로 미루며 쌓이게 하고 수수료(구매액의 약 10%)를 더했다",
+    목표생활비:{지금:ST().cycleBudget,지난주기대비:sum(le,e=>e.amount)>0?`지난 주기 생활비의 약 ${Math.round((ST().cycleBudget||0)/sum(le,e=>e.amount)*100)}% 수준`:null},
+    앞으로:{빚0원:fr,그뒤매달저축:af?Math.round(af.save):null,무지출하루당당겨지는시간:fasterTxt(W0/7),생활비월10만줄이면:`빚 0원 ${fasterTxt(100000*Math.max(1,fr?ymDiff(ymOf(TODAY),fr)+1:12))} 빨라짐`},
+    이번주기기록:{참은돈:sum(cw.filter(w=>w.kind==="skip"),w=>w.amount),부수입:sum(cw.filter(w=>w.kind==="sell"),w=>w.amount),이번주목표한도:wl<W0?wl:null}};
+}
 function coachData(){
   const y=cycleSummary(),wr=weekRange(TODAY),day=S.days[TODAY]||{},yday=addDays(TODAY,-1),top=cardOrder(TODAY)[0],pl=payPlan(ymOf(TODAY)),prev=S.coach[yday];
   const ent=d=>S.entries.filter(e=>e.date===d).map(e=>({카테고리:catName(e.cat),금액:e.amount,결제:e.method==="lotte"?"롯데 일시불":e.method==="cash"?"체크·현금":`할부 ${e.months}개월`,메모:e.memo||""}));
@@ -892,6 +906,8 @@ function coachData(){
     오늘습관:HK.filter(k=>habitsOn(TODAY)[k]).map(k=>({noInst:"신규 할부 0건",noRevolve:"리볼빙·분할납부·현금서비스 안 씀",appCheck:"카드 앱 확인","48h":"쇼핑 48시간 룰"})[k]),
     연속기록일:streakNow(),일정:{월급날:PAY()+"일",카드결제일:CARD()+"일",이번달선결제가능액:Math.round(pl.avail)},
     빚:{합계:Math.round(totalDebt()),카드할부잔액:Math.round(cardDebt()),선결제1순위:top?{건:top.x.name,금액:top.amt,아끼는수수료:top.save}:null},
+    진단:coachInsight(),
+    어제코칭:prev?{총평:prev.headline,조언:prev.points}:null,
     어제미션:prev&&prev.mission?{내용:prev.mission,결과:prev.missionDone==null?"미확인":prev.missionDone?"성공":"실패"}:null};
 }
 async function askCoach(){
@@ -899,6 +915,7 @@ async function askCoach(){
   $("coachBtn").disabled=true;$("coachStop").hidden=false;$("coachBody").innerHTML='<p class="muted">🤔 오늘 숫자를 보고 있어요…</p>';
   const prompt=`너는 빚을 갚고 ${ST().targetYm||"2027-12"}까지 순자산 +${man(ST().targetGain||0)}원, 최종 ${man(ST().finalTarget||1e8)}원을 모으려는 사람의 다정하지만 솔직한 머니 코치야. 인바디 코칭처럼 오늘 숫자를 근거로 짧게 코칭해.
 규칙: 생활비는 카드 주기(12일~다음 달 11일)당 80만 원, 한 주 18만 원. 모든 결제는 일시불, 유이자 할부·리볼빙·분할납부·현금서비스 금지. 남는 돈은 수수료를 많이 아끼는 카드 할부부터 선결제.
+인사이트: points 3개 중 1개는 '진단' 데이터에서 동기부여가 되는 큰 그림을 골라 써. 예) 지난 주기와 비교해 얼마나 줄였는지, 할부 수수료가 얼마나 새고 있는지, 오늘 아끼면 빚 0원이 몇 시간 당겨지는지, 빚 0원 뒤 매달 모일 돈, 참은 돈·부수입 칭찬. 어제코칭과 같은 말은 반복하지 말고 다른 각도로.
 말투: 다정한 존댓말, 이모지 1~2개, 숫자는 원 단위로 구체적으로. 비난하지 말고 다음 행동을 제시해. 아래 JSON 데이터만 근거로 쓰고 없는 사실은 지어내지 마.
 ${JSON.stringify(coachData())}
 다음 JSON으로만 답해:
