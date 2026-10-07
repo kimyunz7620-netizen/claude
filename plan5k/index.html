@@ -196,6 +196,29 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .legend i{display:inline-block;width:18px;border-top:2.5px solid var(--grape);vertical-align:middle;margin-right:6px}
 .legend i.dash{border-top:2px dashed var(--muted)}
 .legend i.proj{border-top:2px dotted var(--mint)}
+.legend i.debt,.legend i.save{width:12px;height:12px;border:0;border-radius:4px;background:var(--coral)}
+.legend i.save{background:var(--mint)}
+.pj-head{display:flex;flex-direction:column;gap:4px}
+.pj-big{font-family:var(--f-display);font-size:1.6rem;font-weight:800;letter-spacing:-.03em;line-height:1.2;color:var(--ink)}
+.pj-big em{font-style:normal;color:var(--mint)}
+.flowchart svg{display:block;width:100%;height:auto;overflow:visible}
+.flowchart .b-debt{fill:var(--coral)} .flowchart .b-save{fill:var(--mint)}
+.flowchart .axis{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.flowchart .grid{stroke:var(--line);stroke-width:1}
+.flowchart .ev{fill:var(--ink);font-size:12px;font-family:var(--f-body);font-weight:700}
+.flowchart .evl{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+.flowchart .hit{fill:transparent;cursor:pointer}
+.flowchart .hit:hover{fill:var(--line);fill-opacity:.35}
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tl li{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;position:relative}
+.tl li::before{content:"";position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--line)}
+.tl li:first-child::before{top:22px} .tl li:last-child::before{bottom:calc(100% - 22px)}
+.tl .dot{position:relative;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.85rem;background:var(--surface);box-shadow:0 0 0 2px var(--line)}
+.tl li.now .dot{box-shadow:0 0 0 2px var(--coral)} .tl li.good .dot{box-shadow:0 0 0 2px var(--mint)}
+.tl .when{font-size:.74rem;color:var(--muted);font-weight:700}
+.tl .t{font-weight:700}
+.tl .s{font-size:.78rem;color:var(--muted);margin-top:2px}
+.tl .a{font-weight:800;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .fl button.link{font:inherit;font-size:.72rem;background:none;border:0;padding:0;color:var(--grape);font-weight:700;cursor:pointer}
 .tbl-wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.84rem}
@@ -425,6 +448,16 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 
   <!-- 현황 -->
   <section class="view" id="v-dash" aria-label="현황" hidden>
+    <div class="card road-card">
+      <div class="row"><div class="title"><span class="em">🗺️</span><h2>앞으로의 길</h2></div><span class="muted small" id="pjBasis"></span></div>
+      <div class="pj-head"><span class="small muted" id="pjWhen"></span><span class="pj-big" id="pjBig"></span><span class="small" id="pjSub"></span></div>
+      <div class="legend"><span><i class="debt"></i>빚 갚는 돈</span><span><i class="save"></i>모으는 돈</span></div>
+      <div class="flowchart" id="pjChart" data-tipbox="pjTip"></div>
+      <div class="tiny muted" id="pjTip">막대를 누르면 그 달 숫자가 보여요.</div>
+      <ol class="tl" id="pjList"></ol>
+      <p class="small" id="pjWhatIf"></p>
+      <p class="tiny muted" id="pjNote"></p>
+    </div>
     <div class="card hp">
       <div class="row"><div class="title"><span class="em">👾</span><h2>빚 몬스터 HP</h2></div><span class="chip good" id="hpPct"></span></div>
       <div class="row"><span class="disp" id="dbTotal">-</span><span class="muted small">시작 <span id="dbStart"></span></span></div>
@@ -435,12 +468,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="row"><div class="title"><span class="em">🐷</span><h2>순자산 여정</h2></div><span class="disp" id="nwNow">-</span></div>
       <div class="road" id="road"></div>
       <div class="chips" id="nwChips"></div>
-    </div>
-    <div class="card">
-      <div class="row"><div class="title"><span class="em">🔮</span><h2>이 속도로 모으면</h2></div><span class="muted small" id="pjBasis"></span></div>
-      <div class="list" id="pjList"></div>
-      <p class="small" id="pjWhatIf"></p>
-      <p class="tiny muted" id="pjNote"></p>
     </div>
     <details class="card chart more"><summary>📈 월별 순자산 그래프</summary>
       <div class="row"><div class="legend"><span><i></i>순자산</span><span><i class="proj"></i>예상</span><span><i class="dash"></i>목표 경로</span></div></div>
@@ -625,28 +652,35 @@ function allocate(amount,date){
 }
 
 /* ---------- payoff simulation ---------- */
-function simulate(extra=0){
-  const st=ST(),living=(st.cycleBudget||0)+extra,base=(st.deposit||0)+(cashNow()||0),path=[],buf=st.buffer||0,closed={};let pot=0;
-  const loans=loanOrder().map(d=>({d,bal:loanBal(d),done:null})),order=cardOrder(TODAY).map(o=>o.x);
+/* month-by-month plan: what is left after fixed costs and the 생활비 budget pays card bills, then prepayments, then loans; once every debt is gone it is all savings.
+   Each month records avail (money that month can put toward debt or savings), debt (the part that went to debt) and save. */
+let SIMC={};
+function simulate(extra=0){if(SIMC[extra])return SIMC[extra];return SIMC[extra]=simulateRun(extra)}
+function simulateRun(extra){
+  const st=ST(),living=(st.cycleBudget||0)+extra,base=(st.deposit||0)+(cashNow()||0),path=[],buf=st.buffer||0,closed={};let pot=0,intBack=0,feeSaved=0;
+  const loans=loanOrder().map(d=>({d,bal:loanBal(d),done:null,int:Math.round(loanBal(d)*(d.apr||0)/1200)})),order=cardOrder(TODAY).map(o=>o.x);
   const bill=(x,m)=>closed[x.id]&&m>=closed[x.id]?0:itemBill(x,m);
   let ym=ymAdd(lastPassed(),1),cardDone=null,free=null;
   for(let i=0;i<120;i++){
     const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym);
     const ab=Object.keys(closed).length?null:appBill(ym);
-    pot+=ab!=null?incomeAt(ym)-fixedCash(ym)-ab-buf:incomeAt(ym)-fixedTotal(ym)-living-inst-buf;
+    const inc=(ab!=null?incomeAt(ym)-fixedCash(ym)-ab-buf:incomeAt(ym)-fixedTotal(ym)-living-inst-buf)+intBack;
+    pot+=inc;let paid=0;
     const next=ymAdd(ym,1);
     const opts=order.filter(x=>!closed[x.id]).map(x=>{const ms=itemMonths(x).filter(m=>m>=next);return{x,amt:sum(ms,m=>itemRaw(x,m).p),save:sum(ms,m=>itemRaw(x,m).fee)}}).filter(o=>o.amt>0);
-    for(const o of bestSet(opts,pot)){closed[o.x.id]=next;pot-=o.amt}
+    for(const o of bestSet(opts,pot)){closed[o.x.id]=next;pot-=o.amt;paid+=o.amt;feeSaved+=o.save}
     const cardLeft=order.some(x=>!closed[x.id]&&itemEnd(x)>ym);
     if(!cardLeft&&!cardDone)cardDone=ym;
-    if(!cardLeft)for(const l of loans){if(l.bal<=0||pot<=0)continue;const a=Math.min(pot,l.bal);l.bal-=a;pot-=a;if(l.bal<=0.5)l.done=ym}
+    if(!cardLeft)for(const l of loans){if(l.bal<=0||pot<=0)continue;const a=Math.min(pot,l.bal);l.bal-=a;pot-=a;paid+=a;if(l.bal<=0.5){l.done=ym;intBack+=l.int}}
     const anyBill=schedMonths().some(m=>m>ym&&((ITEMS().length?sum(ITEMS(),x=>bill(x,m)):baseAt(m))+newInstAt(m))>0.5);
-    if(!free&&!cardLeft&&loans.every(l=>l.bal<=0.5)&&!anyBill)free=ym;
+    const wasFree=!!free;if(!free&&!cardLeft&&loans.every(l=>l.bal<=0.5)&&!anyBill)free=ym;
+    const instDebt=ab!=null?Math.min(ab,effSched(ym)):inst,avail=inc+instDebt;
+    const debt=wasFree?0:free?Math.min(avail,instDebt+paid):avail;
     const cardRem=sum(order.filter(x=>!closed[x.id]),x=>sum(itemMonths(x).filter(m=>m>ym),m=>itemRaw(x,m).p));
-    path.push({ym,net:base+pot-cardRem-sum(loans,l=>Math.max(0,l.bal))});
+    path.push({ym,net:base+pot-cardRem-sum(loans,l=>Math.max(0,l.bal)),avail,debt,save:avail-debt,inc:incomeAt(ym)});
     ym=next;
   }
-  return{cardDone,free,loans:Object.fromEntries(loans.map(l=>[l.d.id,l.done])),path};
+  return{cardDone,free,loans:Object.fromEntries(loans.map(l=>[l.d.id,l.done])),path,intBack,feeSaved};
 }
 
 /* ---------- payday plan ---------- */
@@ -691,12 +725,13 @@ const TASKS=[
 ];
 
 /* ================= RENDER ================= */
-let raf=0;function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;renderAll()})}
-function renderAll(){renderHeader();renderToday();renderQuest();renderCoach();renderWeek();renderMonth();renderDash()}
+let raf=0;function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;SIMC={};renderAll()})}
+function renderAll(){SIMC={};renderHeader();renderToday();renderQuest();renderCoach();renderWeek();renderMonth();renderDash()}
 function renderHeader(){
   const t=parse(TODAY),h=new Date().getHours();
   $("today").textContent=`${t.getMonth()+1}월 ${t.getDate()}일 ${DOW[t.getDay()]}요일 · 머니플랜`;
-  $("hello").textContent=h<11?"좋은 아침이에요 ☀️":h<18?"오늘도 잘하고 있어요 🌱":"오늘 하루 마무리 🌙";
+  const sim=simulate(),fr=sim.free,af=fr&&sim.path[sim.path.findIndex(p=>p.ym===fr)+1];
+  $("hello").textContent=fr&&ymOf(TODAY)<=fr?`빚 0원까지 ${ymDiff(ymOf(TODAY),fr)}개월 🌱`:af?`매달 ${man(af.save)}씩 모으는 중 💰`:h<11?"좋은 아침이에요 ☀️":h<18?"오늘도 잘하고 있어요 🌱":"오늘 하루 마무리 🌙";
   const s=streakNow();$("streak").textContent=`🔥 ${s}일`;$("streak").title=`${s}일 연속 기록 중`;
 }
 
@@ -997,23 +1032,42 @@ function renderDash(){
   $("schTbl").innerHTML="<thead><tr><th>결제월</th><th>할부 청구</th><th>건수</th></tr></thead><tbody>"+schedMonths().filter(m=>m>lp).map(m=>`<tr class="${m===nx?"next":""}"><td>${ymShort(m)}</td><td><strong>${num(effSched(m))}</strong></td><td>${ITEMS().filter(x=>itemBill(x,m)>0).length}</td></tr>`).join("")+"</tbody>";
   $("nwList").innerHTML=snaps.slice().reverse().map(s=>`<div class="li"><span class="av">🐷</span><div><div class="t">${ymKo(s.ym)}</div><div class="s">${s.hana!=null?`하나 ${num(s.hana)} · 케뱅 ${num(s.kbank)} · 우리 ${num(s.woori)}`:`현금 ${num(s.cash)}`} · 빚 ${num(s.debt)}</div></div><div style="text-align:right"><div class="a">${num(s.net)}</div><button type="button" class="btn danger" style="margin-top:4px" data-del-nw="${esc(s.ym)}">삭제</button></div></div>`).join("")||'<p class="empty">월급·상환 탭에서 월말 잔액을 기록하면 쌓여요.</p>';
 }
-/* plan-based projection: income − fixed − 생활비 budget each month goes to prepay → loans → savings */
+/* 앞으로의 길: where each month's spare money goes (debt vs savings) and the milestones on the way */
 function renderProjection(sim,now,target){
-  const st=ST(),P=sim.path,at=v=>{const h=P.find(p=>p.net>=v);return h?ymKo(h.ym):null},tYm=st.targetYm||"2027-12",fin=st.finalTarget||1e8;
-  const atT=P.find(p=>p.ym===tYm),y1=P[11],row=(e,t,s,a)=>`<div class="li"><span class="av">${e}</span><div><div class="t">${t}</div><div class="s">${s}</div></div><div class="a">${a}</div></div>`;
-  const dm=v=>(v>=0?"+":"−")+man(Math.abs(v));
+  const st=ST(),P=sim.path,tYm=st.targetYm||"2027-12",fin=st.finalTarget||1e8,dm=v=>(v>=0?"+":"−")+man(Math.abs(v));
+  const fi=sim.free?P.findIndex(p=>p.ym===sim.free):-1,after=fi>=0?P[fi+1]:null,first=P[0];
   $("pjBasis").textContent=`생활비 ${man(st.cycleBudget||0)} 기준`;
-  const rows=[];
-  if(sim.free)rows.push(row("🗡️","빚 0원",`카드 할부·대출 모두 끝`,ymKo(sim.free)));
-  if(y1)rows.push(row("📅",`1년 뒤 (${ymKo(y1.ym)})`,`지금보다 ${dm(y1.net-now)}`,man(y1.net)));
-  if(atT)rows.push(row("🏁",`목표 시점 ${ymKo(tYm)}`,target!=null?`목표 ${man(target)} 대비 ${dm(atT.net-target)}`:`목표 +${man(st.targetGain||0)}`,man(atT.net)));
-  [[5e7,"🌳"],[fin,"🏆"]].filter(([v],i,a)=>i===0?v<fin:true).forEach(([v,e])=>rows.push(row(e,`순자산 ${man(v)}`,at(v)?"이 페이스로 도착":"10년 안엔 어려워요",at(v)||"-")));
-  $("pjList").innerHTML=rows.join("");
-  const alt=simulate(100000).path,h1=P.find(p=>p.net>=fin),h2=alt.find(p=>p.net>=fin);
-  $("pjWhatIf").innerHTML=h1&&h2?`💸 생활비를 매달 10만 원 더 쓰면 ${man(fin)} 도착이 <strong>${ymDiff(h1.ym,h2.ym)}개월</strong> 늦어져요 (${ymKo(h2.ym)}).`:"";
+  if(after){$("pjWhen").textContent=`${ymKo(after.ym)}부터`;$("pjBig").innerHTML=`매달 <em>${man(after.save)}</em>씩 모여요`;
+    $("pjSub").textContent=`빚 0원까지 ${Math.max(0,ymDiff(ymOf(TODAY),sim.free))}개월 · 지금은 매달 약 ${man(P[1]?P[1].debt:first.debt)}을 빚 갚는 데 써요`}
+  else{$("pjWhen").textContent="";$("pjBig").textContent="빚을 갚는 중이에요";$("pjSub").textContent="지금 숫자로는 완납 시점을 계산할 수 없어요."}
+  // chart: from now to a year after the last debt (at most 24 months)
+  const n=Math.min(P.length,Math.max(12,fi>=0?fi+13:12),24),D=P.slice(0,n),W=600,H=210,L=40,Rr=8,T=34,B=24,bw=(W-L-Rr)/n,mx=Math.max(...D.map(p=>p.avail),1),step=mx>2e6?1e6:5e5,top=Math.ceil(mx/step)*step,y=v=>T+(H-T-B)*(1-v/top);
+  let g="";for(let v=0;v<=top+1;v+=step)g+=`<line class="grid" x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L-6}" y="${y(v)+4}" text-anchor="end">${v?man(v):"0"}</text>`;
+  const ev={};if(sim.cardDone)ev[sim.cardDone]="💳 카드 끝";if(st.raiseFromYm)ev[st.raiseFromYm]=(ev[st.raiseFromYm]?ev[st.raiseFromYm]+" ":"")+"💵 인상";if(sim.free)ev[sim.free]="🎉 빚 0원";
+  D.forEach((p,i)=>{const x=L+i*bw+2,w=Math.max(2,bw-4),yd=y(p.debt),ys=y(p.debt+p.save),r=Math.min(4,w/2);
+    if(p.save>0)g+=`<path class="b-save" d="M${x},${yd-1} V${ys+r} Q${x},${ys} ${x+r},${ys} H${x+w-r} Q${x+w},${ys} ${x+w},${ys+r} V${yd-1} Z"/>`;
+    if(p.debt>0){const yt=p.save>0?yd+1:yd,rr=p.save>0?0:r;g+=`<path class="b-debt" d="M${x},${y(0)} V${yt+rr} Q${x},${yt} ${x+rr},${yt} H${x+w-rr} Q${x+w},${yt} ${x+w},${yt+rr} V${y(0)} Z"/>`}
+    if(i%3===0)g+=`<text class="axis" x="${x+w/2}" y="${H-6}" text-anchor="middle">${ymShort(p.ym)}</text>`;
+    g+=`<rect class="hit" x="${L+i*bw}" y="${T-30}" width="${bw}" height="${H-T+30}" data-tip="${esc(`${ymKo(p.ym)} · 빚 갚기 ${won(Math.round(p.debt))} · 모으기 ${won(Math.round(p.save))}`)}"/>`});
+  let lastX=-99;Object.keys(ev).sort().forEach(ym=>{const i=D.findIndex(p=>p.ym===ym);if(i<0)return;let x=L+i*bw+bw/2;g+=`<line class="evl" x1="${x}" x2="${x}" y1="${T-12}" y2="${y(0)}"/>`;const row=x-lastX<70?1:0;lastX=row?lastX:x;g+=`<text class="ev" x="${Math.min(Math.max(x,L+30),W-40)}" y="${row?T-2:T-16}" text-anchor="middle">${ev[ym]}</text>`});
+  $("pjChart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="월별로 빚 갚는 돈과 모으는 돈">${g}</svg>`;
+  // timeline
+  const items=[],li=(cls,e,when,t,sub,a)=>`<li class="${cls}"><span class="dot">${e}</span><div><div class="when">${when}</div><div class="t">${t}</div>${sub?`<div class="s">${sub}</div>`:""}</div><div class="a">${a||""}</div></li>`;
+  items.push(li("now","⚔️","지금",`할부 선결제 · 대출 상환`,`매달 남는 돈을 수수료 큰 할부부터 갚아요${sim.feeSaved?` · 수수료 약 ${man(sim.feeSaved)} 절약`:""}`,`월 ${man(P[1]?P[1].debt:first.debt)}`));
+  if(sim.cardDone)items.push(li("","💳",ymKo(sim.cardDone),"유이자 카드 할부 끝","그 돈으로 NH 대출부터 갚아요",""));
+  if(st.raiseFromYm&&(!sim.free||st.raiseFromYm<=ymAdd(sim.free,24))){const before=incomeAt(ymAdd(st.raiseFromYm,-1)),aft=incomeAt(st.raiseFromYm);if(aft>before)items.push(li("","💵",ymKo(st.raiseFromYm),`월급 ${st.raisePct||0}% 인상`,"인상분은 전부 상환·저축으로",`월 ${dm(aft-before)}`))}
+  if(sim.free)items.push(li("good","🎉",ymKo(sim.free),"빚 0원!",sim.intBack?`대출 이자 월 ${man(sim.intBack)}도 더는 안 나가요`:"",""));
+  if(after){items.push(li("good","💰",`${ymKo(after.ym)}부터`,"매달 저축 시작","파킹통장에 그대로 쌓아요",`월 ${man(after.save)}`));
+    const cum=k=>sum(P.slice(fi,fi+k+1),p=>p.save);
+    [[6,"반년"],[12,"1년"]].forEach(([k,lab])=>{const p=P[fi+k];if(p)items.push(li("good","🐷",ymKo(p.ym),`저축 ${lab}째`,`통장에 모인 돈`,man(cum(k))))})}
+  const atT=P.find(p=>p.ym===tYm);if(atT)items.push(li("","🏁",ymKo(tYm),"목표 시점 순자산",target!=null?`목표 ${man(target)} 대비 ${dm(atT.net-target)}`:"",man(atT.net)));
+  [[5e7,"🌳"],[fin,"🏆"]].filter(([v])=>v<=fin).forEach(([v,e])=>{const h=P.find(p=>p.net>=v);items.push(li("good",e,h?ymKo(h.ym):"10년 이후",`순자산 ${man(v)}`,h?"이 페이스로 도착":"",""))});
+  $("pjList").innerHTML=items.join("");
+  const alt=simulate(100000),h1=P.find(p=>p.net>=fin),h2=alt.path.find(p=>p.net>=fin);
+  $("pjWhatIf").innerHTML=h1&&h2?`💸 생활비를 매달 10만 원 더 쓰면 빚 0원이 ${alt.free&&sim.free?ymDiff(sim.free,alt.free):"?"}개월, ${man(fin)}이 <strong>${ymDiff(h1.ym,h2.ym)}개월</strong> 늦어져요.`:"";
   const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1);let pace="";
-  if(snaps.length>1){const f=snaps[0],l=snaps[snaps.length-1],m=Math.max(1,ymDiff(f.ym,l.ym)),act=(l.net-f.net)/m,plan=(P[11]?(P[11].net-P[0].net)/11:0);pace=` 실제로는 월 ${signed(Math.round(act))}씩 늘고 있어요 (계획 월 ${signed(Math.round(plan))}).`}
-  $("pjNote").textContent=`실수령${st.raiseFromYm?` (${ymKo(st.raiseFromYm)}부터 ${st.raisePct||0}% 인상)`:""}에서 고정비·생활비를 빼고 남는 돈을 전부 선결제·상환·저축한다고 계산했어요. 월말 잔액을 기록할수록 정확해져요.`+pace;
+  if(snaps.length>1){const f=snaps[0],l=snaps[snaps.length-1],m=Math.max(1,ymDiff(f.ym,l.ym)),act=(l.net-f.net)/m;pace=` 실제 순자산은 월 ${dm(Math.round(act))}씩 늘고 있어요.`}
+  $("pjNote").textContent=`실수령${st.raiseFromYm?`(${ymKo(st.raiseFromYm)}부터 ${st.raisePct||0}% 인상)`:""}에서 고정비와 생활비 ${man(st.cycleBudget||0)}을 빼고 남는 돈을 계산했어요. 월급날 받은 금액을 적고 월말 잔액을 기록할수록 정확해져요.`+pace;
 }
 function drawChart(snaps,startYm,tYm,startNet,target,proj){
   proj=(proj||[]).filter(p=>p.ym<=tYm);const pStart=proj.length?proj[0].ym:startYm;if(!snaps.length)startYm=pStart<startYm?pStart:startYm;
@@ -1054,10 +1108,11 @@ function go(v){
   try{localStorage.setItem("plan5k3:view",v==="settings"?"today":v)}catch(e){}
 }
 function confirmTap(b){if(b.dataset.armed)return true;b.dataset.armed="1";const old=b.textContent;b.textContent="한 번 더 눌러 확인";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=old}},3000);return false}
+document.addEventListener("mouseover",e=>{const t=e.target.closest&&e.target.closest("[data-tip]");if(!t)return;const box=t.closest("[data-tipbox]");$(box?box.dataset.tipbox:"nwTip").textContent=t.dataset.tip});
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button,[data-tip]");if(!t)return;
   if(t.dataset.go){go(t.dataset.go);return}
-  if(t.dataset.tip!=null){$("nwTip").textContent=t.dataset.tip;return}
+  if(t.dataset.tip!=null){const box=t.closest("[data-tipbox]");$(box?box.dataset.tipbox:"nwTip").textContent=t.dataset.tip;return}
   if(t.dataset.guide){const[k,v]=t.dataset.guide.split(":");
     if(k==="go")go(v);
     if(k==="coach"){$("coach").scrollIntoView({behavior:"smooth",block:"start"});askCoach()}
