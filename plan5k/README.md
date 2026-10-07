@@ -22,6 +22,8 @@ claude.ai 아티팩트로 동작합니다: https://claude.ai/artifact/ARaBL6enkx
 | `days/{날짜}` | 습관 체크 4개와 하루 메모 |
 | `weekly/{날짜}` | 주간 카드 점검 (카드 앱 이용금액·결제예정액) |
 | `payments/*` | 할부 건별 선결제(`itemId`, `fromYm`) · 대출 상환(`debtId`) |
+| `wins/*` | 참은 돈(`kind: skip`, 지출 아님)과 부수입(`kind: sell`, 다음 25일 선결제 돈에 더함) |
+| `weekgoals/{월요일}` | 그 주 한도 목표(`limit`). 줄인 만큼 주기 예산이 줄고 저축 계획에 더해져요. 주가 끝나면 실제로 아낀 만큼만 남아요 |
 | `coach/{날짜}` | 그날의 AI 코칭 (총평, 조언 3개, 미션, 미션 성공 여부) |
 | `networth/{월}` | 월말 저축·현금 잔액과 그때의 순자산 |
 
