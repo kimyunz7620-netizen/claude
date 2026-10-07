@@ -365,8 +365,8 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     <form class="card" id="wkForm" autocomplete="off">
       <div class="row"><h2><span class="step">1</span>카드 앱 숫자 적기</h2><span class="chip warn" id="wkSunday" hidden>오늘은 점검일</span></div>
       <label class="field"><span>점검 날짜</span><input type="date" id="wkDate"></label>
-      <label class="field"><span>이번 주기 이용금액 <span id="wkUseRange"></span></span><input type="text" inputmode="numeric" id="wkUsage" placeholder="0"></label>
-      <label class="field"><span id="wkBillLabel">다음 결제예정액</span><input type="text" inputmode="numeric" id="wkBill" placeholder="0"></label>
+      <label class="field"><span id="wkBillLabel">결제예정금액 (합계)</span><input type="text" inputmode="numeric" id="wkBill" placeholder="0"></label>
+      <label class="field"><span>그중 일시불 <span class="muted">(결제요약정보 › 이용금액 › 일시불)</span></span><input type="text" inputmode="numeric" id="wkLump" placeholder="0"></label>
       <button class="btn" type="submit">가계부와 비교하기</button>
     </form>
     <div class="card">
@@ -594,7 +594,7 @@ function cardOrder(date){return ITEMS().filter(x=>x.fee>0&&prepayAmt(x,date)>0).
 
 /* ---------- schedule & debts ---------- */
 const baseAt=ym=>((S.schedule&&S.schedule.base)||{})[ym]||0;
-function effSched(ym){return(ITEMS().length?sum(ITEMS(),x=>itemBill(x,ym)):baseAt(ym))+newInstAt(ym)}
+function effSched(ym){const ov=S.inst&&S.inst.billOverride&&S.inst.billOverride[ym];if(ov!=null)return ov+newInstAt(ym);return(ITEMS().length?sum(ITEMS(),x=>itemBill(x,ym)):baseAt(ym))+newInstAt(ym)}
 function schedMonths(){
   const set=new Set();
   if(ITEMS().length)ITEMS().forEach(x=>itemMonths(x).forEach(m=>set.add(m)));else Object.keys((S.schedule&&S.schedule.base)||{}).forEach(m=>set.add(m));
@@ -607,7 +607,9 @@ const loanTotal=()=>sum(LOANS(),loanBal);
 const totalDebt=()=>cardDebt()+loanTotal();
 const loanOrder=()=>LOANS().filter(d=>loanBal(d)>0).slice().sort((a,b)=>(a.last?1:0)-(b.last?1:0)||(b.apr||0)-(a.apr||0));
 function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort((a,b)=>a.date<b.date?1:-1)[0];return w?w.nextBill:null}
-function estBill(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"),e=>e.amount)+effSched(ym)+fixedCard(ym)}
+function cardFixedEst(ym){const c=cycleOf(ym);return sum(fixedAt(ym).filter(x=>x.card&&!S.entries.some(e=>e.fixedId===x.id&&inRange(e.date,c))),x=>x.amount)}
+function lumpEst(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"),e=>e.amount)+cardFixedEst(ym)}
+function estBill(ym,upTo){return lumpEst(ym,upTo)+effSched(ym)}
 
 /* pick the card items to prepay with the money at hand so the fee saved is as large as possible (0/1 knapsack in 1,000원 steps) */
 function bestSet(opts,money){
@@ -869,19 +871,21 @@ function weeklyCompare(w){
   return weeklyCompareRaw(w);
 }
 function weeklyCompareRaw(w){
-  const cu=cycleOf(payYmOf(w.date)),expUse=sum(cardIn({start:cu.start,end:w.date},e=>e.method!=="cash"),e=>e.amount),expBill=estBill(w.payYm,w.date);
-  const tol=v=>Math.max(ST().warnDiff||30000,Math.abs(v)*0.05),items=[];
-  if(w.usage>0)items.push({k:"이번 주기 이용금액",act:w.usage,exp:expUse});
-  if(w.nextBill>0)items.push({k:`${Number(w.payYm.slice(5))}/${CARD()} 결제예정액`,act:w.nextBill,exp:expBill});
+  const P=w.payYm,upTo=addDays(w.date,-2),lump=lumpEst(P,upTo),items=[];
+  const tol=v=>Math.max(ST().warnDiff||30000,Math.abs(v)*0.03);
+  if(w.lump>0)items.push({k:"결제예정 중 일시불",act:w.lump,exp:lump});
+  if(w.nextBill>0)items.push({k:`${Number(P.slice(5))}/${CARD()} 결제예정 합계`,act:w.nextBill,exp:lump+effSched(P)});
+  if(!w.lump&&w.usage>0){const cu=cycleOf(payYmOf(w.date));items.push({k:"이번 주기 이용금액",act:w.usage,exp:sum(cardIn({start:cu.start,end:upTo},e=>e.method!=="cash"),e=>e.amount)})}
   items.forEach(x=>{x.diff=x.act-x.exp;x.bad=Math.abs(x.diff)>tol(x.act)});return items;
 }
 function compareHTML(w){
   const cu=cycleOf(payYmOf(w.date));
   if(cu.start<ledgerStart()&&!w.seed)return `<div class="note warn"><strong>⏳ 가계부 시작 전 지출이 섞여 있어요</strong><div class="small">${md(cu.start)}~${md(addDays(ledgerStart(),-1))} 기록이 가계부에 없어서 이번 주기는 비교할 수 없어요. 카드 앱 숫자는 저장해 뒀어요.</div><div class="small">카드 앱 이용금액 ${num(w.usage||0)} · 가계부 ${num(weeklyCompareRaw(w)[0]?weeklyCompareRaw(w)[0].exp:0)} · 결제예정 ${num(w.nextBill||0)}</div><div class="small">${md(cycleOf(ymAdd(payYmOf(w.date),1)).start)} 새 주기부터는 정확히 비교돼요. 그 전 기록을 넣으면 지금도 맞춰져요.</div></div>`;
   if(w.seed)return`<p class="note">📦 ${Number(w.payYm.slice(5))}월 카드값 ${won(w.nextBill)}은 기존 트래커에서 옮긴 값이에요. 월급날 계산에 쓰여서 지우지 말아 주세요. 첫 주간 점검을 하면 여기에 그 결과가 나와요.</p>`;
+  const pend=sum(cardIn({start:addDays(w.date,-1),end:w.date},e=>e.method==="lotte"),e=>e.amount);
   return weeklyCompare(w).map(x=>`<div class="note ${x.bad?"bad":"good"}"><div class="row"><strong>${x.bad?"🔍":"✅"} ${x.k}</strong><span class="num">${signed(x.diff)}</span></div>
     <div class="small">카드 앱 ${num(x.act)} · 가계부 예상 ${num(x.exp)}</div>
-    <div class="small">${!x.bad?"가계부와 맞아요!":x.diff>0?"가계부에 빠진 지출이나 모르는 할부가 있을 수 있어요. 카드 앱 이용내역을 열어 확인하세요.":"가계부엔 있는데 카드엔 아직 안 잡힌 금액이에요. 승인 대기·취소 건인지 확인하세요."}</div></div>`).join("");
+    <div class="small">${!x.bad?"가계부와 맞아요!":x.diff>0?"가계부에 빠진 지출이나 모르는 할부가 있을 수 있어요. 카드 앱 이용내역을 열어 확인하세요.":"가계부엔 있는데 카드엔 아직 안 잡힌 금액이에요. 취소·부분취소 건인지 확인하세요."}</div></div>`).join("")+(pend?`<p class="tiny muted">최근 이틀 롯데 결제 ${won(pend)}은 카드 앱에 늦게 잡혀서 비교에서 뺐어요.</p>`:"");
 }
 function bdRange(){if(bdMode==="cycle"){const c=cycleOf(bdKey);return{start:c.start,end:c.end,label:`${md(c.start)}~${md(c.end)} (${Number(bdKey.slice(5))}월 결제)`}}return{...monthRange(bdKey),label:ymKo(bdKey)}}
 function catBudget(c,r){
@@ -892,11 +896,11 @@ function catBudget(c,r){
 function renderWeek(){
   $("wkSunday").hidden=parse(TODAY).getDay()!==0;if(!$("wkDate").value)$("wkDate").value=TODAY;
   const wd=$("wkDate").value||TODAY,wP=dom(wd)<=CARD()?ymOf(wd):ymAdd(ymOf(wd),1),wc=cycleOf(payYmOf(wd));
-  $("wkBillLabel").textContent=`다음 결제예정액 (${md(ymDay(wP,CARD()))} 결제분)`;$("wkUseRange").textContent=`(${md(wc.start)}~${md(wc.end)})`;
+  $("wkBillLabel").textContent=`결제예정금액 합계 (${md(ymDay(wP,CARD()))} 결제분)`;
   const ws=S.weekly.slice().sort((a,b)=>a.date<b.date?1:-1);
   if(!$("wkForm").contains(document.activeElement))$("wkResult").innerHTML=ws[0]?`<div class="tiny muted">${mdw(ws[0].date)} 점검 결과</div>`+compareHTML(ws[0]):'<p class="empty">1번에 숫자를 적으면 결과가 여기 나와요.</p>';
   $("wkHist").innerHTML=ws.length?ws.slice(0,10).map(w=>{const bad=!w.seed&&weeklyCompare(w).some(x=>x.bad),gap=!w.seed&&weeklyCompare(w).some(x=>x.gap);
-    return `<div class="li"><span class="av">${w.seed?"📦":gap?"⏳":bad?"🔍":"✅"}</span><div><div class="t">${w.seed?`${Number(w.payYm.slice(5))}월 카드값 (기존 트래커에서 옮김)`:mdw(w.date)}</div><div class="s">이용 ${w.usage?num(w.usage):"-"} · 결제예정 ${w.nextBill?num(w.nextBill):"-"}</div></div>${w.seed?"<span></span>":`<button type="button" class="btn danger" data-del-week="${esc(w.id)}">삭제</button>`}</div>`}).join(""):'<p class="empty">일요일마다 카드 앱 숫자를 적으면 여기에 쌓여요.</p>';
+    return `<div class="li"><span class="av">${w.seed?"📦":gap?"⏳":bad?"🔍":"✅"}</span><div><div class="t">${w.seed?`${Number(w.payYm.slice(5))}월 카드값 (기존 트래커에서 옮김)`:mdw(w.date)}</div><div class="s">결제예정 ${w.nextBill?num(w.nextBill):"-"}${w.lump?` · 일시불 ${num(w.lump)}`:""}</div></div>${w.seed?"<span></span>":`<button type="button" class="btn danger" data-del-week="${esc(w.id)}">삭제</button>`}</div>`}).join(""):'<p class="empty">일요일마다 카드 앱 숫자를 적으면 여기에 쌓여요.</p>';
   const ref=ws[0]&&!ws[0].seed&&dayDiff(ws[0].date,TODAY)<7?ws[0].date:TODAY,wr=weekRange(ref),W=ST().weekBudget||0,sp=sum(entriesIn(wr),e=>e.amount);
   $("rvRange").textContent=`${md(wr.start)}~${md(wr.end)}`;$("rvSpent").textContent=won(sp);$("rvSpent").className="disp"+(sp>W?" bad-t":"");$("rvLimit").textContent=won(W);paintBar($("rvBar"),sp,W,null);
   const y=cycleSummary(),daysLeft=Math.max(1,dayDiff(addDays(wr.end,1),y.c.end)+1),remain=y.B-sum(entriesIn({start:y.c.start,end:wr.end}),e=>e.amount);
@@ -1130,10 +1134,10 @@ document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.cla
 $("habits").addEventListener("change",saveDay);
 document.addEventListener("change",e=>{const id=e.target.dataset&&e.target.dataset.task;if(!id)return;S.tasks={...S.tasks,[id]:e.target.checked};render();const done=S.tasks;taskWriting=taskWriting.then(()=>put("plan/tasks",{done}).catch(()=>{}))});
 $("wkForm").addEventListener("submit",async e=>{
-  e.preventDefault();const date=$("wkDate").value||TODAY,usage=parseNum($("wkUsage").value),nextBill=parseNum($("wkBill").value);
-  if(!usage&&!nextBill){toast("카드 앱의 이용금액이나 결제예정액을 적어 주세요");return}
-  const payYm=dom(date)<=CARD()?ymOf(date):ymAdd(ymOf(date),1),w={id:date,date,usage,nextBill,payYm,savedAt:new Date().toISOString()};
-  try{await put("weekly/"+date,w);$("wkUsage").value="";$("wkBill").value="";document.activeElement&&document.activeElement.blur();S.weekly=[...S.weekly.filter(x=>x.id!==date),w];renderWeek();
+  e.preventDefault();const date=$("wkDate").value||TODAY,lump=parseNum($("wkLump").value),nextBill=parseNum($("wkBill").value);
+  if(!lump&&!nextBill){toast("카드 앱의 결제예정금액을 적어 주세요");return}
+  const payYm=dom(date)<=CARD()?ymOf(date):ymAdd(ymOf(date),1),w={id:date,date,lump,nextBill,payYm,savedAt:new Date().toISOString()};
+  try{await put("weekly/"+date,w);$("wkLump").value="";$("wkBill").value="";document.activeElement&&document.activeElement.blur();S.weekly=[...S.weekly.filter(x=>x.id!==date),w];renderWeek();
     toast(weeklyCompare(w).some(x=>x.bad)?"🔍 차이가 커요. 2번을 확인하세요":"✅ 가계부와 맞아요!")}catch(_){}
 });
 $("payForm").addEventListener("submit",async e=>{
