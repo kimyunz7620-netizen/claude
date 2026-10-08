@@ -191,6 +191,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .chart .area{fill:var(--grape);opacity:.12}
 .chart .dot{fill:var(--grape);stroke:var(--surface);stroke-width:2}
 .chart .hit{fill:transparent;cursor:pointer}
+.chart .hit:hover{fill:var(--line);fill-opacity:.35}
+.chart .pdot{fill:var(--mint);stroke:var(--surface);stroke-width:1.5}
 .chart .lbl{fill:var(--ink);font-size:12px;font-weight:800}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--muted)}
 .legend i{display:inline-block;width:18px;border-top:2.5px solid var(--grape);vertical-align:middle;margin-right:6px}
@@ -529,10 +531,11 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="road" id="road"></div>
       <div class="chips" id="nwChips"></div>
     </div>
-    <details class="card chart more"><summary>📈 월별 순자산 그래프</summary>
+    <details class="card chart more" open><summary>📈 월별 순자산 그래프</summary>
       <div class="row"><div class="legend"><span><i></i>순자산</span><span><i class="proj"></i>예상</span><span><i class="dash"></i>목표 경로</span></div></div>
       <div id="nwChart"></div>
-      <div class="tiny muted" id="nwTip">점을 누르면 그 달 숫자가 보여요.</div>
+      <div class="small" id="nwTip">그래프를 누르면 그 달 순자산이 무엇으로 이뤄졌는지 보여요.</div>
+      <p class="tiny muted" id="nwHow"></p>
     </details>
     <div class="card">
       <div class="row"><div class="title"><span class="em">💳</span><h2>카드 할부 <span id="instCount"></span></h2></div><span class="muted small" id="instSum"></span></div>
@@ -749,7 +752,8 @@ function simulateRun(extra){
     const instDebt=ab!=null?Math.min(ab,effSched(ym)):inst,avail=inc+instDebt;
     const debt=wasFree?0:free?Math.min(avail,instDebt+paid):avail;
     const cardRem=sum(order.filter(x=>!closed[x.id]),x=>sum(itemMonths(x).filter(m=>m>ym),m=>itemRaw(x,m).p));
-    path.push({ym,net:base+pot-cardRem-sum(loans,l=>Math.max(0,l.bal)),avail,debt,save:avail-debt,inc:incomeAt(ym)});
+    const debtLeft=cardRem+sum(loans,l=>Math.max(0,l.bal));
+    path.push({ym,net:base+pot-debtLeft,avail,debt,save:avail-debt,inc:incomeAt(ym),dep:st.deposit||0,bank:base-(st.deposit||0)+pot,owe:debtLeft});
     ym=next;
   }
   return{cardDone,free,loans:Object.fromEntries(loans.map(l=>[l.d.id,l.done])),path,intBack,feeSaved};
@@ -1284,14 +1288,17 @@ function drawChart(snaps,startYm,tYm,startNet,target,proj){
   const x=ym=>L+(W-L-R)*ymDiff(startYm,ym)/n,y=v=>Tp+(H-Tp-B)*(1-(v-lo)/(hi-lo));let g="";
   for(let v=lo;v<=hi+1;v+=step)g+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L-8}" y="${y(v)+4}" text-anchor="end">${man(v)}</text>`;
   const every=n>18?6:3;for(let i=0;i<=n;i+=every){const ym=ymAdd(startYm,i);g+=`<text class="axis" x="${x(ym)}" y="${H-8}" text-anchor="middle">${ymShort(ym)}</text>`}
+  const mix=p=>`${ymKo(p.ym)} 예상 순자산 ${man(p.net)} = 보증금 ${man(p.dep)} + 통장 ${man(p.bank)}${p.owe>0?` − 빚 ${man(p.owe)}`:" · 빚 0원 🎉"}`;
+  if(proj.length>1){const sw=(W-L-R)/n;proj.forEach((p,i)=>{if(i%3===2||i===proj.length-1)g+=`<circle class="pdot" cx="${x(p.ym)}" cy="${y(p.net)}" r="3.5"/>`;g+=`<rect class="hit" x="${x(p.ym)-sw/2}" y="${Tp}" width="${sw}" height="${H-Tp-B}" data-tip="${esc(mix(p))}"/>`})}
   if(proj.length>1)g+=`<path class="proj" d="M${proj.map(p=>x(p.ym)+","+y(p.net)).join(" L")}"/><text class="axis" x="${x(proj[proj.length-1].ym)-4}" y="${y(proj[proj.length-1].net)+16}" text-anchor="end">예상 ${man(proj[proj.length-1].net)}</text>`;
   if(target!=null)g+=`<path class="target" d="M${x(startYm)},${y(startNet)} L${x(tYm)},${y(target)}"/><text class="axis" x="${x(tYm)-4}" y="${y(target)-8}" text-anchor="end">목표 ${man(target)}</text>`;
   if(snaps.length){const pts=snaps.map(s=>[x(s.ym),y(s.net)]);
     if(pts.length>1)g+=`<path class="area" d="M${pts[0][0]},${y(Math.max(lo,0))} L${pts.map(p=>p.join(",")).join(" L")} L${pts[pts.length-1][0]},${y(Math.max(lo,0))} Z"/><path class="line" d="M${pts.map(p=>p.join(",")).join(" L")}"/>`;
-    snaps.forEach((s,i)=>{g+=`<circle class="dot" cx="${pts[i][0]}" cy="${pts[i][1]}" r="${i===snaps.length-1?6:4}"/><circle class="hit" cx="${pts[i][0]}" cy="${pts[i][1]}" r="16" data-tip="${esc(ymKo(s.ym)+" · 순자산 "+won(s.net)+" · 빚 "+won(s.debt))}"/>`});
+    snaps.forEach((s,i)=>{g+=`<circle class="dot" cx="${pts[i][0]}" cy="${pts[i][1]}" r="${i===snaps.length-1?6:4}"/><circle class="hit" cx="${pts[i][0]}" cy="${pts[i][1]}" r="16" data-tip="${esc(`${ymKo(s.ym)} 실제 순자산 ${man(s.net)} = 보증금 ${man(s.deposit||0)} + 통장 ${man(s.cash||0)} − 빚 ${man(s.debt||0)}`)}"/>`});
     const lp=pts[pts.length-1];g+=`<text class="lbl" x="${Math.min(lp[0]+8,W-R-60)}" y="${lp[1]-10}">${man(snaps[snaps.length-1].net)}</text>`;
   }else g+=`<text class="axis" x="${(L+W-R)/2}" y="${Tp+14}" text-anchor="middle">월말 잔액을 기록하면 실제 순자산 선이 그려져요</text>`;
   $("nwChart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="월별 순자산과 목표 경로">${g}</svg>`;
+  const fr=simulate().free;$("nwHow").textContent=fr?`${ymKo(fr)} 빚 0원까지는 빚이 줄어서, 그 뒤엔 통장이 쌓여서 순자산이 늘어요. 보증금은 처음부터 그대로 들어 있어요.`:"빚이 줄고 통장이 쌓이는 만큼 순자산이 늘어요. 보증금은 처음부터 그대로 들어 있어요.";
 }
 
 /* ---------- 설정 ---------- */
