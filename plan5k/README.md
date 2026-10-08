@@ -10,7 +10,7 @@ claude.ai 아티팩트로 동작합니다: https://claude.ai/artifact/ARaBL6enkx
 
 | 경로 | 내용 |
 |---|---|
-| `config/settings` | 실수령(예상), 달별 실제 받은 실수령(`incomeActual`), 인상률·인상 시작월·소급 개월 수(`raiseBackMonths`, 시작월에 한 번에 들어옴), 생활비·주간 한도, 보증금, 목표 |
+| `config/settings` | 실수령(예상), 달별 실제 받은 실수령(`incomeActual`), 인상률·인상 시작월·소급 개월 수(`raiseBackMonths`, 시작월에 한 번에 들어옴), 일회성 수입(`bonuses`: 월·금액·메모, 그 달 실수령에 더함), 생활비·주간 한도, 보증금, 목표 |
 | `config/budget` | 생활비 카테고리별 예산 (경조사/선물은 적립식) |
 | `config/fixed` | 고정비 (변경 시작월 포함) |
 | `config/installments` | 롯데카드 할부 33건 (26년 11월 결제 기준: 회차, 월 원금, 수수료, 결제 후 잔액). `billBasis[월]`은 카드 앱 '오늘'/'결제일' 탭의 할부 금액으로, 그 사이는 하루 단위로 수수료가 붙는다고 보고 낼 날짜의 금액을 계산 |
