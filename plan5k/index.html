@@ -749,7 +749,7 @@ function simulateRun(extra){
   const bill=(x,m)=>closed[x.id]&&m>=closed[x.id]?0:itemBill(x,m);
   let ym=ymAdd(lastPassed(),1),cardDone=null,free=null;
   for(let i=0;i<120;i++){
-    const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym),liv=living-cyclePledge(cycleOf(ym));
+    const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym),liv=cycleBudgetFor(ym)+extra-cyclePledge(cycleOf(ym));
     const ab=Object.keys(closed).length?null:appBill(ym);
     const inc=(ab!=null?incomeAt(ym)-fixedCash(ym)-ab-buf:incomeAt(ym)-fixedTotal(ym)-liv-inst-buf)+intBack+extraAt(ym);
     pot+=inc;let paid=0;
@@ -774,7 +774,7 @@ function simulateRun(extra){
 /* ---------- payday plan ---------- */
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
-  const card=ab!=null?ab:estBill(M)+(open?Math.max(0,(st.cycleBudget||0)-cyclePledge(c)-spent):0),extra=extraAt(M);
+  const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),extra=extraAt(M);
   const autoRes=sum(entriesIn(c,e=>e.method==="cash"),e=>e.amount),manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
   const fixed=fixedCash(M),inc=incomeAt(M),avail=inc+extra-card-fixed-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
@@ -817,7 +817,7 @@ const TASKS=[
 /* ================= RENDER ================= */
 let raf=0;function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;SIMC={};renderAll()})}
 function renderAll(){SIMC={};renderHeader();renderToday();renderStep();renderQuest();renderCoach();renderWeek();renderMonth();renderDash()}
-function renderHeader(){const st0=ST();$("ruleLimit").textContent=`생활비 한도: 하루 ${man1((st0.weekBudget||0)/7)} · 주 ${man1(st0.weekBudget||0)} · 카드 주기(${CYC()}일~${CYC()-1}일) ${man1(st0.cycleBudget||0)}`;
+function renderHeader(){const st0=ST(),pk=payYmOf(TODAY),cb=cycleBudgetFor(pk),wb=weekBudgetFor(TODAY),nb=st0.cycleBudget||0;$("ruleLimit").textContent=`생활비 한도: 하루 ${man1(wb/7)} · 주 ${man1(wb)} · 카드 주기(${CYC()}일~${CYC()-1}일) ${man1(cb)}${cb!==nb?` · ${md(cycleOf(ymAdd(pk,1)).start)}부터 ${man1(nb)} · 주 ${man1(st0.weekBudget||0)}`:""}`;
   const t=parse(TODAY),h=new Date().getHours();
   $("today").textContent=`${t.getMonth()+1}월 ${t.getDate()}일 ${DOW[t.getDay()]}요일 · 머니플랜`;
   const sim=simulate(),fr=sim.free,af=fr&&sim.path[sim.path.findIndex(p=>p.ym===fr)+1];
@@ -827,14 +827,18 @@ function renderHeader(){const st0=ST();$("ruleLimit").textContent=`생활비 한
 
 /* ---------- 오늘 ---------- */
 /* weekly goals: a lower limit for one week. While the week runs the whole cut is set aside for savings; once it ends only what was really kept below 주 한도 counts */
-const weekLimit=d=>{const g=S.weekGoals[weekRange(d).start];return g&&g.limit!=null?g.limit:(ST().weekBudget||0)};
-function weekPledge(ws){const g=S.weekGoals[ws],W=ST().weekBudget||0;if(!g||g.limit==null||g.limit>=W)return 0;const we=addDays(ws,6);if(TODAY<=we)return W-g.limit;return Math.max(0,W-Math.max(sum(entriesIn({start:ws,end:we}),e=>e.amount),g.limit))}
+/* the budget a cycle (pay month) had: budget.hist[key] covers every cycle up to key, later cycles use the current settings */
+const histFor=key=>{const h=S.budget&&S.budget.hist;if(!h||!key)return null;const k=Object.keys(h).sort().find(k=>k>=key);return k?h[k]:null};
+const cycleBudgetFor=key=>{const e=histFor(key);return e&&e.total!=null?e.total:(ST().cycleBudget||0)};
+const weekBudgetFor=d=>{const e=histFor(payYmOf(weekRange(d).start));return e&&e.week!=null?e.week:(ST().weekBudget||0)};
+const weekLimit=d=>{const g=S.weekGoals[weekRange(d).start];return g&&g.limit!=null?g.limit:weekBudgetFor(d)};
+function weekPledge(ws){const g=S.weekGoals[ws],W=weekBudgetFor(ws);if(!g||g.limit==null||g.limit>=W)return 0;const we=addDays(ws,6);if(TODAY<=we)return W-g.limit;return Math.max(0,W-Math.max(sum(entriesIn({start:ws,end:we}),e=>e.amount),g.limit))}
 const cyclePledge=c=>sum(Object.keys(S.weekGoals).filter(ws=>ws>=c.start&&ws<=c.end),weekPledge);
 /* side income (a sale, a refund) joins the prepayment money of the next 25th */
 const planYmOf=d=>dom(d)<=CARD()?ymOf(d):ymAdd(ymOf(d),1);
 const extraAt=ym=>sum(S.wins.filter(w=>w.kind==="sell"&&planYmOf(w.date)===ym),w=>w.amount);
 function cycleSummary(){
-  const c=cycleOf(payYmOf(TODAY)),B=(ST().cycleBudget||0)-cyclePledge(c),spent=sum(entriesIn(c),e=>e.amount);
+  const c=cycleOf(payYmOf(TODAY)),B=cycleBudgetFor(payYmOf(TODAY))-cyclePledge(c),spent=sum(entriesIn(c),e=>e.amount);
   const total=dayDiff(c.start,c.end)+1,elapsed=dayDiff(c.start,TODAY)+1,left=total-elapsed+1;
   return{c,B,spent,left,remain:B-spent,pace:B*elapsed/total};
 }
@@ -863,7 +867,7 @@ function renderToday(){
 
   const ws=sum(entriesIn(wr),e=>e.amount),y=cycleSummary();
   const lim=(id,used,cap)=>{$(id).textContent=`${man1(used)} / ${man1(cap)}`;const b=$(id+"b");b.style.width=(cap?Math.min(100,used/cap*100):0)+"%";b.classList.toggle("over",used>cap)};
-  lim("lmD",spentT,dayB);lim("lmW",ws,W);$("lmW").previousElementSibling.textContent=W<(ST().weekBudget||0)?"이번 주 🎯":"이번 주";lim("lmC",y.spent,y.B);$("lmCk").textContent=`주기 ~${md(y.c.end)}`;
+  lim("lmD",spentT,dayB);lim("lmW",ws,W);$("lmW").previousElementSibling.textContent=W<weekBudgetFor(TODAY)?"이번 주 🎯":"이번 주";lim("lmC",y.spent,y.B);$("lmCk").textContent=`주기 ~${md(y.c.end)}`;
 
   const cats=$("enCats"),sig=CATS().map(c=>c.id).join()+"|"+selCat;
   if(cats.dataset.sig!==sig){cats.dataset.sig=sig;cats.innerHTML=CATS().length?CATS().map(c=>{const[e,col]=look(c.id);return `<button type="button" class="cat" style="--c:${col}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="e">${e}</span>${esc(c.name)}</button>`}).join(""):'<p class="empty" style="grid-column:1/-1">카테고리를 불러오는 중이에요.</p>'}
@@ -922,7 +926,7 @@ function questItems(){
   const wr=weekRange(TODAY),isSun=parse(TODAY).getDay()===0,prevSun=addDays(wr.start,-1),last=S.weekly.filter(w=>!w.seed).map(w=>w.date).sort().pop();
   if(isSun){const done=!!last&&last>=wr.start;it.push({e:"💳",done,t:"주간 카드 점검",s:done?"이번 주 점검 끝":"롯데카드 앱 열고 5분",btn:done?null:["시작","go:week"]})}
   else if(prevSun>=(ST().appStart||"2026-10-07")&&!(last&&last>=addDays(prevSun,-6)))it.push({e:"💳",done:false,urgent:true,t:"주간 카드 점검 (밀림)",s:`${md(prevSun)} 일요일 점검을 아직 안 했어요`,btn:["시작","go:week"]});
-  if(d>=CYC()&&d<=CYC()+2){const k="cycle-"+M,c=cycleOf(M),sp=sum(entriesIn(c),e=>e.amount),B=ST().cycleBudget||0;
+  if(d>=CYC()&&d<=CYC()+2){const k="cycle-"+M,c=cycleOf(M),sp=sum(entriesIn(c),e=>e.amount),B=cycleBudgetFor(M);
     it.push({e:"🗓️",task:k,done:!!S.tasks[k],t:"카드 주기 마감 확인",s:`${md(c.start)}~${md(c.end)} ${won(sp)} / ${won(B)}${sp>B?` · ${won(sp-B)} 초과`:" 👍"}`})}
   const early=!!ST().payEarly;
   if(d>=PAY()&&(d<CARD()||early&&!S.tasks["secure-"+M])){const k="secure-"+M,pl=payPlan(M);it.push({e:"💰",task:k,done:!!S.tasks[k],t:early?"월급날: 카드값 즉시결제":"월급날: 카드값·고정비 확보",s:`${early?"롯데카드 앱 즉시결제":"하나→케이뱅크"} 카드값 ${won(pl.card)} · 고정비 ${won(pl.fixed)} 남기기${ST().incomeActual&&ST().incomeActual[M]!=null?"":" · 받은 실수령 적기"}`})}
@@ -948,7 +952,7 @@ function coachInsight(){
   const lc=cycleOf(ymAdd(payYmOf(TODAY),-1)),le=entriesIn(lc),by=m=>sum(le.filter(e=>e.method===m),e=>e.amount);
   const cats=CATS().map(c=>({이름:c.name,사용:sum(le.filter(e=>e.cat===c.id),e=>e.amount),예산:c.amount})).filter(x=>x.사용>0).sort((a,b)=>b.사용-a.사용).slice(0,3);
   const its=ITEMS(),dates=its.map(x=>x.date).sort(),feeLeft=sum(its,x=>prepaySave(x)),sim=simulate(),fr=sim.free,af=fr?sim.path[sim.path.findIndex(p=>p.ym===fr)+1]:null;
-  const y=cycleSummary(),cw=S.wins.filter(w=>w.date>=y.c.start&&w.date<=y.c.end),W0=ST().weekBudget||0,wl=weekLimit(TODAY);
+  const y=cycleSummary(),cw=S.wins.filter(w=>w.date>=y.c.start&&w.date<=y.c.end),W0=weekBudgetFor(TODAY),wl=weekLimit(TODAY);
   return{
     지난카드주기:{기간:`${lc.start}~${lc.end}`,생활비합계:sum(le,e=>e.amount),체크현금:by("cash"),롯데일시불:by("lotte"),할부로산것:by("inst"),많이쓴카테고리:cats,큰지출:le.slice().sort((a,b)=>b.amount-a.amount).slice(0,3).map(e=>({메모:e.memo||catName(e.cat),금액:e.amount,결제:e.method==="inst"?"할부":e.method==="lotte"?"일시불":"체크·현금"}))},
     카드할부:{건수:its.filter(x=>itemBal(x)>0).length,원래구매총액:sum(its,x=>(x.principal||0)*(x.N||0)),구매기간:dates.length?`${dates[0].slice(0,7)}~${dates[dates.length-1].slice(0,7)}`:"",연이율:"19.6%",남은수수료:Math.round(feeLeft),선결제로아낄수있는수수료:Math.round(sim.feeSaved||0)},
@@ -1029,9 +1033,9 @@ function compareHTML(w){
     ${!x.bad?"":`<div class="small">${x.diff>0?"가계부에 빠진 지출이나 모르는 할부가 있을 수 있어요. 카드 앱 이용내역을 열어 확인하세요.":"가계부엔 있는데 카드엔 아직 안 잡힌 금액이에요. 취소·부분취소 건인지 확인하세요."}</div>`}</div>`).join("")+(pend&&!(w.lump>0&&Math.abs(lumpEst(w.payYm,w.date)-w.lump)<Math.abs(lumpEst(w.payYm,addDays(w.date,-2))-w.lump))?`<p class="tiny muted">최근 이틀 롯데 결제 ${won(pend)}은 카드 앱에 늦게 잡혀서 비교에서 뺐어요.</p>`:"");
 }
 function bdRange(){if(bdMode==="cycle"){const c=cycleOf(bdKey);return{start:c.start,end:c.end,label:`${md(c.start)}~${md(c.end)} (${Number(bdKey.slice(5))}월 결제)`}}return{...monthRange(bdKey),label:ymKo(bdKey)}}
-function budgetAt(c,key){const h=S.budget&&S.budget.hist;if(!h||!key)return c.amount||0;const k=Object.keys(h).sort().find(k=>k>=key);return k&&h[k].cats&&h[k].cats[c.id]!=null?h[k].cats[c.id]:(c.amount||0)}
+function budgetAt(c,key){const e=histFor(key);return e&&e.cats&&e.cats[c.id]!=null?e.cats[c.id]:(c.amount||0)}
 /* before changing the budget, keep the old one for the cycles already finished */
-function histWith(){const h={...((S.budget&&S.budget.hist)||{})},prev=ymAdd(payYmOf(TODAY),-1);if(!Object.keys(h).some(k=>k>=prev))h[prev]={cats:Object.fromEntries(ALLCATS().map(c=>[c.id,c.amount||0])),total:ST().cycleBudget||0};return h}
+function histWith(){const h={...((S.budget&&S.budget.hist)||{})},prev=ymAdd(payYmOf(TODAY),-1);if(!Object.keys(h).some(k=>k>=prev))h[prev]={cats:Object.fromEntries(ALLCATS().map(c=>[c.id,c.amount||0])),total:ST().cycleBudget||0,week:ST().weekBudget||0};return h}
 function catBudget(c,r){
   if(!c.accumulate||bdMode!=="cycle")return budgetAt(c,bdKey);
   const from=ST().accumulateFrom||r.start,n=ymDiff(payYmOf(from),bdKey)+1;if(n<1)return c.amount||0;
@@ -1179,7 +1183,7 @@ function renderStep(){
     :`<div class="sr"><span>🐢</span><span>이번 주기 예산 페이스보다 <b>${won(-diff)}</b> 더 썼어요. ${r.goal} <span class="bad-t">${fasterTxt(-diff)} 늦어짐</span>. ${-diff<=y.B*y.left/total?`남은 ${y.left}일 아끼면 되돌릴 수 있어요.`:`${md(addDays(y.c.end,1))} 새 주기부터 다시 당겨요 💪`}</span></div>`);
   const cur=simulate(),cut=simulate(-100000),M=ST().finalTarget||1e8,h1=cur.path.find(p=>p.net>=M),h2=cut.path.find(p=>p.net>=M),rem=Math.max(1,cur.free?ymDiff(ymOf(TODAY),cur.free)+1:12);
   rows.push(`<div class="sr"><span>✂️</span><span>생활비를 한 달 10만 줄이면 빚 0원 <b>${fasterTxt(100000*rem)}</b>${h1&&h2&&ymDiff(h2.ym,h1.ym)>0?` · ${man(M)} <b>${ymDiff(h2.ym,h1.ym)}개월</b>`:""} 빨라져요</span></div>`);
-  const W0=ST().weekBudget||0,wl=weekLimit(TODAY),wr=weekRange(TODAY);
+  const W0=weekBudgetFor(TODAY),wl=weekLimit(TODAY),wr=weekRange(TODAY);
   if(wl<W0){const sp=sum(entriesIn(wr),e=>e.amount);rows.unshift(`<div class="sr"><span>🎯</span><span>이번 주 목표 <b>${man(wl)}</b> (평소보다 −${man(W0-wl)}) · 지금 ${sp?man1(sp):"0원"} 씀${sp<=wl?` · <span class="good-t">지키면 ${r.goal} ${fasterTxt(W0-wl)} 빨라져요</span>`:` · <span class="bad-t">목표를 넘었어요</span>`}</span></div>`)}
   const cw=S.wins.filter(w=>w.date>=y.c.start&&w.date<=y.c.end),sk=sum(cw.filter(w=>w.kind==="skip"),w=>w.amount),sl=sum(cw.filter(w=>w.kind==="sell"),w=>w.amount);
   if(sk||sl)rows.unshift(`<div class="sr"><span>✨</span><span>이번 주기 ${sk?`참은 돈 <b>${man1(sk)}</b>`:""}${sk&&sl?" · ":""}${sl?`부수입 <b>${man1(sl)}</b>`:""} · ${r.goal} <span class="good-t">${fasterTxt(sk+sl)} 당겨짐</span></span></div>`);
@@ -1188,7 +1192,7 @@ function renderStep(){
   $("stepPanel").hidden=!stepMode;if(stepMode&&!$("stepPanel").contains(document.activeElement))stepPreview();
 }
 function openStep(mode){
-  stepMode=stepMode===mode?null:mode;const goal=mode==="goal",W0=ST().weekBudget||0,wl=weekLimit(TODAY),wr=weekRange(TODAY);
+  stepMode=stepMode===mode?null:mode;const goal=mode==="goal",W0=weekBudgetFor(TODAY),wl=weekLimit(TODAY),wr=weekRange(TODAY);
   $("spTitle").textContent=goal?`🎯 ${md(wr.start)}~${md(wr.end)} 이번 주 한도`:mode==="skip"?"🙅 사고 싶었는데 참은 돈":"💰 중고 판매·환급 같은 부수입";
   $("spAmtLbl").textContent=goal?`이번 주 한도 (평소 ${man(W0)})`:mode==="skip"?"참은 금액":"받은 금액";
   $("spMemoBox").hidden=goal;$("spMemo").value="";$("spMemo").placeholder=mode==="skip"?"예: 배달 대신 집밥":"예: 당근 의자 판매";
@@ -1197,8 +1201,8 @@ function openStep(mode){
   renderStep();if(stepMode)setTimeout(()=>$("spAmt").focus(),0);
 }
 function stepPreview(){
-  const a=parseNum($("spAmt").value),r=speedRate(),W0=ST().weekBudget||0;
-  if(stepMode==="goal"){const cut=W0-a,c=cycleOf(payYmOf(TODAY)),cur=weekPledge(weekRange(TODAY).start),B=(ST().cycleBudget||0)-cyclePledge(c)+cur-Math.max(0,cut);
+  const a=parseNum($("spAmt").value),r=speedRate(),W0=weekBudgetFor(TODAY);
+  if(stepMode==="goal"){const cut=W0-a,c=cycleOf(payYmOf(TODAY)),cur=weekPledge(weekRange(TODAY).start),B=cycleBudgetFor(payYmOf(TODAY))-cyclePledge(c)+cur-Math.max(0,cut);
     $("spPreview").innerHTML=!(a>0)?"":cut>0?`이번 주 <b>${man(a)}</b>으로 줄이면 주기 예산 <b>${man(B)}</b>, 아낀 <b>${man(cut)}</b>은 저축 계획으로 가서 ${r.goal}이 <span class="good-t">${fasterTxt(cut)} 빨라져요</span>`:cut<0?`평소 한도(${man(W0)})보다 높게는 못 정해요.`:"평소 한도와 같아요."}
   else $("spPreview").innerHTML=a>0?`${r.goal}이 <span class="good-t">${fasterTxt(a)} 빨라져요</span>${stepMode==="sell"?` · ${ymKo(planYmOf(TODAY))} 선결제에 더해져요`:" · 그 돈은 쓰지 않은 채로 두면 돼요"}`:"";
 }
@@ -1468,7 +1472,7 @@ document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.cla
 $("habits").addEventListener("change",saveDay);
 $("spAmt").addEventListener("input",()=>{const v=parseNum($("spAmt").value);$("spAmt").value=v?num(v):"";stepPreview()});
 $("stepPanel").addEventListener("submit",async e=>{e.preventDefault();
-  const a=parseNum($("spAmt").value),mode=stepMode,W0=ST().weekBudget||0;
+  const a=parseNum($("spAmt").value),mode=stepMode,W0=weekBudgetFor(TODAY);
   if(mode==="goal"){if(!(a>0&&a<W0)){toast(`평소 한도(${man(W0)})보다 낮게 정해 주세요`);return}const ws=weekRange(TODAY).start,ft=fasterTxt(W0-a);
     stepMode=null;try{await put("weekgoals/"+ws,{limit:a,setAt:new Date().toISOString()});toast(`🎯 이번 주 ${man(a)}! 지키면 ${speedRate().goal} ${ft} 빨라져요`)}catch(_){}return}
   if(!(a>0)){toast("금액을 입력해 주세요");return}
