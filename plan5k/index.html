@@ -146,6 +146,18 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .hb.auto{cursor:default}
 .hb.on::after{content:"✓";position:absolute;right:10px;color:var(--mint);font-weight:800}
 .hb:focus-within{outline:2px solid var(--grape);outline-offset:2px}
+.clist{display:flex;flex-direction:column}
+.crow{display:grid;grid-template-columns:28px minmax(0,1fr) auto;grid-template-areas:"e nm rt" "e bar bar";column-gap:10px;row-gap:6px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.crow:first-child{border-top:0}
+.crow .e{grid-area:e;font-size:1.15rem;align-self:start;padding-top:1px}
+.crow .nm{grid-area:nm;font-weight:700;font-size:.9rem;min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.crow .amt{font-weight:500;font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.crow .rt{grid-area:rt;text-align:right;white-space:nowrap}
+.crow .cbar{grid-area:bar;position:relative;height:6px;border-radius:999px;background:var(--line)}
+.crow .cbar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--grape)}
+.crow.fast .cbar i{background:var(--sun)}
+.crow.over .cbar i{background:var(--coral)}
+.crow .cbar b{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink);opacity:.55;border-radius:1px}
 .gauge{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
 .gauge:first-child{border-top:0}
 .gauge .hd{text-align:left;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center}
@@ -1017,8 +1029,11 @@ function compareHTML(w){
     ${!x.bad?"":`<div class="small">${x.diff>0?"가계부에 빠진 지출이나 모르는 할부가 있을 수 있어요. 카드 앱 이용내역을 열어 확인하세요.":"가계부엔 있는데 카드엔 아직 안 잡힌 금액이에요. 취소·부분취소 건인지 확인하세요."}</div>`}</div>`).join("")+(pend&&!(w.lump>0&&Math.abs(lumpEst(w.payYm,w.date)-w.lump)<Math.abs(lumpEst(w.payYm,addDays(w.date,-2))-w.lump))?`<p class="tiny muted">최근 이틀 롯데 결제 ${won(pend)}은 카드 앱에 늦게 잡혀서 비교에서 뺐어요.</p>`:"");
 }
 function bdRange(){if(bdMode==="cycle"){const c=cycleOf(bdKey);return{start:c.start,end:c.end,label:`${md(c.start)}~${md(c.end)} (${Number(bdKey.slice(5))}월 결제)`}}return{...monthRange(bdKey),label:ymKo(bdKey)}}
+function budgetAt(c,key){const h=S.budget&&S.budget.hist;if(!h||!key)return c.amount||0;const k=Object.keys(h).sort().find(k=>k>=key);return k&&h[k].cats&&h[k].cats[c.id]!=null?h[k].cats[c.id]:(c.amount||0)}
+/* before changing the budget, keep the old one for the cycles already finished */
+function histWith(){const h={...((S.budget&&S.budget.hist)||{})},prev=ymAdd(payYmOf(TODAY),-1);if(!Object.keys(h).some(k=>k>=prev))h[prev]={cats:Object.fromEntries(ALLCATS().map(c=>[c.id,c.amount||0])),total:ST().cycleBudget||0};return h}
 function catBudget(c,r){
-  if(!c.accumulate||bdMode!=="cycle")return c.amount||0;
+  if(!c.accumulate||bdMode!=="cycle")return budgetAt(c,bdKey);
   const from=ST().accumulateFrom||r.start,n=ymDiff(payYmOf(from),bdKey)+1;if(n<1)return c.amount||0;
   return n*(c.amount||0)-sum(S.entries.filter(e=>e.cat===c.id&&e.date>=from&&e.date<r.start),e=>e.amount);
 }
@@ -1038,19 +1053,18 @@ function renderWeek(){
     :'<p class="small muted">이번 주 기록이 아직 없어요.</p>';
   if(!bdKey)bdKey=bdMode==="cycle"?payYmOf(TODAY):ymOf(TODAY);
   const r=bdRange();$("bdLabel").textContent=r.label;
-  const f=TODAY<r.start?0:TODAY>r.end?1:(dayDiff(r.start,TODAY)+1)/(dayDiff(r.start,r.end)+1),es=entriesIn(r),B=sum(CATS(),c=>c.amount||0),Sp=sum(es,e=>e.amount);
+  const f=TODAY<r.start?0:TODAY>r.end?1:(dayDiff(r.start,TODAY)+1)/(dayDiff(r.start,r.end)+1),es=entriesIn(r),B=sum(CATS(),c=>budgetAt(c,bdKey)),Sp=sum(es,e=>e.amount);
   $("bdSpent").textContent=won(Sp);$("bdOf").textContent=`/ ${won(B)}`;paintBar($("bdBar"),Sp,B,B*f);
   const bdGap=partial(r)?" · ⏳ "+gapTxt(r):"";
   $("bdPace").textContent=(f>0&&f<1?`기간 ${Math.round(f*100)}% 지남 · ${Sp>B*f?`페이스보다 ${won(Sp-B*f)} 빠름`:`${won(B*f-Sp)} 여유`}`:f>=1?(Sp>B?`${won(Sp-B)} 초과로 끝났어요.`:`${won(B-Sp)} 남기고 끝났어요 🎉`):"아직 시작 전이에요.")+bdGap;
   const other=sum(es.filter(e=>!CATS().some(c=>c.id===e.cat)),e=>e.amount);
-  const gauges=CATS().map(c=>{const b=catBudget(c,r),s=sum(es.filter(e=>e.cat===c.id),e=>e.amount),pace=b*f,[em,col]=look(c.id);
-    const scale=Math.max(b*1.5,s,1),z1=Math.min(100,pace/scale*100),z2=Math.min(100,b/scale*100);
-    const st=s>b?["bad-t","🚨 초과 +"+num(s-b)]:f>0&&s>pace*1.1&&s>0?["warn-t","😬 페이스보다 빠름"]:["good-t","😊 적정"];
-    return{html:`<div class="gauge" style="--c:${col}"><div class="hd"><span class="e">${em}</span><strong class="small">${esc(c.name)}${c.accumulate&&bdMode==="cycle"?' <span class="tiny muted">적립</span>':""}</strong><span class="small"><strong>${num(s)}</strong> <span class="muted">/ ${num(b)}</span><br><span class="st ${st[0]}">${st[1]}</span></span></div>
-      <div class="trk" style="background:linear-gradient(90deg,var(--mint-soft) 0 ${z1}%,var(--sun-soft) ${z1}% ${z2}%,var(--coral-soft) ${z2}% 100%)"><i style="width:${Math.min(100,s/scale*100)}%"></i></div></div>`,hot:st[0]!=="good-t"}});
-  const hot=gauges.filter(g=>g.hot);$("bdCats").innerHTML=(hot.length?hot.map(g=>g.html).join(""):'<p class="small good-t">😊 모든 카테고리가 적정이에요</p>')+
-    (other?`<p class="small muted">미분류 ${won(other)}</p>`:"");;
-  const rest=hot.length?gauges.filter(g=>!g.hot):gauges;$("bdAll").innerHTML=rest.map(g=>g.html).join("");$("bdAllSum").textContent=hot.length?`적정인 카테고리 ${rest.length}개 보기`:`카테고리 ${rest.length}개 보기`;$("bdAll").parentElement.hidden=!rest.length
+  const live=f>0&&f<1,rows=CATS().map(c=>{const b=catBudget(c,r),s=sum(es.filter(e=>e.cat===c.id),e=>e.amount),[em,col]=look(c.id),over=s>b,fast=!over&&live&&s>b*f*1.1&&s>0;
+    const lvl=over?0:fast?1:s>0?2:3,ratio=b>0?s/b:s>0?99:0;
+    const right=b<=0&&s>0?'<span class="bad-t">예산 없음</span>':over?`<span class="bad-t">${ratio>=2?`${(Math.floor(ratio*10)/10)}배`:`+${man1(s-b)}`} 초과</span>`:f>=1?`<span class="good-t">${man1(b-s)} 남김</span>`:`<span class="${fast?"warn-t":"muted"}">남은 <b>${man1(b-s)}</b>${fast?" · 빠름":""}</span>`;
+    return{lvl,ratio,html:`<div class="crow${over?" over":fast?" fast":""}"><span class="e">${em}</span><span class="nm">${esc(c.name)}${c.accumulate&&bdMode==="cycle"?' <span class="tiny muted">적립</span>':""}<span class="amt">${s?man1(s):"0원"} / ${man1(b)}</span></span><span class="rt small">${right}</span>
+      <span class="cbar"><i style="width:${b>0?Math.min(100,s/b*100):s>0?100:0}%"></i>${live&&b>0?`<b style="left:${f*100}%"></b>`:""}</span></div>`}}).sort((a,b)=>a.lvl-b.lvl||b.ratio-a.ratio);
+  $("bdCats").innerHTML=`${live?'<p class="tiny muted">막대 속 세로선 = 오늘까지 써도 되는 선. 선을 넘으면 빠른 거예요.</p>':""}<div class="clist">${rows.map(x=>x.html).join("")}</div>`+(other?`<p class="small muted">미분류 ${won(other)}</p>`:"");
+  $("bdAll").parentElement.hidden=true;
 }
 
 /* ---------- 월급·상환 ---------- */
@@ -1233,7 +1247,7 @@ async function fitBudget(newB){
   const off=newB-sum(vis,c=>c.amount);if(off&&vis.length){const big=vis.slice().sort((a,b)=>b.amount-a.amount)[0];big.amount+=off}
   const week=Math.round((st.weekBudget||0)*f/1000)*1000;
   const gain=GF.gain??st.targetGain,T=GF.T||st.targetYm;
-  try{await put("config/budget",{cats});await put("config/settings",{...st,cycleBudget:newB,weekBudget:week,targetGain:gain,targetYm:T});GF={gain:null,T:null};toast(`🎯 생활비 월 ${man(newB)} · 주 ${man1(week)}으로 맞췄어요`)}catch(_){}
+  try{await put("config/budget",{cats,hist:histWith()});await put("config/settings",{...st,cycleBudget:newB,weekBudget:week,targetGain:gain,targetYm:T});GF={gain:null,T:null};toast(`🎯 생활비 월 ${man(newB)} · 주 ${man1(week)}으로 맞췄어요`)}catch(_){}
 }
 /* 앞으로의 길: where each month's spare money goes (debt vs savings) and the milestones on the way */
 function renderProjection(sim,now,target){
@@ -1489,7 +1503,7 @@ const val=id=>$(id)?$(id).value:"";
 $("setBase").addEventListener("submit",async e=>{e.preventDefault();
   const s={...ST(),income:parseNum(val("s_income")),raisePct:Number(val("s_raise"))||0,raiseFromYm:val("s_raiseFrom"),raiseBackMonths:Number(val("s_raiseBack"))||0,buffer:parseNum(val("s_buffer")),cycleBudget:parseNum(val("s_cycle")),weekBudget:parseNum(val("s_week")),deposit:parseNum(val("s_deposit")),startDebt:parseNum(val("s_startDebt")),targetGain:parseNum(val("s_gain")),targetYm:val("s_tYm"),finalTarget:parseNum(val("s_final")),warnDiff:parseNum(val("s_warn")),cashReserve:val("s_res").trim()===""?null:parseNum(val("s_res")),payEarly:!!($("s_early")&&$("s_early").checked)};
   try{await put("config/settings",s);toast("수입·목표를 저장했어요")}catch(_){}});
-$("setBudget").addEventListener("submit",async e=>{e.preventDefault();const cats=ALLCATS().map(c=>c.hidden?c:{...c,amount:parseNum(val("b_"+c.id))});try{await put("config/budget",{cats});toast(`예산 저장 · 합계 ${won(sum(cats,c=>c.amount))}`)}catch(_){}});
+$("setBudget").addEventListener("submit",async e=>{e.preventDefault();const cats=ALLCATS().map(c=>c.hidden?c:{...c,amount:parseNum(val("b_"+c.id))});try{await put("config/budget",{cats,hist:histWith()});toast(`예산 저장 · 합계 ${won(sum(cats,c=>c.amount))}`)}catch(_){}});
 $("setFixed").addEventListener("submit",async e=>{e.preventDefault();
   const items=((S.fixed&&S.fixed.items)||[]).map(it=>{const fc=val("fc_"+it.id),fa=val("fa_"+it.id),o={...it,amount:parseNum(val("f_"+it.id)),card:!!($("fk_"+it.id)&&$("fk_"+it.id).checked)};o.changes=fc&&fa!==""?[{fromYm:fc,amount:parseNum(fa)}]:[];return o});
   try{await put("config/fixed",{items});toast("고정비를 저장했어요")}catch(_){}});
