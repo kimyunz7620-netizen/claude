@@ -771,7 +771,9 @@ const HK=["noInst","noRevolve","appCheck","48h"];
 /* habits the ledger already knows: no paid installment that day, and a weekly card check saved that day */
 function habitAuto(d){return{noInst:!S.entries.some(e=>e.date===d&&e.method==="inst"&&!e.free),appCheck:S.weekly.some(w=>!w.seed&&w.date===d)}}
 function habitsOn(d){const a=habitAuto(d),c=(S.days[d]&&S.days[d].checks)||{};return{noInst:a.noInst,noRevolve:!!c.noRevolve,appCheck:a.appCheck||!!c.appCheck,"48h":!!c["48h"]}}
-const recorded=d=>S.entries.some(e=>e.date===d)||S.wins.some(w=>w.date===d)||!!(S.days[d]&&(S.days[d].noSpend||HK.some(k=>S.days[d].checks&&S.days[d].checks[k])));
+/* streaks count only days the person logged in the app: rows imported from the old ledger (ids like s2026091200 / e2026100101) and day docs written without the app (no savedAt) don't count */
+const imported=e=>/^[se]\d{10}$/.test(e.id||"");
+const recorded=d=>S.entries.some(e=>e.date===d&&!imported(e))||S.wins.some(w=>w.date===d)||!!(S.days[d]&&S.days[d].savedAt&&(S.days[d].noSpend||HK.some(k=>S.days[d].checks&&S.days[d].checks[k])));
 function streakNow(){let s=0,d=TODAY;if(!recorded(d))d=addDays(d,-1);while(recorded(d)){s++;d=addDays(d,-1)}return s}
 function bestRun(pred){const days=new Set();S.entries.forEach(e=>days.add(e.date));Object.keys(S.days).forEach(d=>days.add(d));
   let best=0;[...days].forEach(d=>{if(!pred(d)||pred(addDays(d,1)))return;let n=1,x=addDays(d,-1);while(pred(x)){n++;x=addDays(x,-1)}best=Math.max(best,n)});return best}
