@@ -1115,7 +1115,7 @@ function renderDash(){
   $("dbFree").textContent=sim.free?`이대로면 유이자 카드 할부는 ${ymKo(sim.cardDone)}, 모든 빚은 ${ymKo(sim.free)}에 끝나요.`:"지금 숫자로는 완납 시점을 계산할 수 없어요.";
   const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),lastCash=cashNow(),now=(st.deposit||0)+(lastCash||0)-T;
   $("nwNow").textContent=won(now);
-  const startNet=snaps.length?snaps[0].net:now,gain=st.targetGain||0,target=startNet+gain,fin=st.finalTarget||1e8;
+  const startNet=goalBase(),gain=st.targetGain||0,target=startNet+gain,fin=st.finalTarget||1e8;
   const lo=Math.min(startNet,now,0),span=Math.max(1,fin-lo),pos=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
   $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div><div class="mk lo" style="left:${pos(target)}%"><b>🏁</b>${man(target)}</div><div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div><div class="me" style="left:${pos(now)}%">🐷</div>`;
   const chips=[];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip warn">세 통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
@@ -1178,35 +1178,52 @@ function stepPreview(){
     $("spPreview").innerHTML=!(a>0)?"":cut>0?`이번 주 <b>${man(a)}</b>으로 줄이면 주기 예산 <b>${man(B)}</b>, 아낀 <b>${man(cut)}</b>은 저축 계획으로 가서 ${r.goal}이 <span class="good-t">${fasterTxt(cut)} 빨라져요</span>`:cut<0?`평소 한도(${man(W0)})보다 높게는 못 정해요.`:"평소 한도와 같아요."}
   else $("spPreview").innerHTML=a>0?`${r.goal}이 <span class="good-t">${fasterTxt(a)} 빨라져요</span>${stepMode==="sell"?` · ${ymKo(planYmOf(TODAY))} 선결제에 더해져요`:" · 그 돈은 쓰지 않은 채로 두면 돼요"}`:"";
 }
-/* the most 생활비 a month can take and still reach the target by the target month (searched in 1,000원 steps) */
-let GOALC={sig:null,res:null};
-function budgetForGoal(){
-  const st=ST(),T=st.targetYm,gain=st.targetGain;if(!T||!gain)return null;
-  const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),now=(st.deposit||0)+(cashNow()||0)-totalDebt(),target=(snaps.length?snaps[0].net:now)+gain;
-  const sig=JSON.stringify([st,S.entries.length,sum(S.entries,e=>e.amount),S.payments.length,ITEMS().length,LOANS(),S.weekGoals,S.wins.length,S.networth.length,S.accounts,TODAY]);
+/* the goal is measured from a fixed start: the first month-end record, or deposit − debt when the app started */
+function goalBase(){const st=ST(),snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1);return snaps.length?snaps[0].net:(st.deposit||0)+(st.startCash||0)-(st.startDebt||totalDebt())}
+/* the most 생활비 a month can take and still reach base+gain by month T (searched in 1만 steps) */
+let GOALC={sig:null,res:null},GF={gain:null,T:null};
+function budgetForGoal(gain,T){
+  const st=ST();gain=gain??st.targetGain;T=T||st.targetYm;if(!T||!(gain>0))return null;
+  const target=goalBase()+gain,sig=JSON.stringify([gain,T,st,S.entries.length,sum(S.entries,e=>e.amount),S.payments.length,ITEMS().length,LOANS(),S.weekGoals,S.wins.length,S.networth.length,S.accounts,TODAY]);
   if(GOALC.sig===sig)return GOALC.res;
-  const B=st.cycleBudget||0,at=x=>{const p=simulate(x).path.find(p=>p.ym===T);return p?p.net:null};
-  let res=null;const base=at(0);
+  const B=st.cycleBudget||0,at=x=>{const p=simulate(x).path.find(p=>p.ym===T);return p?p.net:null},base=at(0);let res=null;
   if(base!=null){
-    if(at(-B)<target)res={T,target,max:null};
-    else{let lo=-B,hi=B;if(at(hi)>=target)lo=hi;else for(let i=0;i<10&&hi-lo>10000;i++){const mid=Math.round((lo+hi)/2/10000)*10000;if(mid===lo||mid===hi)break;if(at(mid)>=target)lo=mid;else hi=mid}
-      res={T,target,max:Math.floor((B+lo)/10000)*10000,gap:base-target}}}
+    const per=Math.max(1,(at(-10000)-base)),reach=(simulate(0).path.find(p=>p.net>=target)||{}).ym||null,left=simulate(0).path.filter(p=>p.ym<=T).length;
+    let max=null;if(at(-B)>=target){let lo=-B,hi=B;if(at(hi)>=target)lo=hi;else for(let i=0;i<10&&hi-lo>10000;i++){const mid=Math.round((lo+hi)/2/10000)*10000;if(mid===lo||mid===hi)break;if(at(mid)>=target)lo=mid;else hi=mid}max=Math.floor((B+lo)/10000)*10000}
+    res={T,gain,target,base,max,gap:base-target,per,reach,left}}
   GOALC={sig,res};return res;
 }
 function renderGoalFit(){
-  const st=ST(),r=budgetForGoal(),B=st.cycleBudget||0,el=$("goalFit");el.hidden=!r;if(!r)return;
-  const lab=`${ymKo(r.T)} +${man(st.targetGain)}`;
-  if(r.max==null){el.innerHTML=`<strong class="small">🎯 ${lab} 목표</strong><span class="small">생활비를 0원으로 줄여도 닿기 어려워요. 목표 시점이나 금액을 조금 조정해 보세요.</span>`;return}
-  const diff=r.max-B;
-  el.innerHTML=`<strong class="small">🎯 ${lab} 달성하려면</strong><span>생활비 월 <b>${man(r.max)}</b> 이하 ${diff<0?`<span class="bad-t">(지금 예산보다 −${man(-diff)})</span>`:`<span class="good-t">(지금 ${man(B)}이면 ${ymKo(r.T)}에 목표보다 ${man(r.gap)} 여유)</span>`}</span>`+
-    (diff<0?`<button type="button" class="btn" data-fitgoal="${r.max}">월 ${man(r.max)}으로 예산 맞추기</button><span class="tiny muted">한 달·한 주 한도와 카테고리 금액을 같은 비율로 줄여요.</span>`:"");
+  const st=ST(),el=$("goalFit");
+  if(!$("gfGain")){el.innerHTML=`<div class="row"><strong>🎯 목표로 역산</strong><span class="tiny muted">금액·시점을 바꿔 보세요</span></div>
+    <div class="fields"><label class="field"><span>순자산 늘릴 금액</span><input type="text" inputmode="numeric" id="gfGain"></label><label class="field"><span>언제까지</span><input type="month" id="gfYm"></label></div><div id="gfOut" style="display:flex;flex-direction:column;gap:8px"></div>`;
+    const upd=()=>{GF.gain=parseNum($("gfGain").value)||null;GF.T=$("gfYm").value||null;clearTimeout(upd.t);upd.t=setTimeout(goalOut,250)};
+    $("gfGain").addEventListener("input",()=>{const v=parseNum($("gfGain").value);$("gfGain").value=v?num(v):"";upd()});$("gfYm").addEventListener("change",upd)}
+  if(document.activeElement!==$("gfGain")&&GF.gain==null)$("gfGain").value=st.targetGain?num(st.targetGain):"";
+  if(document.activeElement!==$("gfYm")&&GF.T==null)$("gfYm").value=st.targetYm||"";
+  goalOut();
 }
+function goalOut(){
+  const st=ST(),gain=GF.gain??st.targetGain,T=GF.T||st.targetYm,r=budgetForGoal(gain,T),B=st.cycleBudget||0,o=$("gfOut");
+  if(!r){o.innerHTML='<p class="small muted">늘릴 금액과 시점을 적으면 필요한 생활비를 계산해요.</p>';return}
+  const sd=st.startDebt||0,debtPart=Math.min(sd,r.gain),savePart=r.gain-debtPart,changed=(gain!==st.targetGain||T!==st.targetYm);
+  const lines=[`<p class="small">목표: <b>${ymKo(r.T)}에 순자산 ${man(r.target)}</b> <span class="muted">(시작 ${man(goalBase())})</span>${sd?`<br><span class="muted">= 빚 ${man(debtPart)} 다 갚기${savePart>0?` + 통장에 ${man(savePart)} 모으기`:""}</span>`:""}</p>`,
+    `<p class="small">지금 생활비 ${man(B)}이면 ${ymKo(r.T)}에 ${man(r.target+r.gap)} <span class="${r.gap>=0?"good-t":"bad-t"}">(${r.gap>=0?"+":"−"}${man(Math.abs(r.gap))})</span>${r.reach?` · 목표 도착 <b>${ymKo(r.reach)}</b>`:""}</p>`,
+    `<p class="tiny muted">생활비를 월 1만 줄이면 ${ymKo(r.T)} 순자산이 약 ${man1(r.per)} 늘어요 (그때까지 남은 결제 ${r.left}번).</p>`];
+  const res=r.max==null?`<p class="small bad-t">생활비를 0원으로 줄여도 ${ymKo(r.T)}까지는 어려워요. 시점을 늦추거나 금액을 줄여 보세요.</p>`
+    :r.max>=B?`<p class="small good-t">✅ 지금 생활비로 충분해요${r.max>B?` (월 ${man(r.max)}까지 써도 달성)`:""}</p>`
+    :`<p><b>생활비 월 ${man(r.max)} 이하</b>면 달성 <span class="bad-t small">(지금보다 −${man(B-r.max)})</span></p>`;
+  const btns=[];if(r.max!=null&&r.max<B)btns.push(`<button type="button" class="btn" data-fitgoal="${r.max}">월 ${man(r.max)}으로 예산 맞추기</button>`);if(changed)btns.push(`<button type="button" class="btn ghost" data-savegoal="1">이 목표 저장</button>`);
+  o.innerHTML=res+lines.join("")+(btns.length?`<div class="btns">${btns.join("")}</div>${r.max!=null&&r.max<B?'<span class="tiny muted">예산을 맞추면 이 목표도 함께 저장돼요. 한 달·한 주 한도와 카테고리를 같은 비율로 줄여요.</span>':""}`:"");
+}
+async function saveGoal(){const st=ST(),gain=GF.gain??st.targetGain,T=GF.T||st.targetYm;try{await put("config/settings",{...st,targetGain:gain,targetYm:T});GF={gain:null,T:null};toast(`🎯 목표 저장: ${ymKo(T)}까지 +${man(gain)}`)}catch(_){}}
 async function fitBudget(newB){
   const st=ST(),B=st.cycleBudget||0;if(!(newB>0)||!B)return;const f=newB/B;
   const cats=ALLCATS().map(c=>c.hidden?c:{...c,amount:Math.round((c.amount||0)*f/1000)*1000}),vis=cats.filter(c=>!c.hidden);
   const off=newB-sum(vis,c=>c.amount);if(off&&vis.length){const big=vis.slice().sort((a,b)=>b.amount-a.amount)[0];big.amount+=off}
   const week=Math.round((st.weekBudget||0)*f/1000)*1000;
-  try{await put("config/budget",{cats});await put("config/settings",{...st,cycleBudget:newB,weekBudget:week});toast(`🎯 생활비 월 ${man(newB)} · 주 ${man1(week)}으로 맞췄어요`)}catch(_){}
+  const gain=GF.gain??st.targetGain,T=GF.T||st.targetYm;
+  try{await put("config/budget",{cats});await put("config/settings",{...st,cycleBudget:newB,weekBudget:week,targetGain:gain,targetYm:T});GF={gain:null,T:null};toast(`🎯 생활비 월 ${man(newB)} · 주 ${man1(week)}으로 맞췄어요`)}catch(_){}
 }
 /* 앞으로의 길: where each month's spare money goes (debt vs savings) and the milestones on the way */
 function renderProjection(sim,now,target){
@@ -1317,6 +1334,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.delwin){if(!confirmTap(t))return;try{await del("wins/"+t.dataset.delwin);toast("지웠어요")}catch(_){}return}
   if(t.id==="spClose"){stepMode=null;renderStep();return}
   if(t.id==="spReset"){const ws=weekRange(TODAY).start;stepMode=null;try{await del("weekgoals/"+ws);toast(`이번 주 한도를 ${man(ST().weekBudget||0)}으로 돌렸어요`)}catch(_){}return}
+  if(t.dataset.savegoal){await saveGoal();return}
   if(t.dataset.fitgoal){if(!confirmTap(t))return;await fitBudget(Number(t.dataset.fitgoal));return}
   if(t.dataset.delref){if(!confirmTap(t))return;try{await del("entries/"+t.dataset.delref);toast("취소 기록을 지웠어요")}catch(_){}return}
   if(t.dataset.refundok){const e0=S.entries.find(x=>x.id===t.dataset.refundok);if(!e0)return;const{pending,...rest}=e0;const{id:_i,...doc}=rest;try{await put("entries/"+e0.id,doc);toast("✅ 카드 취소 확인!")}catch(_){}return}
