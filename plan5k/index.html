@@ -393,10 +393,22 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
   <section class="view" id="v-records" aria-label="지난 기록" hidden>
     <div class="row"><h1>📅 지난 기록</h1><button type="button" class="btn ghost" data-go="today">‹ 오늘</button></div>
 
-    <div class="card" id="refundCard" hidden>
-      <div class="row"><h2>↩️ 결제 취소 예정</h2><span class="chip" id="refundCount"></span></div>
+    <div class="card" id="refundCard">
+      <div class="row"><h2>↩️ 결제 취소</h2><span class="chip" id="refundCount"></span></div>
       <p class="small muted">카드 앱 이용내역에 취소가 뜨면 '취소 확인'을 눌러 주세요. 그 전까지는 주간 점검 비교에서 빼 둬요.</p>
       <div class="list" id="refundList"></div>
+      <details class="more" id="oldRefBox"><summary>+ 기록에 없는 예전 결제 취소</summary>
+        <form id="oldRefForm" autocomplete="off" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+          <p class="small muted">이 앱을 쓰기 전에 결제한 건이에요. 그때 생활비는 여기 없으니 지금 생활비 예산은 그대로 두고, 카드값·빚 계산에만 반영해요.</p>
+          <div class="seg" id="orKind" role="group" aria-label="원래 결제"><button type="button" data-ork="lump" aria-pressed="true">일시불이었어요</button><button type="button" data-ork="inst" aria-pressed="false">할부였어요</button></div>
+          <label class="field" id="orItemBox" hidden><span>취소되는 할부 건</span><select id="orItem"></select></label>
+          <div class="fields"><label class="field"><span id="orAmtLbl">취소 금액</span><input type="text" inputmode="numeric" id="orAmt" placeholder="0"></label><label class="field"><span>취소일 (예정일)</span><input type="date" id="orDate"></label></div>
+          <label class="field"><span>무엇</span><input type="text" id="orMemo" placeholder="예: 지그재그 9/3 주문"></label>
+          <label class="check"><input type="checkbox" id="orPending" checked><span class="small">카드 앱에 아직 취소가 안 보여요 <span class="muted">(취소 예정)</span></span></label>
+          <p class="small" id="orPreview"></p>
+          <button class="btn" type="submit">취소 기록하기</button>
+        </form>
+      </details>
     </div>
     <div class="card" id="uncatCard" hidden>
       <div class="row"><h2>🧩 분류가 필요한 지출</h2><span class="chip warn" id="uncatCount"></span></div>
@@ -647,7 +659,7 @@ function newInstLeft(){const lp=lastPassed();return sum(ledgerInst(),e=>{const f
 const ITEMS=()=>(S.inst&&S.inst.items)||[];
 const ASOF=()=>(S.inst&&S.inst.asOfYm)||"2026-11";
 const itemPays=x=>S.payments.filter(p=>p.itemId===x.id);
-const closedFrom=x=>itemPays(x).map(p=>p.fromYm).sort()[0]||null;
+const closedFrom=x=>itemPays(x).map(p=>p.fromYm).concat(S.entries.filter(e=>e.cancelItem===x.id&&e.fromYm).map(e=>e.fromYm)).sort()[0]||null;
 function itemRaw(x,ym){ // principal and bill for ym, as the card schedules it
   const k=ymDiff(ASOF(),ym),R=x.N-x.n;
   if(k<-(x.n-1)||k>R)return null;
@@ -806,8 +818,9 @@ function paintBar(el,spent,budget,pace){
   el.querySelector("i").style.width=(budget>0?Math.min(100,spent/budget*100):0)+"%";
   const b=el.querySelector("b");if(b)b.style.left=(budget>0&&pace!=null?Math.min(100,pace/budget*100):0)+"%";
 }
+const refName=e=>e.cancelItem?`${(ITEMS().find(x=>x.id===e.cancelItem)||{name:"할부"}).name} 할부`:ALLCATS().some(c=>c.id===e.cat)?catName(e.cat):(e.memo||"예전 결제");
 function entryRow(e){const[em,col]=look(e.cat),rf=e.amount<0,cx=rf?0:sum(S.entries.filter(x=>x.cancelOf===e.id),x=>-x.amount);
-  if(rf)return `<div class="li" style="--c:${col}"><span class="av">↩️</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))} 결제 취소${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.pending?"⏳ 취소 예정 · 카드 앱에 뜨면 체크":"✅ 카드 취소 완료"}</div></button><div class="a good-t">−${num(-e.amount)}</div></div>`;
+  if(rf)return `<div class="li" style="--c:${col}"><span class="av">↩️</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(refName(e))} 결제 취소${e.memo&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.pending?"⏳ 취소 예정 · 카드 앱에 뜨면 체크":"✅ 카드 취소 완료"}${e.cancelItem?` · ${ymKo(e.fromYm)} 청구부터 없음`:e.excl?" · 예전 결제라 생활비엔 안 들어가요":""}</div></button><div class="a good-t">${e.amount?`−${num(-e.amount)}`:"취소"}</div></div>`;
   return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":`⚠️ 할부 ${e.months}개월${e.free?" 무이자":""}`}${e.excl?" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
 function renderToday(){
   const allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
@@ -843,8 +856,10 @@ function renderToday(){
   HK.forEach(k=>{const el=$("hk_"+k),auto=k==="noInst"||(k==="appCheck"&&ha.appCheck);el.checked=ho[k];el.disabled=auto;el.closest(".hb").classList.toggle("on",ho[k]);el.closest(".hb").classList.toggle("auto",auto)});
 
   renderCal();
-  const pend=S.entries.filter(e=>e.pending&&e.amount<0).sort((a,b)=>a.date<b.date?-1:1);$("refundCard").hidden=!pend.length;$("refundCount").textContent=`${pend.length}건 · ${won(-sum(pend,e=>e.amount))}`;
-  $("refundList").innerHTML=pend.map(e=>`<div class="li"><span class="av">↩️</span><div><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${md(e.date)} 기록 · ${num(-e.amount)}원</div></div><button type="button" class="btn ghost" style="padding:6px 10px;font-size:.78rem" data-refundok="${esc(e.id)}">취소 확인</button></div>`).join("");
+  const pend=S.entries.filter(e=>e.pending&&e.amount<=0).sort((a,b)=>a.date<b.date?-1:1);$("refundCount").hidden=!pend.length;$("refundCount").textContent=`예정 ${pend.length}건 · ${won(-sum(pend,e=>e.amount))}`;
+  if(!$("oldRefForm").contains(document.activeElement)){if(!$("orDate").value)$("orDate").value=TODAY;
+    const open=ITEMS().filter(x=>itemBal(x)>0).sort((a,b)=>a.date<b.date?1:-1);$("orItem").innerHTML=open.map(x=>`<option value="${esc(x.id)}">${esc(x.name)} · ${md(x.date)} · 남은 ${num(itemBal(x))}</option>`).join("")||'<option value="">남은 할부가 없어요</option>';orPreview()}
+  $("refundList").innerHTML=pend.length?pend.map(e=>`<div class="li"><span class="av">↩️</span><div><div class="t">${esc(refName(e))}${e.memo&&!e.cancelItem&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${md(e.date)} 기록 · ${e.amount?num(-e.amount)+"원":"남은 할부 취소"}</div></div><button type="button" class="btn ghost" style="padding:6px 10px;font-size:.78rem" data-refundok="${esc(e.id)}">취소 확인</button></div>`).join(""):'<p class="small muted">취소 예정인 건이 없어요. 지금 기록에 있는 결제는 그 지출을 눌러 ↩️ 결제 취소를 쓰면 돼요.</p>';
   const un=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).sort((a,b)=>a.date<b.date?-1:1);
   $("uncatCard").hidden=!un.length;$("uncatCount").textContent=`${un.length}건`;
   if(!$("uncatList").contains(document.activeElement))$("uncatList").innerHTML=un.map(e=>`<div class="sub"><div class="row"><span class="small"><span class="muted">${md(e.date)}</span> ${esc((e.memo||"").replace(/ · 카드에만 있음.*$/,""))}</span><strong>${num(e.amount)}</strong></div><div class="pills">${CATS().map(c=>`<button type="button" class="pill" data-recat="${esc(e.id)}" data-cat2="${esc(c.id)}">${look(c.id)[0]} ${esc(c.name)}</button>`).join("")}<button type="button" class="pill" data-recat="${esc(e.id)}" data-cat2="__excl">🎒 예산에서 빼기</button></div></div>`).join("");
@@ -872,7 +887,7 @@ function renderCal(){
 function questItems(){
   const it=[],d=dom(TODAY),M=ymOf(TODAY),day=S.days[TODAY]||{},todays=S.entries.filter(e=>e.date===TODAY);
   const unc=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).length;
-  const pnd=S.entries.filter(e=>e.pending&&e.amount<0);if(pnd.length)it.push({e:"↩️",done:false,t:`결제 취소 예정 ${pnd.length}건`,s:"카드 앱에 취소가 떴는지 확인",btn:["보기","go:records"]});
+  const pnd=S.entries.filter(e=>e.pending&&e.amount<=0);if(pnd.length)it.push({e:"↩️",done:false,t:`결제 취소 예정 ${pnd.length}건`,s:"카드 앱에 취소가 떴는지 확인",btn:["보기","go:records"]});
   if(unc)it.push({e:"🧩",done:false,urgent:true,t:`분류가 필요한 지출 ${unc}건`,s:"카드에만 있던 지출이에요",btn:["정리","go:records"]});
   const wr=weekRange(TODAY),isSun=parse(TODAY).getDay()===0,prevSun=addDays(wr.start,-1),last=S.weekly.filter(w=>!w.seed).map(w=>w.date).sort().pop();
   if(isSun){const done=!!last&&last>=wr.start;it.push({e:"💳",done,t:"주간 카드 점검",s:done?"이번 주 점검 끝":"롯데카드 앱 열고 5분",btn:done?null:["시작","go:week"]})}
@@ -1329,6 +1344,22 @@ function startEdit(en){
 }
 function cancelEdit(){editingId=null;refundOf=null;$("enPendBox").hidden=true;$("enRefund").hidden=true;selCat=null;selMethod="lotte";document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m==="lotte"));$("instBox").hidden=true;$("enMore").open=false;$("enFree").checked=false;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
 $("enCancel").addEventListener("click",()=>{cancelEdit();renderToday()});
+let orKind="lump";
+function orPreview(){const inst=orKind==="inst",x=inst&&ITEMS().find(i=>i.id===$("orItem").value),a=parseNum($("orAmt").value),d=$("orDate").value||TODAY;
+  $("orItemBox").hidden=!inst;$("orAmtLbl").textContent=inst?"이미 낸 돈 중 돌려받는 금액 (모르면 0)":"취소 금액";
+  document.querySelectorAll("#orKind button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.ork===orKind));
+  $("orPreview").innerHTML=inst?(x?`${esc(x.name)} 할부의 남은 원금 <b>${won(prepayAmt(x,d))}</b>이 ${ymKo(fromOf(d))} 청구부터 사라지고 수수료 ${won(prepaySave(x,d))}도 안 나가요.${a?` 돌려받는 ${won(a)}은 카드값에서 빠져요.`:""}`:""):a?`${ymKo(payYmOf(d))} 카드값에서 <b>${won(a)}</b>이 빠져요 (카드 앱에 취소가 뜨면 계산에 들어가요). 그만큼 선결제할 돈이 늘어요.`:"";}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-ork]");if(!b)return;orKind=b.dataset.ork;orPreview()});
+["orItem","orAmt","orDate"].forEach(id=>$(id).addEventListener("input",()=>{if(id==="orAmt"){const v=parseNum($("orAmt").value);$("orAmt").value=v?num(v):""}orPreview()}));
+$("orItem").addEventListener("change",orPreview);
+$("oldRefForm").addEventListener("submit",async e=>{e.preventDefault();
+  const inst=orKind==="inst",a=parseNum($("orAmt").value),d=$("orDate").value||TODAY,x=inst&&ITEMS().find(i=>i.id===$("orItem").value);
+  if(inst&&!x){toast("취소되는 할부 건을 골라 주세요");return}if(!inst&&!(a>0)){toast("취소 금액을 적어 주세요");return}
+  const doc={date:d,cat:"refund",amount:-(a||0),method:"lotte",excl:true,memo:$("orMemo").value.trim()||(x?x.name:""),createdAt:new Date().toISOString()};
+  if(x){doc.cancelItem=x.id;doc.fromYm=fromOf(d)}if($("orPending").checked)doc.pending=true;
+  try{await put("entries/"+newId(),doc);toast(x?`↩️ ${x.name} 할부 취소 · 남은 ${won(prepayAmt(x,d))}이 빚에서 빠져요`:`↩️ 예전 결제 ${won(a)} 취소 기록`);
+    $("orAmt").value="";$("orMemo").value="";$("oldRefBox").open=false;}catch(_){}
+});
 /* turn the open entry into a new cancellation of it: same card, category and budget flag, today, full amount by default */
 $("enRefund").addEventListener("click",()=>{const o=S.entries.find(x=>x.id===editingId);if(!o)return;
   editingId=null;refundOf=o.id;selDate=TODAY;$("enDate").value=TODAY;$("enAmount").value=num(o.amount);$("enMemo").value=o.memo||"";$("enPending").checked=true;
@@ -1343,6 +1374,7 @@ $("entryForm").addEventListener("submit",async e=>{
   const doc={date,cat:selCat,amount:refundOf?-amount:amount,method:selMethod,memo:$("enMemo").value.trim(),createdAt:prev?prev.createdAt:new Date().toISOString()};
   if(refundOf){if(refundOf!=="?")doc.cancelOf=refundOf;if($("enPending").checked)doc.pending=true;const o=S.entries.find(x=>x.id===refundOf);if(o&&o.excl)$("enExcl").checked=true}
   if(prev&&prev.cardItem)doc.cardItem=prev.cardItem;
+  if(prev&&prev.cancelItem){doc.cancelItem=prev.cancelItem;doc.fromYm=prev.fromYm}
   if($("enExcl").checked)doc.excl=true;
   if(selMethod==="inst"){doc.months=Math.max(2,Math.min(36,Number($("enMonths").value)||3));doc.free=$("enFree").checked}
   $("enSave").disabled=true;
