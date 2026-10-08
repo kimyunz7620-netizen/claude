@@ -865,7 +865,7 @@ function renderToday(){
   const pend=S.entries.filter(e=>e.pending&&e.amount<=0).sort((a,b)=>a.date<b.date?-1:1);$("refundCount").hidden=!pend.length;$("refundCount").textContent=`예정 ${pend.length}건 · ${won(-sum(pend,e=>e.amount))}`;
   if(!$("oldRefForm").contains(document.activeElement)){if(!$("orDate").value)$("orDate").value=TODAY;
     const open=ITEMS().filter(x=>itemBal(x)>0).sort((a,b)=>a.date<b.date?1:-1);$("orItem").innerHTML=open.map(x=>`<option value="${esc(x.id)}">${esc(x.name)} · ${md(x.date)} · 남은 ${num(itemBal(x))}</option>`).join("")||'<option value="">남은 할부가 없어요</option>';orPreview()}
-  $("refundList").innerHTML=pend.length?pend.map(e=>`<div class="li"><span class="av">↩️</span><div><div class="t">${esc(refName(e))}${e.memo&&!e.cancelItem&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${md(e.date)} 기록 · ${e.amount?num(-e.amount)+"원":"남은 할부 취소"}</div></div><button type="button" class="btn ghost" style="padding:6px 10px;font-size:.78rem" data-refundok="${esc(e.id)}">취소 확인</button></div>`).join(""):'<p class="small muted">취소 예정인 건이 없어요. 지금 기록에 있는 결제는 그 지출을 눌러 ↩️ 결제 취소를 쓰면 돼요.</p>';
+  $("refundList").innerHTML=pend.length?pend.map(e=>`<div class="li"><span class="av">↩️</span><div><div class="t">${esc(refName(e))}${e.memo&&!e.cancelItem&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${md(e.date)} 기록 · ${e.amount?num(-e.amount)+"원":"남은 할부 취소"}</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><button type="button" class="btn ghost" style="padding:6px 10px;font-size:.78rem" data-refundok="${esc(e.id)}">취소 확인</button><div style="display:flex;gap:4px"><button type="button" class="btn ghost" style="padding:4px 8px;font-size:.72rem" data-edit="${esc(e.id)}">고치기</button><button type="button" class="btn danger" style="padding:4px 8px;font-size:.72rem" data-delref="${esc(e.id)}">삭제</button></div></div></div>`).join(""):'<p class="small muted">취소 예정인 건이 없어요. 지금 기록에 있는 결제는 그 지출을 눌러 ↩️ 결제 취소를 쓰면 돼요.</p>';
   const un=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).sort((a,b)=>a.date<b.date?-1:1);
   $("uncatCard").hidden=!un.length;$("uncatCount").textContent=`${un.length}건`;
   if(!$("uncatList").contains(document.activeElement))$("uncatList").innerHTML=un.map(e=>`<div class="sub"><div class="row"><span class="small"><span class="muted">${md(e.date)}</span> ${esc((e.memo||"").replace(/ · 카드에만 있음.*$/,""))}</span><strong>${num(e.amount)}</strong></div><div class="pills">${CATS().map(c=>`<button type="button" class="pill" data-recat="${esc(e.id)}" data-cat2="${esc(c.id)}">${look(c.id)[0]} ${esc(c.name)}</button>`).join("")}<button type="button" class="pill" data-recat="${esc(e.id)}" data-cat2="__excl">🎒 예산에서 빼기</button></div></div>`).join("");
@@ -1316,6 +1316,7 @@ document.addEventListener("click",async e=>{
   if(t.id==="spClose"){stepMode=null;renderStep();return}
   if(t.id==="spReset"){const ws=weekRange(TODAY).start;stepMode=null;try{await del("weekgoals/"+ws);toast(`이번 주 한도를 ${man(ST().weekBudget||0)}으로 돌렸어요`)}catch(_){}return}
   if(t.dataset.fitgoal){if(!confirmTap(t))return;await fitBudget(Number(t.dataset.fitgoal));return}
+  if(t.dataset.delref){if(!confirmTap(t))return;try{await del("entries/"+t.dataset.delref);toast("취소 기록을 지웠어요")}catch(_){}return}
   if(t.dataset.refundok){const e0=S.entries.find(x=>x.id===t.dataset.refundok);if(!e0)return;const{pending,...rest}=e0;const{id:_i,...doc}=rest;try{await put("entries/"+e0.id,doc);toast("✅ 카드 취소 확인!")}catch(_){}return}
   if(t.dataset.wi){WI=Number(t.dataset.wi);renderDash();return}
   if(t.dataset.increset){saveIncome(t.dataset.increset,null);return}
@@ -1387,7 +1388,7 @@ $("entryForm").addEventListener("submit",async e=>{
   if(selMethod==="inst"){doc.months=Math.max(2,Math.min(36,Number($("enMonths").value)||3));doc.free=$("enFree").checked}
   $("enSave").disabled=true;
   try{await put("entries/"+id,doc);
-    if(refundOf){toast(`↩️ ${catName(selCat)} ${won(amount)} 결제 취소${doc.pending?" 예정":""} 기록 · 그만큼 생활비가 돌아와요`);cancelEdit();selDate=date;renderToday();$("enSave").disabled=false;return}
+    if(refundOf){toast(`↩️ ${refName(doc)} ${won(amount)} 결제 취소${doc.pending?" 예정":""} · ${doc.excl?"그만큼 카드값에서 빠져요":"그만큼 생활비가 돌아와요"}`);cancelEdit();selDate=date;renderToday();$("enSave").disabled=false;return}
     const allow=todayAllowance(),todaySum=sum(S.entries.filter(x=>x.date===TODAY&&x.id!==id),x=>x.amount)+(date===TODAY?amount:0);
     const cc=cycleOf(payYmOf(date)),cb=(CATS().find(c=>c.id===selCat)||{}).amount||0,cs=sum(entriesIn(cc,x=>x.cat===selCat&&x.id!==id),x=>x.amount)+(date>=cc.start&&date<=cc.end?amount:0);
     toast(`${look(selCat)[0]} ${catName(selCat)} ${won(amount)} ${wasEdit?"고쳤어요":"기록!"}${!doc.excl&&cb&&cs>cb?` · ${catName(selCat)} 이번 주기 ${won(cs-cb)} 초과`:date===TODAY&&allow>0?` · 오늘 남은 돈 ${won(Math.max(0,allow-todaySum))}`:""}`);
