@@ -871,17 +871,20 @@ function payTxSteps(M,pl){
   steps.push({k:"pay",act:`롯데카드 앱 › ${early?"즉시결제":"결제계좌 확인"}`,amt:pl.card,sub:early?`결제예정금액 › 즉시결제 · ${ca}에서 빠져요`:`${md(pd)}에 ${ca}에서 자동으로 빠져요`});
   if(items.length)steps.push({k:"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 목록에서 '기록'"});
   loans.forEach(r=>steps.push({k:"loan-"+r.d.id,from:SALARY,to:r.d.name,amt:r.amt,sub:`중도상환${r.due?` · ${md(r.d.due)} 만기 전 상환`:""} · 하고 나면 '기록'`}));
-  if(savePot)steps.push({k:"pot",from:SALARY,to:SAVEACC,amt:savePot,sub:`다음 선결제(${pots[0].target.x.name})용으로 모아 두기`});
   if(rest>0)steps.push({k:"save",from:SALARY,to:SAVEACC,amt:rest,sub:"빚을 다 갚고 남는 돈 · 저축"});
-  const auto=(ca===SALARY?[{name:"카드값 즉시결제",amount:pl.card-pl.giftCard,note:""}].concat(prepay?[{name:"할부 선결제",amount:prepay,note:""}]:[]):[]).concat(fx.filter(x=>!fixedDest(x))),keep=sum(auto,x=>x.amount)+(ST().buffer||0);
-  return{steps,auto,keep,left:pl.inc+pl.extra-sum(steps.filter(s=>s.from===SALARY),s=>s.amt)-keep};
+  /* what really stays in the salary account: money saved toward the next prepayment, the buffer, and costs that leave it on their own.
+     Costs taken out of the salary before it arrives (급여 공제) never reach it. The card and prepay are paid from it in steps above. */
+  const ded=fx.filter(x=>x.acct==="급여 공제"),own=fx.filter(x=>!fixedDest(x)&&x.acct!=="급여 공제");
+  const auto=(savePot?[{name:`다음 선결제(${pots[0].target.x.name})용으로 모아 두기`,amount:savePot}]:[]).concat(own.map(x=>({name:x.name,amount:x.amount,note:x.note}))).concat(ST().buffer?[{name:"버퍼",amount:ST().buffer}]:[]);
+  const keep=sum(auto,x=>x.amount),outCard=ca===SALARY?pl.card-pl.giftCard+prepay:0;
+  return{steps,auto,keep,ded,left:pl.inc+pl.extra-sum(ded,x=>x.amount)-sum(steps.filter(s=>s.from===SALARY),s=>s.amt)-outCard-keep};
 }
 function renderPayTx(M,pl,phase){
-  const el=$("payTx");if(!el)return;const {steps,auto,keep,left}=payTxSteps(M,pl),pre=phase==="before";
+  const el=$("payTx");if(!el)return;const {steps,auto,keep,ded,left}=payTxSteps(M,pl),pre=phase==="before";
   el.innerHTML=`<div class="row"><h2>💸 ${md(ymDay(M,PAY()))} 월급날 이체 순서</h2>${pre?`<span class="chip">D-${dayDiff(TODAY,ymDay(M,PAY()))}</span>`:""}</div><p class="small muted">월급은 ${SALARY}(급여)으로 들어와요. 위에서부터 하나씩 하고 체크하세요.</p>
     <ol class="tx">${steps.map((s,i)=>{const id=`tx-${M}-${s.k}`,dn=!!S.tasks[id];return `<li class="${dn?"done":""}"><span class="txn">${dn?"✓":i+1}</span><div><div class="txr">${s.act?`<span>${esc(s.act)}</span>`:`<span class="acc">${esc(s.from)}</span><span>→</span><span class="acc">${esc(s.to)}</span>`}</div>${s.sub?`<div class="txs">${esc(s.sub)}</div>`:""}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(Math.round(s.amt))}</span><input type="checkbox" data-task="${id}" ${dn?"checked":""} aria-label="${i+1}번 했어요"></div></li>`}).join("")}
-    <li><span class="txn" style="background:var(--muted)">🏦</span><div><div class="txr"><span class="acc">${SALARY}</span><span>에 남겨 두기</span></div><div class="txs">${auto.map(x=>`${x.name} ${won(x.amount)}${x.note?` (${esc(x.note.split("·")[0].trim())})`:""}`).join(" · ")||"자동이체 없음"}${ST().buffer?` · 버퍼 ${won(ST().buffer)}`:""}</div></div><span class="txa">${num(keep)}</span></li></ol>
-    <p class="small ${Math.abs(left)<1000?"good-t":"bad-t"}" style="margin-top:10px">${Math.abs(left)<1000?`✅ 이렇게 하면 ${SALARY}에 남길 돈만 딱 남아요`:left>0?`${SALARY}에 ${won(left)}이 더 남아요`:`⚠️ ${won(-left)}이 모자라요 · 위 '선결제·상환 가능'이 마이너스예요`}</p>`;
+    <li><span class="txn" style="background:var(--muted)">🏦</span><div><div class="txr"><span class="acc">${SALARY}</span><span>에 그대로 두기</span></div><div class="txs">${auto.map(x=>`${esc(x.name)} ${won(x.amount)}`).join(" · ")||"남는 돈 없음"}${ded.length?`<br>${ded.map(x=>`${esc(x.name)} ${won(x.amount)}`).join(" · ")}은 월급에서 미리 빠져요`:""}</div></div><span class="txa">${num(keep)}</span></li></ol>
+    <p class="small ${Math.abs(left)<1000?"good-t":"bad-t"}" style="margin-top:10px">${Math.abs(left)<1000?`✅ 이렇게 하면 ${SALARY}에 ${won(keep)}이 남아요`:left>0?`${SALARY}에 ${won(left)}이 더 남아요`:`⚠️ ${won(-left)}이 모자라요 · 위 '선결제·상환 가능'이 마이너스예요`}</p>`;
 }
 
 /* ---------- payday plan ---------- */
@@ -1262,7 +1265,7 @@ function renderMonth(){
   else{const rows=allocate(phase==="repay"?pl.rest:pl.avail,phase==="repay"?TODAY:ymDay(M,early?PAY():CARD()));
     body=(phase==="repay"&&pl.paid?`<p class="small muted">이번 달 이미 기록한 상환 ${won(pl.paid)} · 남은 ${won(pl.rest)}</p>`:"")+`<h3>${phase==="repay"?"🗡️ 이렇게 넣으세요":early?"🗡️ 카드값 낸 뒤 넣을 곳 (예정)":"🗡️ 25일 뒤 넣을 곳 (예정)"}</h3><p class="tiny muted">이 돈으로 아낄 수 있는 수수료 합계가 가장 큰 조합이에요. 아끼는 수수료가 큰 순서로 적었어요.</p>`+
       (rows.length?`<div class="list">${rows.map(r=>r.kind==="item"?`<div class="li"><span class="av">💳</span><div><div class="t">${esc(r.x.name)}</div><div class="s">${md(r.x.date)} 할부 · 수수료 ${won(r.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(r.amt)}</div>${phase==="repay"?`<button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(r.x.id)}">기록</button>`:""}</div></div>`
-        :r.kind==="pot"?`<div class="li"><span class="av">🐷</span><div><div class="t">우리은행(저축)에 모아 두기</div><div class="s">다음 ${esc(r.target.x.name)} 선결제(${won(r.target.amt)})용 · 수수료 ${won(r.target.save)} 절약 예정</div></div><div class="a">${num(r.amt)}</div></div>`
+        :r.kind==="pot"?`<div class="li"><span class="av">🐷</span><div><div class="t">하나은행에 그대로 모아 두기</div><div class="s">다음 ${esc(r.target.x.name)} 선결제(${won(r.target.amt)})용 · 수수료 ${won(r.target.save)} 절약 예정</div></div><div class="a">${num(r.amt)}</div></div>`
         :`<div class="li"><span class="av">🏦</span><div><div class="t">${esc(r.d.name)}</div><div class="s">${esc(r.d.rate||"")}${r.due?` · ${md(r.d.due)} 만기 전에 다 갚도록 나눠 내요`:r.d.last?" · 비상금 역할이라 마지막":""}</div></div><div style="text-align:right"><div class="a">${num(r.amt)}</div>${phase==="repay"?`<button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="d:${esc(r.d.id)}" data-amt="${Math.round(r.amt)}">기록</button>`:""}</div></div>`).join("")}</div>`
         :`<p class="empty">${phase==="repay"&&pl.paid?"이번 달 상환을 다 기록했어요 🎉":"넣을 곳이 없어요."}</p>`)}
   const secureBox=phase==="secure"?`<label class="check"><input type="checkbox" data-task="${sk}" ${S.tasks[sk]?"checked":""}><span>${early?"카드값 즉시결제 했고, 고정비도 남겨 뒀어요":"카드값은 케이뱅크로 옮기고, 고정비도 남겨 뒀어요"}</span></label>`:"";
