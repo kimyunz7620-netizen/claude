@@ -736,7 +736,11 @@ function schedMonths(){
   ledgerInst().forEach(e=>{const f=payYmOf(e.date);for(let i=0;i<e.months;i++)set.add(ymAdd(f,i))});
   return[...set].sort();
 }
-const cardDebt=()=>ITEMS().length?sum(ITEMS(),itemBal)+newInstLeft():sum(schedMonths().filter(m=>m>lastPassed()),effSched);
+/* the item list starts at asOfYm, so a bill before it (read from the card app as billBasis) also holds items already gone from the list: count that bill's principal from the card app instead */
+const itemPrincipalAt=(x,m)=>{const c=closedFrom(x),r=itemRaw(x,m);return r&&!(c&&m>=c)?r.p:0};
+function cardDebt(){if(!ITEMS().length)return sum(schedMonths().filter(m=>m>lastPassed()),effSched);
+  const lp=lastPassed(),early=Object.keys((S.inst&&S.inst.billBasis)||{}).filter(m=>m>lp&&m<ASOF());
+  return sum(ITEMS(),itemBal)+newInstLeft()+sum(early,m=>Math.max(0,instAt(m,payDateOf(m))-newInstAt(m)-sum(ITEMS(),x=>itemRaw(x,m)?itemRaw(x,m).fee:0))-sum(ITEMS(),x=>itemPrincipalAt(x,m)))}
 function loanBal(d){return Math.max(0,Math.round((d.balance||0)-sum(S.payments.filter(p=>p.debtId===d.id&&(!d.setAt||(p.createdAt||"")>d.setAt)),p=>p.amount)))}
 const loanTotal=()=>sum(LOANS(),loanBal);
 const totalDebt=()=>cardDebt()+loanTotal();
@@ -798,7 +802,7 @@ function simulateRun(extra,plan){
     const wasFree=!!free;if(!free&&!cardLeft&&loans.every(l=>l.bal<=0.5)&&!anyBill)free=ym;
     const instDebt=ab!=null?Math.min(ab,effSched(ym)):inst,avail=inc+instDebt;
     const debt=wasFree?0:free?Math.min(avail,instDebt+paid):avail;
-    const cardRem=sum(order.filter(x=>!closed[x.id]),x=>sum(itemMonths(x).filter(m=>m>ym),m=>itemRaw(x,m).p));
+    const cardRem=sum(ITEMS().filter(x=>!closed[x.id]),x=>sum(itemMonths(x).filter(m=>m>ym),m=>itemPrincipalAt(x,m)));
     const debtLeft=cardRem+sum(loans,l=>Math.max(0,l.bal));
     path.push({ym,net:base+pot-debtLeft,avail,debt,save:avail-debt,parts:{inst:Math.min(instDebt,debt),pre,lp,hold:Math.max(0,debt-Math.min(instDebt,debt)-sum(pre,x=>x.a)-sum(lp,x=>x.a))},inc:incomeAt(ym),dep:st.deposit||0,bank:base-(st.deposit||0)+pot,owe:debtLeft});
     ym=next;
