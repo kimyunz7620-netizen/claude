@@ -198,6 +198,9 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .rvd.today{color:var(--ink);font-weight:800}
 .rvc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.85rem;padding:4px 0}
 .rvc .bar{height:8px}
+.coach .bh{display:flex;gap:8px;align-items:center;font-size:1rem;margin-top:4px}.coach .bh strong{font-weight:800}
+.coach .bm{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--bg);border-radius:12px;padding:10px 12px;cursor:pointer}
+.coach .bm .k{font-size:.72rem;font-weight:700;color:var(--grape)}.coach .bm .v{font-weight:600;font-size:.9rem}.coach .bm input{width:20px;height:20px;accent-color:var(--mint)}
 .fngrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
 .fn{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .fn .k{font-size:.72rem;color:var(--muted)}.fn strong{font-size:1.02rem;font-variant-numeric:tabular-nums}.fn .s{font-size:.72rem;color:var(--muted)}
@@ -208,7 +211,7 @@ button.rvd{background:none;border:0;padding:0;font:inherit;cursor:pointer}.rvd.s
 .flow .fl .num{font-weight:800}
 .flow .fl.total{border-top:2px dashed var(--line);margin-top:4px;padding-top:10px;font-weight:800;font-size:1.04rem}
 .hp .bar{height:18px}
-.hp .bar>i{background:linear-gradient(90deg,var(--coral),var(--sun))}
+.hp .bar>i{background:var(--coral)}
 .road{position:relative;height:58px;margin:4px 14px 0}
 .road .ln{position:absolute;left:0;right:0;top:24px;height:8px;border-radius:999px;background:var(--line)}
 .road .fill{position:absolute;left:0;top:24px;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--sky),var(--mint))}
@@ -271,6 +274,7 @@ button.rvd{background:none;border:0;padding:0;font:inherit;cursor:pointer}.rvd.s
 .fxsum b{font-variant-numeric:tabular-nums}
 .whatif{display:flex;flex-direction:column;gap:10px;background:var(--bg);border-radius:14px;padding:14px}
 .whatif #pjWhatIf{line-height:1.7}
+.road-card .title .em,.hp .title .em,#v-dash .title .em{display:none}
 .tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .tl li{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;position:relative}
 .tl li::before{content:"";position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--line)}
@@ -421,12 +425,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     </div>
 
 
-    <div class="coach" id="coach">
-      <div class="row"><h2 id="coachTitle">아침 브리핑</h2><span class="tiny muted" id="coachWhen"></span></div>
-      <div id="coachBody"></div>
-      <div id="fundNow"></div>
-      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
-    </div>
     <div class="card" id="calCard">
       <div class="row"><h2 id="calLabel"></h2>
         <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
@@ -435,6 +433,12 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div id="calDay"></div>
       <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>하루 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
       <button type="button" class="btn ghost" id="calCats">이 달 카테고리별 보기</button>
+    </div>
+    <div class="coach" id="coach">
+      <div class="row"><h2 id="coachTitle">아침 브리핑</h2><span class="tiny muted" id="coachWhen"></span></div>
+      <div id="fundNow"></div>
+      <div id="coachBody"></div>
+      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
     </div>
     <button type="button" class="btn ghost" data-go="records">↩️ 결제 취소 · 분류 정리</button>
   </section>
@@ -515,7 +519,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
   <!-- 월급·상환 -->
   <section class="view" id="v-month" aria-label="월급·상환" hidden>
     <div class="intro"><h1>월급·상환</h1></div>
-    <div class="steps" id="monthSteps"></div>
+    <div class="steps" id="monthSteps" hidden></div>
     <div class="card" id="payPanel"></div>
     <div class="card" id="payTx"></div>
     <form class="card" id="payForm" hidden autocomplete="off">
@@ -575,27 +579,27 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="road" id="road"></div>
       <div class="chips" id="nwChips"></div>
     </div>
-    <details class="card chart more" open><summary>📈 월별 순자산 그래프</summary>
+    <details class="card chart more"><summary>월별 순자산 그래프</summary>
       <div class="row"><div class="legend"><span><i></i>순자산</span><span><i class="proj"></i>예상</span><span><i class="dash"></i>목표 경로</span></div></div>
       <div id="nwChart"></div>
       <div class="small" id="nwTip">그래프를 누르면 그 달 순자산이 무엇으로 이뤄졌는지 보여요.</div>
       <p class="tiny muted" id="nwHow"></p>
     </details>
-    <div class="card">
-      <div class="row"><div class="title"><span class="em">💳</span><h2>카드 할부 <span id="instCount"></span></h2></div><span class="muted small" id="instSum"></span></div>
+    <details class="card more">
+      <summary class="row" style="display:flex"><div class="title"><span class="em">💳</span><h2>카드 할부 <span id="instCount"></span></h2></div><span class="muted small" id="instSum"></span></summary>
       <p class="small muted">연 19.6% 유이자 · 아끼는 수수료 큰 순</p>
       <div class="list" id="instList"></div>
       <details class="more" id="instMoreBox"><summary id="instMoreSum">나머지 보기</summary><div class="list" id="instMore"></div></details>
       <details class="more"><summary>끝난 할부 보기</summary><div class="list" id="instDone"></div></details>
-    </div>
+    </details>
     <div class="card">
       <div class="title"><span class="em">🏦</span><h2>대출</h2></div>
       <div class="list" id="loanList"></div>
     </div>
     <div class="card">
-      <details class="more"><summary>📅 월별 할부 결제 일정</summary>
+      <details class="more"><summary>월별 할부 결제 일정</summary>
         <div class="tbl-wrap" style="margin-top:8px"><table id="schTbl"></table></div></details>
-      <details class="more"><summary>🗂️ 월말 잔액 기록</summary><div class="list" id="nwList" style="margin-top:6px"></div></details>
+      <details class="more"><summary>월말 잔액 기록</summary><div class="list" id="nwList" style="margin-top:6px"></div></details>
     </div>
   </section>
 
@@ -1129,17 +1133,15 @@ function renderFundNow(){const f=fundNow(),n=dailyNums(),tile=(k,v,sub,cls)=>`<d
   const mT=n.el<3?tile("이번 달",`${n.el+1}일째`,`하루 평균 ${won(Math.floor(n.y.B/n.total/100)*100)}까지`,""):tile("이번 달 이대로면",d>=0?`${man1(d)} 남아요`:`${man1(-d)} 넘어요`,`${md(n.y.c.end)}까지 · 지금 ${man1(n.y.spent)} 씀`,d<0?"bad-t":"good-t");
   const zT=tile("이번 달 무지출",`${n.zero}일`,n.run>1?`${n.run}일째 연속 🔥`:n.run===1?"어제 무지출 🥚":"",n.zero?"good-t":"");
   $("fundNow").innerHTML=`<div class="fngrid">${yT}${wT}${mT}${zT}</div>`+
-    `<div class="step-rows" style="margin-top:10px">${todayNotes(f).join("")}</div>`}
-/* small facts worth a glance every day: what today's restraint buys, the cycle pace, a category running hot, the next payday and gifts */
-function todayNotes(f){const n=[],row=(e,h)=>`<div class="sr"><span>${e}</span><span>${h}</span></div>`;
-  if(STEP)n.push(row("⏱️",STEP.big));
+    `<div class="chips" style="margin-top:10px">${todayChips(f).join("")}</div>`}
+function todayChips(f){const out=[],chip=(t,cls)=>`<span class="chip ${cls||"plain"}">${t}</span>`,r=speedRate(),dayB=weekLimit(TODAY)/7;
+  if(r.perDay>0)out.push(chip(`🥚 무지출 = ${r.goal} ${fasterTxt(dayB)} 빨리`));
   const y=cycleSummary(),k=payYmOf(TODAY),fr=(dayDiff(y.c.start,TODAY)+1)/(dayDiff(y.c.start,y.c.end)+1);
-  const hot=LIVECATS(k).map(c=>{const b=budgetAt(c,k),sp=sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount);return{c,b,sp,r:b?sp/b:0}}).filter(x=>x.b>0&&(x.sp>x.b||x.r>fr+.15)).sort((a,b)=>b.r-a.r).slice(0,2);
-  hot.forEach(x=>n.push(row(look(x.c.id)[0],x.sp>x.b?`${esc(SHORT[x.c.id]||x.c.name)} 이번 달 예산보다 <b class="bad-t">${man1(x.sp-x.b)} 더</b> 썼어요`:`${esc(SHORT[x.c.id]||x.c.name)} 이번 달 예산 <b>${Math.round(x.r*100)}%</b> 썼어요 <span class="muted">(${man1(x.b-x.sp)} 남음)</span>`)));
-  const M=nextPayYm(),pd=ymDay(M,PAY()),dd=dayDiff(TODAY,pd);
-  if(dd<=10){const pl=payPlan(M);n.push(row("💰",`${dd?`월급날까지 ${dd}일`:"오늘 월급날"} · 카드값 ${man1(pl.card)}${pl.avail>0?` · 빚 더 갚을 돈 <b>${man1(pl.avail)}</b>`:""}`))}
-  f.next.filter(x=>x.d!==pd&&dayDiff(TODAY,x.d)<=14).forEach(x=>n.push(row("📅",`${esc(x.t)} · ${dayDiff(TODAY,x.d)?`${dayDiff(TODAY,x.d)}일 뒤`:"오늘"}`)));
-  return n}
+  LIVECATS(k).map(c=>{const b=budgetAt(c,k),sp=sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount);return{c,b,sp,r:b?sp/b:0}}).filter(x=>x.b>0&&(x.sp>x.b||x.r>fr+.15)).sort((a,b)=>b.r-a.r).slice(0,2)
+    .forEach(x=>out.push(chip(`${look(x.c.id)[0]} ${esc(SHORT[x.c.id]||x.c.name)} ${x.sp>x.b?`+${man1(x.sp-x.b)} 넘음`:`${Math.round(x.r*100)}% 씀`}`,x.sp>x.b?"bad":"warn")));
+  const pd=ymDay(nextPayYm(),PAY()),dd=dayDiff(TODAY,pd);if(dd<=10)out.push(chip(`💰 월급날 ${dd?`D-${dd}`:"오늘"}`));
+  f.next.filter(x=>x.d!==pd&&dayDiff(TODAY,x.d)<=14).forEach(x=>out.push(chip(`📅 ${esc(x.t)} ${dayDiff(TODAY,x.d)?`D-${dayDiff(TODAY,x.d)}`:"오늘"}`)));
+  return out}
 let coachAuto={};
 async function askCoach(slot){
   slot=slot==="am"||slot==="pm"?slot:slotNow();if(!sample||coachBusy)return;coachBusy=true;coachCtl=new AbortController();
@@ -1173,7 +1175,8 @@ function renderCoach(){
   $("coach").className="coach "+(c?c.mood:"");
   $("coachBtn").hidden=!sample;$("coachBtn").textContent=c?"다시 받기":slot==="am"?"브리핑 받기":"리뷰 받기";
   $("coachWhen").textContent=c?new Date(c.createdAt).toLocaleTimeString("ko-KR",{hour:"numeric",minute:"2-digit"}):"";
-  const bub=x=>`<div class="bub"><span class="av">${{good:"🥳",ok:"🙂",warn:"🤔",bad:"🫣"}[x.mood]||"🙂"}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div class="head">${esc(x.headline)}</div>${x.summary?`<div class="small">${esc(x.summary)}</div>`:""}${x.mission?`<div class="small" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span><strong class="warn-t">🎯 ${slot==="am"||x!==c?"오늘":"내일"} 미션</strong> ${esc(x.mission)}</span>${(slot==="am"||x!==c)&&x.mission===todayMission()?`<label class="check" style="padding:0"><input type="checkbox" data-task="mission-${TODAY}" ${S.tasks["mission-"+TODAY]?"checked":""}><span class="tiny">했어요</span></label>`:""}</div>`:""}${x.points&&x.points.length?`<details class="more"><summary>자세히</summary><ul style="margin-top:6px">${x.points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></details>`:""}</div></div>`;
+  /* one bold line and the mission up front; the AI's sentences fold away */
+  const bub=x=>{const mine=(slot==="am"||x!==c)&&x.mission===todayMission();return `<div class="bh"><span>${{good:"🥳",ok:"🙂",warn:"🤔",bad:"🫣"}[x.mood]||"🙂"}</span><strong>${esc(x.headline)}</strong></div>${x.mission?`<label class="bm"><span class="k">${slot==="am"||x!==c?"오늘":"내일"} 미션</span><span class="v">${esc(x.mission)}</span>${mine?`<input type="checkbox" data-task="mission-${TODAY}" ${S.tasks["mission-"+TODAY]?"checked":""} aria-label="미션 했어요">`:""}</label>`:""}${x.summary||(x.points&&x.points.length)?`<details class="more"><summary>AI 코멘트 보기</summary>${x.summary?`<p class="small" style="margin:6px 0 0">${esc(x.summary)}</p>`:""}${x.points&&x.points.length?`<ul style="margin-top:6px">${x.points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:""}</details>`:""}`};
   let h=c?bub(c):sample?`<p class="small muted">${slot==="am"?"오늘 아침 브리핑을 준비할게요.":"오늘 하루 리뷰를 준비할게요."}</p>`:'<p class="small muted">AI 분석은 claude.ai에서 로그인한 상태로 열었을 때 쓸 수 있어요.</p>';
   if(other)h+=`<details class="more"><summary>🌅 오늘 아침 브리핑 다시 보기</summary>${bub(other)}</details>`;
   $("coachBody").innerHTML=h;
@@ -1333,8 +1336,8 @@ function renderDash(){
   $("nwNow").textContent=won(now);
   const startNet=goalBase(),GL=GOALS(),lastG=GL[GL.length-1],target=lastG?lastG.net:startNet+(st.targetGain||0),gain=target-startNet,fin=st.finalTarget||1e8,goalYm=lastG?lastG.ym:st.targetYm||"2027-12";
   const lo=Math.min(startNet,now,0),span=Math.max(1,fin-lo),pos=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
-  $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div>${(GL.length?GL:[{net:target}]).map((g,i)=>`<div class="mk lo" style="left:${pos(g.net)}%"><b>🏁</b>${GL.length>1?`${i+1}차 `:""}${man(g.net)}</div>`).join("")}<div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div><div class="me" style="left:${pos(now)}%">🐷</div>`;
-  const chips=[];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip warn">통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
+  $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div>${(GL.length?GL:[{net:target}]).map((g,i)=>`<div class="mk lo" style="left:${pos(g.net)}%"><b>🏁</b>${GL.length>1?`${i+1}차 `:""}${man(g.net)}</div>`).join("")}${GL.some(g=>g.net===fin)?"":`<div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div>`}<div class="me" style="left:${pos(now)}%">🐷</div>`;
+  const chips=[];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip plain">통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
   if(snaps.length){const sYm=snaps[0].ym,tYm=goalYm,sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
   $("nwChips").innerHTML=chips.join("");
   renderProjection(sim,now,target);
