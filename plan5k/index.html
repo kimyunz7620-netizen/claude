@@ -198,6 +198,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .rvd.today{color:var(--ink);font-weight:800}
 .rvc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.85rem;padding:4px 0}
 .rvc .bar{height:8px}
+.dsub{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--line);padding:4px;border-radius:14px}
 .fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(76px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--grape);color:#fff;font-size:1.9rem;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(80,60,200,.35);z-index:20}
 .sheet{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end}
 .sheet-bg{position:absolute;inset:0;background:rgba(20,20,40,.45)}
@@ -562,7 +563,8 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 
   <!-- 현황 -->
   <section class="view" id="v-dash" aria-label="현황" hidden>
-    <div class="card road-card">
+    <div class="seg dsub" id="dashSub" role="tablist" aria-label="현황 나누어 보기"><button type="button" data-dsub="plan" aria-pressed="true">🗺️ 계획</button><button type="button" data-dsub="save" aria-pressed="false">🐷 순자산</button><button type="button" data-dsub="debt" aria-pressed="false">💳 빚·할부</button></div>
+    <div class="card road-card" data-sub="plan">
       <div class="row"><div class="title"><span class="em">🗺️</span><h2>앞으로의 길</h2></div><span class="muted small" id="pjBasis"></span></div>
       <div class="pj-head"><span class="small muted" id="pjWhen"></span><span class="pj-big" id="pjBig"></span><span class="small" id="pjSub"></span></div>
       <div class="legend"><span><i class="debt"></i>빚 갚는 돈</span><span><i class="save"></i>모으는 돈</span></div>
@@ -577,33 +579,35 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
       <p class="tiny muted" id="pjNote"></p>
     </div>
-    <div class="card">
+    <div class="card" data-sub="save">
       <div class="row"><div class="title"><span class="em">🐷</span><h2>순자산 여정</h2></div><span class="disp" id="nwNow">-</span></div>
       <div class="road" id="road"></div>
       <div class="chips" id="nwChips"></div>
     </div>
-    <details class="card chart more" open><summary>📈 월별 순자산 그래프</summary>
+    <details class="card chart more" open data-sub="save"><summary>📈 월별 순자산 그래프</summary>
       <div class="row"><div class="legend"><span><i></i>순자산</span><span><i class="proj"></i>예상</span><span><i class="dash"></i>목표 경로</span></div></div>
       <div id="nwChart"></div>
       <div class="small" id="nwTip">그래프를 누르면 그 달 순자산이 무엇으로 이뤄졌는지 보여요.</div>
       <p class="tiny muted" id="nwHow"></p>
     </details>
-    <details class="card more" open>
+    <details class="card more" open data-sub="debt">
       <summary class="row" style="display:flex"><div class="title"><span class="em">💳</span><h2>카드 할부 <span id="instCount"></span></h2></div><span class="muted small" id="instSum"></span></summary>
       <p class="small muted">연 19.6% 유이자 · 아끼는 수수료 큰 순</p>
       <div class="list" id="instList"></div>
       <details class="more" id="instMoreBox"><summary id="instMoreSum">나머지 보기</summary><div class="list" id="instMore"></div></details>
       <details class="more"><summary>끝난 할부 보기</summary><div class="list" id="instDone"></div></details>
     </details>
-    <div class="card">
+    <div class="card" data-sub="debt">
       <div class="title"><span class="em">🏦</span><h2>대출</h2></div>
       <p class="small muted" id="dbFree"></p>
       <div class="list" id="loanList"></div>
     </div>
-    <div class="card">
-      <details class="more"><summary>📅 월별 할부 결제 일정</summary>
+    <div class="card" data-sub="debt">
+      <details class="more" open><summary>📅 월별 할부 결제 일정</summary>
         <div class="tbl-wrap" style="margin-top:8px"><table id="schTbl"></table></div></details>
-      <details class="more"><summary>🗂️ 월말 잔액 기록</summary><div class="list" id="nwList" style="margin-top:6px"></div></details>
+    </div>
+    <div class="card" data-sub="save">
+      <details class="more" open><summary>🗂️ 월말 잔액 기록</summary><div class="list" id="nwList" style="margin-top:6px"></div></details>
     </div>
   </section>
 
@@ -1551,11 +1555,13 @@ function renderSettings(){
 }
 
 /* ================= EVENTS ================= */
+let dashSub=(()=>{try{return localStorage.getItem("plan5k3:dsub")||"plan"}catch(e){return"plan"}})();
+function setDashSub(k){dashSub=k;try{localStorage.setItem("plan5k3:dsub",k)}catch(e){}document.querySelectorAll("#dashSub button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.dsub===k));document.querySelectorAll("#v-dash [data-sub]").forEach(el=>el.hidden=el.dataset.sub!==k);window.scrollTo(0,0)}
 function go(v){
   if(!["today","records","week","month","dash","settings"].includes(v))v="today";view=v;
   ["today","records","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);$("rules").hidden=!["week","month"].includes(v);$("fab").hidden=v!=="today";if(v!=="today")closeSheet();
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===(v==="records"?"today":v)?"page":"false"));
-  if(v==="settings")renderSettings();renderAll();window.scrollTo(0,0);
+  if(v==="settings")renderSettings();renderAll();if(v==="dash")setDashSub(dashSub);window.scrollTo(0,0);
   try{localStorage.setItem("plan5k3:view",v==="settings"?"today":v)}catch(e){}
 }
 async function saveFev(id,fn){const cats=ALLCATS().map(c=>c.id===id&&c.fund?{...c,fund:{...c.fund,events:fn(c.fund.events||[]).sort((a,b)=>a.date<b.date?-1:1)}}:c);S.budget={...S.budget,cats};renderSettings();render();try{await put("config/budget",{...S.budget,cats})}catch(_){}}
@@ -1564,6 +1570,7 @@ document.addEventListener("mouseover",e=>{const t=e.target.closest&&e.target.clo
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button,[data-tip]");if(!t)return;
   if(t.dataset.go){go(t.dataset.go);return}
+  if(t.dataset.dsub){setDashSub(t.dataset.dsub);return}
   if(t.dataset.rvday!=null){rvSel=t.dataset.rvday&&t.dataset.rvday!==rvSel?t.dataset.rvday:null;renderWeek();return}
   if(t.dataset.tip!=null){const box=t.closest("[data-tipbox]");$(box?box.dataset.tipbox:"nwTip").textContent=t.dataset.tip;return}
   if(t.dataset.guide){const[k,v]=t.dataset.guide.split(":");
