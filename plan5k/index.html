@@ -1155,7 +1155,7 @@ function renderWeek(){
   if(!$("wkForm").contains(document.activeElement))$("wkResult").innerHTML=ws[0]?`<div class="tiny muted">${mdw(ws[0].date)} 점검 결과</div>`+compareHTML(ws[0]):'<p class="empty">1번에 숫자를 적으면 결과가 여기 나와요.</p>';
   $("wkHist").innerHTML=ws.length?ws.slice(0,10).map(w=>{const bad=!w.seed&&weeklyCompare(w).some(x=>x.bad),gap=!w.seed&&weeklyCompare(w).some(x=>x.gap);
     return `<div class="li"><span class="av">${w.seed?"📦":gap?"⏳":bad?"🔍":"✅"}</span><div><div class="t">${w.seed?`${Number(w.payYm.slice(5))}월 카드값 (기존 트래커에서 옮김)`:mdw(w.date)}</div><div class="s">결제예정 ${w.nextBill?num(w.nextBill):"-"}${w.lump?` · 일시불 ${num(w.lump)}`:""}</div></div>${w.seed?"<span></span>":`<button type="button" class="btn danger" data-del-week="${esc(w.id)}">삭제</button>`}</div>`}).join(""):'<p class="empty">일요일마다 카드 앱 숫자를 적으면 여기에 쌓여요.</p>';
-  const ref=ws[0]&&!ws[0].seed&&dayDiff(ws[0].date,TODAY)<7?ws[0].date:TODAY,wr=weekRange(ref),W=weekLimit(ref),sp=sum(entriesIn(wr),e=>e.amount);
+  const ref=TODAY,wr=weekRange(ref),W=weekLimit(ref),sp=sum(entriesIn(wr),e=>e.amount);
   $("rvRange").textContent=`${md(wr.start)}~${md(wr.end)}`;$("rvSpent").textContent=`${won(sp)} 썼어요`;$("rvSpent").className="disp"+(sp>W?" bad-t":"");$("rvLimit").textContent=won(W);paintBar($("rvBar"),sp,W,null);
   const wes=entriesIn(wr),wcs=LIVECATS(payYmOf(wr.start)).map(c=>({c,s:sum(wes.filter(e=>e.cat===c.id),e=>e.amount)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s),big=wes.slice().sort((a,b)=>b.amount-a.amount)[0];
   const left=W-sp,daysLeft=Math.max(0,dayDiff(TODAY,wr.end)+(TODAY<=wr.end?1:0)),ended=TODAY>wr.end,dayB=W/7;
@@ -1163,9 +1163,11 @@ function renderWeek(){
     :`<p class="note good"><strong>${ended?`🎉 ${won(left)} 남기고 끝났어요`:`👍 ${won(left)} 남았어요`}</strong>${!ended&&daysLeft?`<br><span class="small">남은 ${daysLeft}일 동안 하루 ${won(Math.floor(left/daysLeft/100)*100)}씩 쓸 수 있어요.</span>`:""}</p>`;
   const days=[...Array(7)].map((_,i)=>{const d=addDays(wr.start,i),v=sum(entriesIn({start:d,end:d}),e=>e.amount);return{d,v}}),top=Math.max(dayB*1.5,...days.map(x=>x.v),1);
   $("rvDays").innerHTML=days.map(x=>`<div class="rvd ${x.v>dayB?"over":""} ${x.d>TODAY?"fut":""} ${x.d===TODAY?"today":""}"><div class="col" title="${md(x.d)} ${won(x.v)}"><b style="bottom:${Math.round(dayB/top*100)}%"></b><i style="height:${Math.round(x.v/top*100)}%"></i></div><span>${"월화수목금토일"[(parse(x.d).getDay()+6)%7]}</span><span>${x.v?man1(x.v):"-"}</span></div>`).join("");
-  /* shares of this week's spending, rounded so they add up to exactly 100% */
-  const wsum=sum(wcs,x=>x.s),raw=wcs.map(x=>wsum?x.s/wsum*100:0),pct=raw.map(Math.floor);let left100=wsum?100-sum(pct,v=>v):0;raw.map((v,i)=>[v-pct[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(left100>0){pct[i]++;left100--}});
-  $("rvOver").innerHTML=wes.length?`<div class="row" style="margin-top:12px"><h3>어디에 썼나</h3><span class="tiny muted">이번 주 쓴 ${won(wsum)} = 100%</span></div>`+wcs.map((x,i)=>`<div class="rvc"><span>${look(x.c.id)[0]} ${esc(x.c.name)}</span><div class="bar"><i style="width:${raw[i]}%;background:${look(x.c.id)[1]}"></i></div><span class="num small">${num(x.s)} <span class="muted">${pct[i]}%</span></span></div>`).join("")+
+  /* each category's share of this week's limit: its cycle budget scaled by week limit / cycle budget, so the shares add up to the week limit */
+  const amt=v=>v<10000?won(v):man1(v),wk=payYmOf(wr.start),cb=cycleBudgetFor(wk)||1,cr=LIVECATS(wk).map(c=>{const b=Math.round(budgetAt(c,wk)*W/cb/100)*100,s=sum(wes.filter(e=>e.cat===c.id),e=>e.amount);return{c,b,s}}).filter(x=>x.b>0||x.s>0)
+    .sort((a,b)=>(b.s-b.b)-(a.s-a.b));
+  $("rvOver").innerHTML=wes.length?`<div class="row" style="margin-top:12px"><h3>예산 대비</h3><span class="tiny muted">카테고리 예산의 이번 주 몫</span></div>`+cr.map(x=>{const over=x.s>x.b,r=x.b?x.s/x.b:x.s?9:0;
+      return `<div class="rvc"><span>${look(x.c.id)[0]} ${esc(x.c.name)}</span><div class="bar"><i style="width:${Math.min(100,Math.round(r*100))}%;background:${over?"var(--coral)":look(x.c.id)[1]}"></i></div><span class="num small">${num(x.s)}<span class="muted"> / ${num(x.b)}</span> <span class="${over?"bad-t":"good-t"}">${!x.b?"예산 없음":over?(r>=2?`${Math.floor(r*10)/10}배`:`+${amt(x.s-x.b)}`):`${amt(x.b-x.s)} 남음`}</span></span></div>`}).join("")+
     (big&&big.amount>=W*.2?`<p class="small muted" style="margin-top:8px">💸 가장 큰 지출: ${md(big.date)} ${esc(big.memo||catName(big.cat))} ${won(big.amount)}${big.method==="inst"?` · 할부 ${big.months}개월`:""}</p>`:"")
     :'<p class="small muted">이번 주 기록이 아직 없어요.</p>';
   if(!bdKey)bdKey=bdMode==="cycle"?payYmOf(TODAY):ymOf(TODAY);
