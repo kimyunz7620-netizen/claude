@@ -82,7 +82,7 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .quest{display:flex;flex-direction:column}
 .q{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}
 .q:first-child{border-top:0}
-.q .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:.95rem;background:var(--grape-soft)}
+.q .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:.95rem;background:var(--bg)}
 .q.done .ic{background:var(--mint-soft)}
 .q.urgent .ic{background:var(--sun-soft)}
 .q strong{font-weight:600}
@@ -92,15 +92,16 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .chip{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:999px;background:var(--grape-soft);color:var(--grape);font-size:.78rem;font-weight:600;white-space:nowrap}
 .chip.good{background:var(--mint-soft);color:var(--mint)} .chip.warn{background:var(--sun-soft);color:var(--sun)} .chip.bad{background:var(--coral-soft);color:var(--coral)} .chip.plain{background:var(--bg);color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
+#dayCats .chip{background:var(--bg);color:var(--ink);font-weight:500;white-space:normal}#dayCats .chip.bad{color:var(--coral)}
 .party{text-align:center;font-weight:800;font-size:1.05rem;color:var(--mint);padding:6px 0}
-.coach{background:var(--surface);border-radius:var(--r);padding:20px 18px;display:flex;flex-direction:column;gap:12px;border:2px solid var(--grape-soft)}
+.coach{background:var(--surface);border-radius:var(--r);padding:20px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 0 var(--line)}
 .coach .bub{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;align-items:start}
-.coach .av{width:44px;height:44px;border-radius:50%;background:var(--grape-soft);display:grid;place-items:center;font-size:1.5rem}
+.coach .av{width:44px;height:44px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:1.5rem}
 .coach .head{font-weight:700;font-size:.95rem;line-height:1.35}
 .coach ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:.92rem}
 .mission{background:var(--sun-soft);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
 .mission strong{font-weight:800;color:var(--sun)}
-.coach.good{border-color:var(--mint)} .coach.warn{border-color:var(--sun)} .coach.bad{border-color:var(--coral)}
+
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>span{font-size:.82rem;color:var(--muted);font-weight:600}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -118,10 +119,10 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .pills{display:flex;flex-wrap:wrap;gap:8px}
 .pill{font:inherit;font-size:.85rem;border:0;background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer;font-weight:600}
 .cats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-.cat{font:inherit;border:2px solid transparent;border-radius:14px;padding:11px 2px 9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--c) 14%,var(--surface));min-width:0;overflow-wrap:anywhere;text-align:center}
+.cat{font:inherit;border:2px solid transparent;border-radius:14px;padding:11px 2px 9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;font-weight:600;color:var(--ink);background:var(--bg));min-width:0;overflow-wrap:anywhere;text-align:center}
 .cat .e{font-size:1.1rem;line-height:1.2}
 #enCats .cat{padding:8px 2px 7px;gap:2px;font-size:.7rem;border-radius:12px}
-.cat[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 30%,var(--surface))}
+.cat[aria-pressed="true"]{border-color:var(--grape);background:var(--grape-soft)}
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--bg);border-radius:14px;padding:4px;gap:4px}
 .seg button{font:inherit;font-size:.84rem;font-weight:600;border:0;border-radius:10px;padding:9px 4px;background:transparent;color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -132,7 +133,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .list{display:flex;flex-direction:column}
 .li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;padding:14px 0;border-top:1px solid var(--line);align-items:center}
 .li:first-child{border-top:0}
-.li .av{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:1.1rem;background:color-mix(in srgb,var(--c,#6E56F8) 16%,var(--surface))}
+.li .av{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:1.1rem;background:var(--bg)}
 .li .t{font-weight:600;overflow-wrap:anywhere}
 .li .s{font-size:.78rem;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
 .li .a{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
@@ -198,7 +199,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .rvc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.85rem;padding:4px 0}
 .rvc .bar{height:8px}
 .fngrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
-.fn{background:var(--surface);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fn{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .fn .k{font-size:.72rem;color:var(--muted)}.fn strong{font-size:1.02rem;font-variant-numeric:tabular-nums}.fn .s{font-size:.72rem;color:var(--muted)}
 button.rvd{background:none;border:0;padding:0;font:inherit;cursor:pointer}.rvd.sel .col{outline:2px solid var(--grape);outline-offset:1px}
 .rvi{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:3px 0}
@@ -305,7 +306,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 .cd{font:inherit;border:2px solid transparent;border-radius:10px;padding:5px 1px;min-height:52px;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:0}
 .cd .n{font-size:.72rem;color:var(--muted)}
 .cd .v{font-size:.68rem;font-weight:800;white-space:nowrap}
-.cd.g{background:var(--mint-soft)} .cd.w{background:var(--sun-soft)} .cd.b{background:var(--coral-soft)}
+.cd.b .v{color:var(--coral)}
 .cd.today .n{color:var(--grape);font-weight:800}
 .cd.sel{border-color:var(--grape)}
 .cd.fut{opacity:.35;cursor:default}
@@ -410,7 +411,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 
 
     <div class="card" id="calCard">
-      <div class="row"><strong id="calLabel"></strong>
+      <div class="row"><h2 id="calLabel"></h2>
         <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
       <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
       <div class="cal" id="cal"></div>
@@ -994,7 +995,7 @@ function renderToday(){
   const dc=cycleOf(payYmOf(selDate)),df=Math.min(1,(dayDiff(dc.start,selDate)+1)/(dayDiff(dc.start,dc.end)+1)),used=[...new Set(list.filter(e=>!e.excl).map(e=>e.cat))].map(id=>LIVECATS(payYmOf(selDate)).find(c=>c.id===id)).filter(Boolean);
   const fx=[...new Set(list.filter(e=>fundOut(e)).map(e=>e.cat))].map(FUNDCAT).filter(Boolean);
   const fundNote=fx.map(c=>`<span class="chip good">${look(c.id)[0]} ${esc(c.fund.bank)}에서 · 남은 ${num(fundBalance(c))}</span>`).join("");
-  $("dayCats").innerHTML=(fundNote?`<div class="chips" style="margin-bottom:6px">${fundNote}</div>`:"")+(used.length?`<p class="tiny muted">이번 주기(${md(dc.start)}~${md(dc.end)}) 카테고리 상태</p><div class="chips">${used.map(c=>{const sp=sum(entriesIn(dc,e=>e.cat===c.id),e=>e.amount),b=budgetAt(c,dc.p),cls=sp>b?"bad":sp>b*df*1.1?"warn":"good";return `<span class="chip ${cls}">${look(c.id)[0]} ${esc(c.name)} ${num(sp)}/${num(b)}${sp>b?` · ${num(sp-b)} 초과`:cls==="warn"?" · 빠름":""}</span>`}).join("")}</div>`:"");
+  $("dayCats").innerHTML=fundNote?`<div class="chips">${fundNote}</div>`:""; /* categories running hot are in the briefing's notes */
   const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;$("backToday").hidden=isToday;
   ns.textContent=dd.noSpend?"🥚 무지출 · 취소":isToday?"🥚 오늘은 안 썼어요":"🥚 이날은 안 썼어요";
   const ho=habitsOn(selDate),ha=habitAuto(selDate);
@@ -1013,16 +1014,16 @@ function renderToday(){
 function renderCal(){
   if(!calYm)calYm=ymOf(TODAY);
   const [y,m]=calYm.split("-").map(Number),first=calYm+"-01",days=new Date(y,m,0).getDate(),lead=(parse(first).getDay()+6)%7,dayB=weekBudgetFor(first)/7;
-  $("calLabel").textContent=`${y}년 ${m}월`;$("calNext").disabled=calYm>=ymOf(TODAY);
+  $("calLabel").textContent=`📅 ${m}월 기록${y!==Number(TODAY.slice(0,4))?` (${y})`:""}`;$("calNext").disabled=calYm>=ymOf(TODAY);
   let html="",tot=0,recDays=0,zero=0;
   for(let i=0;i<lead;i++)html+='<span class="cd pad"></span>';
-  for(let k=1;k<=days;k++){const d=calYm+"-"+pad(k),fut=d>TODAY,es=S.entries.filter(e=>e.date===d&&!e.excl),s=sum(es,e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,rec=recorded(d);
+  for(let k=1;k<=days;k++){const d=calYm+"-"+pad(k),fut=d>TODAY,es=S.entries.filter(e=>e.date===d&&!e.excl),s=sum(es,e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,rec=es.length>0||!!ns||recorded(d); /* the calendar shows every day with data, imported ones too (the streak stays app-only) */
     if(!fut&&rec){recDays++;tot+=s;if(s===0)zero++}
-    const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b";
+    const cls=!fut&&rec&&s>dayB?"b":"";
     const v=fut?"":s>0?(s>=10000?man1(s):num(s)):ns?"🥚":rec?"0":"";
     html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===calSel?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span></button>`}
   $("cal").innerHTML=html;
-  if(!calSel||ymOf(calSel)!==calYm)$("calDay").innerHTML='<p class="tiny muted">날짜를 누르면 여기에 그날 내역이 나와요.</p>';
+  if(!calSel||ymOf(calSel)!==calYm)$("calDay").innerHTML=`<p class="tiny muted">날짜를 누르면 그날 내역이 나와요 · <span style="color:var(--coral)">빨간 숫자</span>는 하루 한도(${man1(dayB)})를 넘은 날</p>`;
   else{const es=S.entries.filter(e=>e.date===calSel).sort((a,b)=>(a.createdAt||"")<(b.createdAt||"")?-1:1),ns=S.days[calSel]&&S.days[calSel].noSpend;
     $("calDay").innerHTML=`<div class="sub"><div class="row"><strong>${mdw(calSel)}</strong><span class="disp">${won(sum(es.filter(e=>!e.excl),e=>e.amount))}</span></div><div class="list">${es.length?es.map(entryRow).join(""):`<p class="empty">${ns?"🥚 무지출 데이":"기록이 없어요."}</p>`}</div><button type="button" class="btn ghost" data-addday="${calSel}">+ 이 날 지출 추가</button></div>`}
   $("calSum").textContent=won(tot);$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
