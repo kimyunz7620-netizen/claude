@@ -552,9 +552,10 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <p class="small muted">통장 잔액을 그대로 적어 주세요. 보증금은 자동으로 더해요.</p><p class="tiny muted" id="fundHint"></p>
       <label class="field"><span>월</span><input type="month" id="nwMonth"></label>
       <div class="fields">
-        <label class="field"><span>🏦 하나은행 (급여)</span><input type="text" inputmode="numeric" id="acHana" placeholder="0"></label>
-        <label class="field"><span>🏦 케이뱅크 (생활비·카드 결제)</span><input type="text" inputmode="numeric" id="acKbank" placeholder="0"></label>
+        <label class="field"><span>🏦 하나은행 (급여·카드값)</span><input type="text" inputmode="numeric" id="acHana" placeholder="0"></label>
+        <label class="field"><span>🏦 케이뱅크 (체크카드 생활비)</span><input type="text" inputmode="numeric" id="acKbank" placeholder="0"></label>
         <label class="field"><span>🐷 우리은행 (저축, 파킹통장 전까지)</span><input type="text" inputmode="numeric" id="acWoori" placeholder="0"></label>
+        <label class="field"><span>🏦 토스뱅크 (자동이체)</span><input type="text" inputmode="numeric" id="acToss" placeholder="0"></label>
         <label class="field"><span>🎁 신한은행 (경조사)</span><input type="text" inputmode="numeric" id="acShinhan" placeholder="0"></label>
         <div class="field"><span>합계</span><strong class="disp" style="font-size:1.3rem;padding-top:8px" id="acSum">0원</strong></div>
       </div>
@@ -876,7 +877,7 @@ function payTxSteps(M,pl){
   const ca=CARDACC(),toCard=ca===SALARY?0:pl.card-pl.giftCard+prepay;
   const byDest={};fx.forEach(x=>{const d=fixedDest(x);if(d)(byDest[d]=byDest[d]||[]).push(x)});
   /* the gift shortfall goes wherever the monthly gift transfer leaves from (e.g. 토스뱅크, moved to the gift account by hand later) */
-  const fundFix=fx.find(x=>/경조사/.test(x.name+" "+x.note)),gapDest=(fundFix&&fixedDest(fundFix))||fundAcc,gapTxt=`경조사 부족분 ${won(pl.gift)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})${gapDest!==fundAcc?` · ${gapDest}에 두었다가 경조사 때 옮기기`:""}`;
+  const fundFix=fx.find(x=>/경조사/.test(x.name+" "+x.note)),gapDest=(fundFix&&fixedDest(fundFix))||fundAcc,gapTxt=`경조사 부족분 ${won(pl.gift)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})${gapDest!==fundAcc?` · ${gapDest}에 넣은 뒤 ${fundAcc}${(c=>c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28&&(c-0xAC00)%28!==8?"으로":"로")(fundAcc.charCodeAt(fundAcc.length-1))} 직접 옮기기`:""}`;
   if(pl.gift&&!byDest[gapDest])byDest[gapDest]=[];
   const dests=Object.entries(byDest).sort(([a],[b])=>(a===fundAcc)-(b===fundAcc));
   dests.forEach(([d,xs])=>{const extra=d===gapDest?pl.gift:0;steps.push({k:"fx-"+d,from:SALARY,to:d,amt:sum(xs,x=>x.amount)+extra,sub:xs.map(x=>`${x.name} ${won(x.amount)}`).concat(extra?[gapTxt]:[]).join(" + ")+(d==="토스뱅크"?" · 22일 자동이체 전에":"")})});
@@ -884,7 +885,7 @@ function payTxSteps(M,pl){
   if(pl.cashRes)steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,sub:"체크카드 생활비"});
   if(pl.giftCard)steps.push({k:"gc",from:fundAcc,to:ca,amt:pl.giftCard,sub:"카드로 산 경조사 선물만큼 경조사 통장에서 채워요"});
   steps.push({k:"pay",act:`롯데카드 앱 › ${early?"즉시결제":"결제계좌 확인"}`,amt:pl.card,sub:early?`결제예정금액 › 즉시결제 · ${ca}에서 빠져요`:`${md(pd)}에 ${ca}에서 자동으로 빠져요`});
-  if(items.length)steps.push({k:"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 목록에서 '기록'"});
+  if(items.length)steps.push({k:"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 '선결제·상환 기록'에 적기"});
   loans.forEach(r=>steps.push({k:"loan-"+r.d.id,from:SALARY,to:r.d.name,amt:r.amt,sub:`중도상환${r.due?` · ${md(r.d.due)} 만기 전 상환`:""} · 하고 나면 '기록'`}));
   if(rest>0)steps.push({k:"save",from:SALARY,to:SAVEACC,amt:rest,sub:"빚을 다 갚고 남는 돈 · 저축"});
   /* what really stays in the salary account: money saved toward the next prepayment, the buffer, and costs that leave it on their own.
@@ -913,7 +914,7 @@ function payPlan(M){
 }
 
 /* ---------- bank balances (bank names only, never account numbers) ---------- */
-const ACC=[["hana","acHana"],["kbank","acKbank"],["woori","acWoori"],["shinhan","acShinhan"]];
+const ACC=[["hana","acHana"],["kbank","acKbank"],["woori","acWoori"],["toss","acToss"],["shinhan","acShinhan"]];
 const accTotal=a=>a?sum(ACC,([k])=>a[k]||0):null;
 const readAcc=()=>Object.fromEntries(ACC.map(([k,id])=>[k,parseNum($(id).value)]));
 function cashNow(){const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),last=snaps[snaps.length-1],a=S.accounts;
@@ -1268,7 +1269,7 @@ function renderMonth(){
     (fin.length?`<details class="more"><summary>끝낸 할 일 ${fin.length}묶음</summary>${fin.map(grp).join("")}</details>`:"");
   gs.forEach(g=>g.items.forEach(i=>{n++;if(S.tasks[i.id])dn++}));
   $("taskCount").textContent=`${dn}/${n} 완료`;
-  if(!$("payForm").contains(document.activeElement)){fillTargets();if(!$("pfDate").value)$("pfDate").value=TODAY}
+  if(!$("payForm").contains(document.activeElement)){fillTargets();if(!$("pfDate").value)$("pfDate").value=TODAY;if(!$("pfAmount").value)pfAuto()}
   if(!$("nwMonth").value)$("nwMonth").value=ymOf(TODAY);
   {const L=Number(ymDay(M,31).slice(8));if((d>=L-1||d<=3)&&!$("nwBox").dataset.auto){$("nwBox").open=true;$("nwBox").dataset.auto=1}}
   $("fundHint").textContent=CATS().filter(c=>c.fund).map(c=>`🎁 ${c.fund.bank} 예상 잔액 ${num(fundBalance(c))} (매달 이체 + 모자랄 때 채운 돈 − 쓴 돈)`).join(" · ");
@@ -1278,7 +1279,7 @@ function renderMonth(){
 }
 function fillTargets(keep){
   const sel=$("pfTarget"),v=keep||sel.value;
-  sel.innerHTML=`<optgroup label="카드 할부 (아끼는 수수료 큰 순)">${cardOrder(TODAY).sort((a,b)=>b.save-a.save).map(o=>`<option value="i:${esc(o.x.id)}">💳 ${esc(o.x.name)} ${md(o.x.date)} · ${num(o.amt)}</option>`).join("")}</optgroup><optgroup label="대출">${LOANS().map(d=>`<option value="d:${esc(d.id)}">🏦 ${esc(d.name)} · ${num(loanBal(d))}</option>`).join("")}</optgroup>`;
+  sel.innerHTML=`<optgroup label="카드 할부 (아끼는 수수료 큰 순)">${cardOrder(TODAY).sort((a,b)=>b.save-a.save).map(o=>`<option value="i:${esc(o.x.id)}">💳 ${esc(o.x.name)} ${md(o.x.date)} · ${itemLeftN(o.x)}회 남음 · ${num(o.amt)}</option>`).join("")}</optgroup><optgroup label="대출">${LOANS().map(d=>`<option value="d:${esc(d.id)}">🏦 ${esc(d.name)} · ${num(loanBal(d))}</option>`).join("")}</optgroup>`;
   if(v)sel.value=v;
 }
 function pfAuto(){
@@ -1319,7 +1320,7 @@ function renderDash(){
   $("loanList").innerHTML=LOANS().map(d=>`<div class="li"><span class="av">🏦</span><div><div class="t">${esc(d.name)}</div><div class="s">${esc([d.rate,d.due?`만기 ${d.due.slice(2).replace(/-/g,".")}`:"",d.note].filter(Boolean).join(" · "))}${sim.loans[d.id]?` · 완납 예상 ${ymKo(sim.loans[d.id])}`:""}${sim.dueShort[d.id]?`<div class="s" style="color:var(--coral);font-weight:700">⚠️ 만기 ${md(d.due)}까지 약 ${man(sim.dueShort[d.id])} 모자라요 · 부수입을 넣거나 은행에 기한연장을 물어보세요</div>`:""}</div></div><div style="text-align:right"><div class="a">${num(loanBal(d))}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="d:${esc(d.id)}">상환</button></div></div>`).join("")||'<p class="empty">대출 정보를 불러오는 중이에요.</p>';
   const lp=lastPassed();
   $("schTbl").innerHTML="<thead><tr><th>결제월</th><th>할부 청구</th><th>건수</th></tr></thead><tbody>"+schedMonths().filter(m=>m>lp).map(m=>`<tr class="${m===nx?"next":""}"><td>${ymShort(m)}</td><td><strong>${num(effSched(m))}</strong></td><td>${ITEMS().filter(x=>itemBill(x,m)>0).length}</td></tr>`).join("")+"</tbody>";
-  $("nwList").innerHTML=snaps.slice().reverse().map(s=>`<div class="li"><span class="av">🐷</span><div><div class="t">${ymKo(s.ym)}</div><div class="s">${s.hana!=null?`하나 ${num(s.hana)} · 케뱅 ${num(s.kbank)} · 우리 ${num(s.woori)}${s.shinhan?` · 신한 ${num(s.shinhan)}`:""}`:`현금 ${num(s.cash)}`} · 빚 ${num(s.debt)}</div></div><div style="text-align:right"><div class="a">${num(s.net)}</div><button type="button" class="btn danger" style="margin-top:4px" data-del-nw="${esc(s.ym)}">삭제</button></div></div>`).join("")||'<p class="empty">월급·상환 탭에서 월말 잔액을 기록하면 쌓여요.</p>';
+  $("nwList").innerHTML=snaps.slice().reverse().map(s=>`<div class="li"><span class="av">🐷</span><div><div class="t">${ymKo(s.ym)}</div><div class="s">${s.hana!=null?`하나 ${num(s.hana)} · 케뱅 ${num(s.kbank)} · 우리 ${num(s.woori)}${s.toss?` · 토스 ${num(s.toss)}`:""}${s.shinhan?` · 신한 ${num(s.shinhan)}`:""}`:`현금 ${num(s.cash)}`} · 빚 ${num(s.debt)}</div></div><div style="text-align:right"><div class="a">${num(s.net)}</div><button type="button" class="btn danger" style="margin-top:4px" data-del-nw="${esc(s.ym)}">삭제</button></div></div>`).join("")||'<p class="empty">월급·상환 탭에서 월말 잔액을 기록하면 쌓여요.</p>';
 }
 let WI=-100000;
 /* how much sooner a sum of money brings the goal: before debt-free it speeds up 빚 0원, after that it speeds up 1억 */
