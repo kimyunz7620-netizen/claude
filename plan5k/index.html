@@ -1304,7 +1304,7 @@ function renderDash(){
   const startNet=goalBase(),GL=GOALS(),lastG=GL[GL.length-1],target=lastG?lastG.net:startNet+(st.targetGain||0),gain=target-startNet,fin=st.finalTarget||1e8,goalYm=lastG?lastG.ym:st.targetYm||"2027-12";
   const lo=Math.min(startNet,now,0),span=Math.max(1,fin-lo),pos=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
   $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div>${(GL.length?GL:[{net:target}]).map((g,i)=>`<div class="mk lo" style="left:${pos(g.net)}%"><b>🏁</b>${GL.length>1?`${i+1}차 `:""}${man(g.net)}</div>`).join("")}${GL.some(g=>g.net===fin)?"":`<div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div>`}<div class="me" style="left:${pos(now)}%">🐷</div>`;
-  const chips=[];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip plain">통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
+  const chips=[`<span class="chip plain">보증금 ${man(st.deposit||0)} + 통장 ${man(lastCash||0)} − 빚 ${man(T)}</span>`];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip plain">통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
   if(snaps.length){const sYm=snaps[0].ym,tYm=goalYm,sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
   $("nwChips").innerHTML=chips.join("");
   renderProjection(sim,now,target);
