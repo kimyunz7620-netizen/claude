@@ -1185,14 +1185,14 @@ function renderDash(){
   $("dbFree").textContent=sim.free?`이대로면 유이자 카드 할부는 ${ymKo(sim.cardDone)}, 모든 빚은 ${ymKo(sim.free)}에 끝나요.`:"지금 숫자로는 완납 시점을 계산할 수 없어요.";
   const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),lastCash=cashNow(),now=(st.deposit||0)+(lastCash||0)-T;
   $("nwNow").textContent=won(now);
-  const startNet=goalBase(),gain=st.targetGain||0,target=startNet+gain,fin=st.finalTarget||1e8;
+  const startNet=goalBase(),GL=GOALS(),lastG=GL[GL.length-1],target=lastG?lastG.net:startNet+(st.targetGain||0),gain=target-startNet,fin=st.finalTarget||1e8,goalYm=lastG?lastG.ym:st.targetYm||"2027-12";
   const lo=Math.min(startNet,now,0),span=Math.max(1,fin-lo),pos=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
-  $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div><div class="mk lo" style="left:${pos(target)}%"><b>🏁</b>${man(target)}</div><div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div><div class="me" style="left:${pos(now)}%">🐷</div>`;
+  $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div>${(GL.length?GL:[{net:target}]).map((g,i)=>`<div class="mk lo" style="left:${pos(g.net)}%"><b>🏁</b>${GL.length>1?`${i+1}차 `:""}${man(g.net)}</div>`).join("")}<div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div><div class="me" style="left:${pos(now)}%">🐷</div>`;
   const chips=[];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip warn">세 통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
-  if(snaps.length){const sYm=snaps[0].ym,tYm=st.targetYm||"2027-12",sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
+  if(snaps.length){const sYm=snaps[0].ym,tYm=goalYm,sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
   $("nwChips").innerHTML=chips.join("");
   renderProjection(sim,now,target);
-  drawChart(snaps,snaps.length?snaps[0].ym:ymOf(TODAY),st.targetYm||"2027-12",snaps.length?startNet:null,snaps.length?target:null,sim.path);
+  drawChart(snaps,snaps.length?snaps[0].ym:ymOf(TODAY),goalYm,snaps.length?startNet:null,snaps.length?target:null,sim.path);
   const order=cardOrder(TODAY).sort((a,b)=>b.save-a.save),open=ITEMS().filter(x=>itemBal(x)>0),done=ITEMS().filter(x=>itemBal(x)<=0),free=open.filter(x=>x.fee===0),nx=ymAdd(lastPassed(),1);
   $("instCount").textContent=`${open.length}건`;$("instSum").textContent=`원금 ${won(cardDebt())}`;
   const row=(o,i)=>`<div class="li"><span class="av">${["🥇","🥈","🥉"][i]||"💳"}</span><div><div class="t">${esc(o.x.name)} <span class="eff">−${man1(o.save)} 수수료</span></div><div class="s">${md(o.x.date)} 결제 · ${itemLeftN(o.x)}회 남음 · 다음 청구 ${num(itemBill(o.x,nx))} · 선결제하면 수수료 ${num(o.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(o.amt)}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(o.x.id)}">선결제</button></div></div>`;
@@ -1314,7 +1314,7 @@ function debtTip(p){const q=p.parts||{},bits=[];if(q.inst)bits.push(`할부 청�
   return `${ymKo(p.ym)} · 빚 갚기 ${man1(p.debt)}${bits.length?` = ${bits.join(" + ")}`:""}${p.save>0?` · 모으기 ${man1(p.save)}`:""}`}
 /* 앞으로의 길: where each month's spare money goes (debt vs savings) and the milestones on the way */
 function renderProjection(sim,now,target){
-  const st=ST(),P=sim.path,tYm=st.targetYm||"2027-12",fin=st.finalTarget||1e8,dm=v=>(v>=0?"+":"−")+man(Math.abs(v));
+  const st=ST(),P=sim.path,GL=GOALS(),tYm=GL.length?GL[GL.length-1].ym:st.targetYm||"2027-12",fin=st.finalTarget||1e8,dm=v=>(v>=0?"+":"−")+man(Math.abs(v));
   const fi=sim.free?P.findIndex(p=>p.ym===sim.free):-1,after=fi>=0?P[fi+1]:null,first=P[0];
   $("pjBasis").textContent=`생활비 ${man(st.cycleBudget||0)}${(st.budgetPlan||[]).map(x=>` → ${ymKo(x.from)}부터 ${man(x.budget)}`).join("")} 기준`;
   if(after){$("pjWhen").textContent=`${ymKo(after.ym)}부터`;$("pjBig").innerHTML=`매달 <em>${man(after.save)}</em>씩 모여요`;
@@ -1323,7 +1323,7 @@ function renderProjection(sim,now,target){
   // chart: from now to a year after the last debt (at most 24 months)
   const n=Math.min(P.length,Math.max(12,fi>=0?fi+13:12),24),D=P.slice(0,n),W=600,H=210,L=40,Rr=8,T=34,B=24,bw=(W-L-Rr)/n,mx=Math.max(...D.map(p=>p.avail),1),step=mx>2e6?1e6:5e5,top=Math.ceil(mx/step)*step,y=v=>T+(H-T-B)*(1-v/top);
   let g="";for(let v=0;v<=top+1;v+=step)g+=`<line class="grid" x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L-6}" y="${y(v)+4}" text-anchor="end">${v?man(v):"0"}</text>`;
-  const ev={};if(sim.cardDone)ev[sim.cardDone]="💳 카드 끝";if(st.raiseFromYm)ev[st.raiseFromYm]=(ev[st.raiseFromYm]?ev[st.raiseFromYm]+" ":"")+"💵 인상";if(sim.free)ev[sim.free]="🎉 빚 0원";
+  const ev={};if(sim.cardDone)ev[sim.cardDone]="💳 카드 끝";if(st.raiseFromYm)ev[st.raiseFromYm]=(ev[st.raiseFromYm]?ev[st.raiseFromYm]+" ":"")+"💵 인상";if(sim.free)ev[sim.free]="🎉 빚 0원";GL.forEach((g,i)=>{ev[g.ym]=(ev[g.ym]?ev[g.ym]+" ":"")+`🏁${GL.length>1?i+1+"차":"목표"}`});
   D.forEach((p,i)=>{const x=L+i*bw+2,w=Math.max(2,bw-4),yd=y(p.debt),ys=y(p.debt+p.save),r=Math.min(4,w/2);
     if(p.save>0)g+=`<path class="b-save" d="M${x},${yd-1} V${ys+r} Q${x},${ys} ${x+r},${ys} H${x+w-r} Q${x+w},${ys} ${x+w},${ys+r} V${yd-1} Z"/>`;
     if(p.debt>0){const yt=p.save>0?yd+1:yd,rr=p.save>0?0:r;g+=`<path class="b-debt" d="M${x},${y(0)} V${yt+rr} Q${x},${yt} ${x+rr},${yt} H${x+w-rr} Q${x+w},${yt} ${x+w},${yt+rr} V${y(0)} Z"/>`}
@@ -1341,7 +1341,8 @@ function renderProjection(sim,now,target){
   if(after){items.push([after.ym,li("good","💰",`${ymKo(after.ym)}부터`,"매달 저축 시작","파킹통장에 그대로 쌓아요",`월 ${man(after.save)}`)]);
     const cum=k=>sum(P.slice(fi,fi+k+1),p=>p.save);
     [[6,"반년"],[12,"1년"]].forEach(([k,lab])=>{const p=P[fi+k];if(p)items.push([p.ym,li("good","🐷",ymKo(p.ym),`저축 ${lab}째`,`통장에 모인 돈`,man(cum(k)))])})}
-  const atT=P.find(p=>p.ym===tYm);if(atT)items.push([tYm,li("","🏁",ymKo(tYm),"목표 시점 순자산",target!=null?`목표 ${man(target)} 대비 ${dm(atT.net-target)}`:"",man(atT.net))]);
+  GL.forEach((g,i)=>{const at=P.find(p=>p.ym===g.ym);if(!at)return;const ok=at.net>=g.net,h=P.find(p=>p.net>=g.net);items.push([g.ym,li(ok?"good":"","🏁",ymKo(g.ym),`${GL.length>1?`${i+1}차 `:""}목표 순자산 ${man(g.net)}`,ok?`예상 ${man(at.net)} · ${at.net-g.net<10000?"딱 맞춰 도착":`목표보다 ${man(at.net-g.net)} 여유`}`:`예상 ${man(at.net)} · ${man(g.net-at.net)} 모자라요${h?` · 이대로면 ${ymKo(h.ym)} 도착`:""}`,ok?"달성 ✅":"⚠️")])});
+  (st.budgetPlan||[]).forEach(x=>items.push([x.from,li("","🔁",ymKo(x.from),`생활비 월 ${man(x.budget)}으로 바뀌어요`,`2차 목표 기간 · 주 ${man1(x.week||0)}`,"")]));
   [[5e7,"🌳"],[fin,"🏆"]].filter(([v,e])=>e==="🏆"||v<fin).forEach(([v,e])=>{const h=P.find(p=>p.net>=v);items.push([h?h.ym:"9999",li("good",e,h?ymKo(h.ym):"10년 이후",`순자산 ${man(v)}`,h?"이 페이스로 도착":"","")])});
   $("pjList").innerHTML=items.sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:0).map(x=>x[1]).join("");
   if(view==="dash")renderGoalFit();
