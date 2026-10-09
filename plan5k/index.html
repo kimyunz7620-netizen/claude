@@ -196,6 +196,9 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .rvd.today{color:var(--ink);font-weight:800}
 .rvc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.85rem;padding:4px 0}
 .rvc .bar{height:8px}
+button.rvd{background:none;border:0;padding:0;font:inherit;cursor:pointer}.rvd.sel .col{outline:2px solid var(--grape);outline-offset:1px}
+.rvi{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:3px 0}
+.rvod,.rvsel{background:var(--bg);border-radius:12px;padding:10px 12px;margin-top:8px}
 .flow .fl{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;font-size:.92rem}
 .flow .fl .num{font-weight:800}
 .flow .fl.total{border-top:2px dashed var(--line);margin-top:4px;padding-top:10px;font-weight:800;font-size:1.04rem}
@@ -810,7 +813,7 @@ function allocateRest(amount,date){
 /* ---------- payoff simulation ---------- */
 /* month-by-month plan: what is left after fixed costs and the 생활비 budget pays card bills, then prepayments, then loans; once every debt is gone it is all savings.
    Each month records avail (money that month can put toward debt or savings), debt (the part that went to debt) and save. */
-let SIMC={};
+let SIMC={},rvSel=null;
 function simulate(extra=0,plan){const k=extra+"|"+(plan?JSON.stringify(plan):"");if(SIMC[k])return SIMC[k];return SIMC[k]=simulateRun(extra,plan)}
 function simulateRun(extra,plan){
   const st=ST(),living=(st.cycleBudget||0)+extra,base=(st.deposit||0)+(cashNow()||0),path=[],buf=st.buffer||0,closed={};let pot=0,intBack=0,feeSaved=0;
@@ -1162,14 +1165,20 @@ function renderWeek(){
   $("rvMsg").innerHTML=!wes.length?"":sp>W?`<p class="note bad"><strong>⚠️ 한도보다 ${won(sp-W)} 더 썼어요</strong>${wcs[0]?`<br><span class="small">가장 많이 쓴 건 ${look(wcs[0].c.id)[0]} ${esc(wcs[0].c.name)} ${won(wcs[0].s)}이에요.${ended?"":` 남은 ${daysLeft}일은 무지출로 버텨 봐요.`}</span>`:""}</p>`
     :`<p class="note good"><strong>${ended?`🎉 ${won(left)} 남기고 끝났어요`:`👍 ${won(left)} 남았어요`}</strong>${!ended&&daysLeft?`<br><span class="small">남은 ${daysLeft}일 동안 하루 ${won(Math.floor(left/daysLeft/100)*100)}씩 쓸 수 있어요.</span>`:""}</p>`;
   const days=[...Array(7)].map((_,i)=>{const d=addDays(wr.start,i),v=sum(entriesIn({start:d,end:d}),e=>e.amount);return{d,v}}),top=Math.max(dayB*1.5,...days.map(x=>x.v),1);
-  $("rvDays").innerHTML=days.map(x=>`<div class="rvd ${x.v>dayB?"over":""} ${x.d>TODAY?"fut":""} ${x.d===TODAY?"today":""}"><div class="col" title="${md(x.d)} ${won(x.v)}"><b style="bottom:${Math.round(dayB/top*100)}%"></b><i style="height:${Math.round(x.v/top*100)}%"></i></div><span>${"월화수목금토일"[(parse(x.d).getDay()+6)%7]}</span><span>${x.v?man1(x.v):"-"}</span></div>`).join("");
-  /* each category's share of this week's limit: its cycle budget scaled by week limit / cycle budget, so the shares add up to the week limit */
-  const amt=v=>v<10000?won(v):man1(v),wk=payYmOf(wr.start),cb=cycleBudgetFor(wk)||1,cr=LIVECATS(wk).map(c=>{const b=Math.round(budgetAt(c,wk)*W/cb/100)*100,s=sum(wes.filter(e=>e.cat===c.id),e=>e.amount);return{c,b,s}}).filter(x=>x.b>0||x.s>0)
-    .sort((a,b)=>(b.s-b.b)-(a.s-a.b));
-  $("rvOver").innerHTML=wes.length?`<div class="row" style="margin-top:12px"><h3>예산 대비</h3><span class="tiny muted">카테고리 예산의 이번 주 몫</span></div>`+cr.map(x=>{const over=x.s>x.b,r=x.b?x.s/x.b:x.s?9:0;
-      return `<div class="rvc"><span>${look(x.c.id)[0]} ${esc(x.c.name)}</span><div class="bar"><i style="width:${Math.min(100,Math.round(r*100))}%;background:${over?"var(--coral)":look(x.c.id)[1]}"></i></div><span class="num small">${num(x.s)}<span class="muted"> / ${num(x.b)}</span> <span class="${over?"bad-t":"good-t"}">${!x.b?"예산 없음":over?(r>=2?`${Math.floor(r*10)/10}배`:`+${amt(x.s-x.b)}`):`${amt(x.b-x.s)} 남음`}</span></span></div>`}).join("")+
-    (big&&big.amount>=W*.2?`<p class="small muted" style="margin-top:8px">💸 가장 큰 지출: ${md(big.date)} ${esc(big.memo||catName(big.cat))} ${won(big.amount)}${big.method==="inst"?` · 할부 ${big.months}개월`:""}</p>`:"")
-    :'<p class="small muted">이번 주 기록이 아직 없어요.</p>';
+  $("rvDays").innerHTML=days.map(x=>`<button type="button" class="rvd ${x.v>dayB?"over":""} ${x.d>TODAY?"fut":""} ${x.d===TODAY?"today":""} ${x.d===rvSel?"sel":""}" data-rvday="${x.d}" aria-label="${md(x.d)} ${won(x.v)} 보기"><div class="col" title="${md(x.d)} ${won(x.v)}"><b style="bottom:${Math.round(dayB/top*100)}%"></b><i style="height:${Math.round(x.v/top*100)}%"></i></div><span>${"월화수목금토일"[(parse(x.d).getDay()+6)%7]}</span><span>${x.v?man1(x.v):"-"}</span></button>`).join("");
+  /* a week is about days: which days ran over and what did it, the biggest single spends, quiet days, and how it compares with last week */
+  if(rvSel&&(rvSel<wr.start||rvSel>wr.end))rvSel=null;
+  const prevW=weekRange(addDays(wr.start,-1)),prevSp=sum(entriesIn(prevW),e=>e.amount),dayItems=d=>entriesIn({start:d,end:d}).slice().sort((a,b)=>b.amount-a.amount);
+  const itemRow=e=>`<div class="rvi"><span>${look(e.cat)[0]}</span><span class="small">${esc(e.memo||catName(e.cat))}${e.method==="inst"?` <span class="tiny muted">할부 ${e.months}개월</span>`:""}</span><span class="num small">${num(e.amount)}</span></div>`;
+  const overDays=days.filter(x=>x.v>dayB&&x.d<=TODAY),zero=days.filter(x=>x.d<=TODAY&&x.d>=ledgerStart()&&!x.v).length,skips=sum(S.wins.filter(w=>w.kind==="skip"&&w.date>=wr.start&&w.date<=wr.end),w=>w.amount);
+  const top3=wes.slice().sort((a,b)=>b.amount-a.amount).slice(0,3);
+  const sel=rvSel?`<div class="rvsel"><div class="row"><strong class="small">${mdw(rvSel)} · ${won(sum(dayItems(rvSel),e=>e.amount))}</strong><button type="button" class="link tiny" data-rvday="">닫기</button></div>${dayItems(rvSel).map(itemRow).join("")||'<p class="tiny muted">기록이 없어요</p>'}</div>`:'<p class="tiny muted">막대를 누르면 그날 쓴 내역이 보여요.</p>';
+  $("rvOver").innerHTML=sel+(wes.length?
+    (overDays.length?`<h3 style="margin-top:14px">🔥 하루 한도(${man1(dayB)})를 넘은 날</h3>`+overDays.map(x=>`<div class="rvod"><div class="row"><strong class="small">${mdw(x.d)}</strong><span class="bad-t small">${won(x.v)} · 한도보다 +${x.v-dayB<10000?won(Math.round(x.v-dayB)):man1(x.v-dayB)}</span></div>${dayItems(x.d).slice(0,3).map(itemRow).join("")}</div>`).join("")
+      :`<p class="small good-t" style="margin-top:14px">✅ 하루 한도(${man1(dayB)})를 넘은 날이 없어요</p>`)+
+    (!overDays.length&&top3.length?`<h3 style="margin-top:14px">💸 이번 주 큰 지출</h3>`+top3.map(itemRow).join(""):"")+
+    `<div class="chips" style="margin-top:12px"><span class="chip ${zero?"good":""}">🥚 무지출 ${zero}일</span>${skips?`<span class="chip good">🙅 참은 돈 ${won(skips)}</span>`:""}${prevSp?`<span class="chip ${sp<=prevSp?"good":"bad"}">지난주보다 ${sp<=prevSp?`${man1(prevSp-sp)} 덜`:`${man1(sp-prevSp)} 더`} 썼어요</span>`:""}</div>`
+    :'<p class="small muted">이번 주 기록이 아직 없어요.</p>');
   if(!bdKey)bdKey=bdMode==="cycle"?payYmOf(TODAY):ymOf(TODAY);
   const r=bdRange();$("bdLabel").textContent=r.label;
   const f=TODAY<r.start?0:TODAY>r.end?1:(dayDiff(r.start,TODAY)+1)/(dayDiff(r.start,r.end)+1),es=entriesIn(r),B=sum(LIVECATS(bdKey),c=>budgetAt(c,bdKey)),Sp=sum(es,e=>e.amount);
@@ -1483,6 +1492,7 @@ document.addEventListener("mouseover",e=>{const t=e.target.closest&&e.target.clo
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button,[data-tip]");if(!t)return;
   if(t.dataset.go){go(t.dataset.go);return}
+  if(t.dataset.rvday!=null){rvSel=t.dataset.rvday&&t.dataset.rvday!==rvSel?t.dataset.rvday:null;renderWeek();return}
   if(t.dataset.tip!=null){const box=t.closest("[data-tipbox]");$(box?box.dataset.tipbox:"nwTip").textContent=t.dataset.tip;return}
   if(t.dataset.guide){const[k,v]=t.dataset.guide.split(":");
     if(k==="go")go(v);
