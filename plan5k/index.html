@@ -198,6 +198,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .rvd.today{color:var(--ink);font-weight:800}
 .rvc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.85rem;padding:4px 0}
 .rvc .bar{height:8px}
+.brief{display:flex;flex-direction:column;gap:8px;background:var(--bg);border-radius:14px;padding:12px 14px}.brief .sr{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;font-size:.88rem;line-height:1.45}
 .glance-big{font-family:var(--f-display);font-size:1.1rem;font-weight:800;letter-spacing:-.02em;text-wrap:balance}.glance-big em{font-style:normal;color:var(--grape)}
 #glance .link{font:inherit;background:none;border:0;padding:0;color:var(--grape);font-weight:700;cursor:pointer}
 .dsub{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--line);padding:4px;border-radius:14px}
@@ -373,6 +374,13 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </div>
 
+    <div class="card" id="glance">
+      <div class="row"><h2>☀️ 오늘 브리핑</h2><span class="tiny muted">어제까지 기록 기준</span></div>
+      <div class="glance-big" id="glanceBig"></div>
+      <div id="fundNow"></div>
+      <div id="glanceCats" style="display:flex;flex-direction:column;gap:4px"></div>
+      <div class="chips" id="glanceChips"></div>
+    </div>
     <div class="card" id="questCard">
       <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
       <div class="quest" id="quest"></div>
@@ -412,13 +420,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
         <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>하루 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
       <button type="button" class="btn ghost" id="calCats">이 달 카테고리별 보기</button>
-    </div>
-    <div class="card" id="glance">
-      <div class="row"><h2>📊 오늘 한눈에</h2></div>
-      <div class="glance-big" id="glanceBig"></div>
-      <div id="fundNow"></div>
-      <div id="glanceCats" style="display:flex;flex-direction:column;gap:4px"></div>
-      <div class="chips" id="glanceChips"></div>
     </div>
     <button type="button" class="fab" id="fab" aria-label="쓴 돈 기록">＋</button>
     <div class="sheet" id="sheet" hidden><div class="sheet-bg" data-sheetclose="1"></div>
@@ -1116,15 +1117,19 @@ function dailyNums(){
 }
 /* one card to glance at: what you can spend today, four numbers that change daily, the categories closest to their budget, what's coming up */
 function renderCoach(){
-  const n=dailyNums(),f=fundNow(),tile=(k,v,sub,cls)=>`<div class="fn"><span class="k">${k}</span><strong class="${cls||""}">${v}</strong>${sub?`<span class="s">${sub}</span>`:""}</div>`;
+  const n=dailyNums(),f=fundNow();
   const perDay=n.wLeft>0?Math.floor(n.wLeft/n.wDays/100)*100:0;
   $("glanceBig").innerHTML=n.wLeft>0?`이번 주는 하루 <em>${won(perDay)}</em>까지 써도 돼요`:`이번 주 한도를 <em class="bad-t">${won(-n.wLeft)}</em> 넘었어요 · 남은 ${n.wDays}일은 무지출로`;
-  const yT=!n.yRec?tile("어제","기록 없음","",""):tile("어제",won(n.ySp),n.ySp<=n.dayB?"하루 한도 안 👍":`한도보다 ${man1(n.ySp-n.dayB)} 더`,n.ySp>n.dayB?"bad-t":"");
-  const wT=tile("이번 주 남은 돈",n.wLeft>=0?won(n.wLeft):`${won(-n.wLeft)} 넘음`,`${n.wDays}일 남음`,n.wLeft<0?"bad-t":"");
-  const d=n.proj==null?null:n.y.B-n.proj;
-  const mT=n.el<3?tile("이번 달",`${n.el+1}일째`,`예산 ${man(n.y.B)}`,""):tile("이번 달 이대로면",d>=0?`${man1(d)} 남아요`:`${man1(-d)} 넘어요`,`${md(n.y.c.end)}까지 · 지금 ${man1(n.y.spent)}`,d<0?"bad-t":"good-t");
-  const zT=tile("이번 달 무지출",`${n.zero}일`,n.run>1?`${n.run}일째 연속 🔥`:n.run===1?"어제 무지출 🥚":"",n.zero?"good-t":"");
-  $("fundNow").innerHTML=`<div class="fngrid">${yT}${wT}${mT}${zT}</div>`;
+  /* today's briefing: what changed up to yesterday, in three lines */
+  const ydE=entriesIn({start:n.yd,end:n.yd}),topY=Object.values(ydE.reduce((a,e)=>{(a[e.cat]=a[e.cat]||{cat:e.cat,s:0}).s+=e.amount;return a},{})).sort((a,b)=>b.s-a.s)[0];
+  const lines=[];
+  lines.push(!n.yRec?["📝","어제 기록이 없어요 · 쓴 게 있으면 달력에서 어제를 눌러 적어 주세요"]:n.ySp===0?["🥚",`어제는 무지출! ${n.run>1?`${n.run}일째 연속이에요`:"잘했어요"}`]
+    :[n.ySp<=n.dayB?"👍":"⚠️",`어제 <b>${won(n.ySp)}</b> 썼어요 · ${n.ySp<=n.dayB?"하루 한도 안":`한도보다 ${man1(n.ySp-n.dayB)} 더`}${topY?` (${look(topY.cat)[0]} ${esc(SHORT[topY.cat]||catName(topY.cat))} ${man1(topY.s)})`:""}`]);
+  if(n.el>=3){const spPrev=sum(entriesIn({start:n.y.c.start,end:addDays(n.yd,-1)}),e=>e.amount),projPrev=Math.round(spPrev/(n.el-1)*n.total),dNow=n.y.B-n.proj,dPrev=n.y.B-projPrev,ch=dNow-dPrev;
+    lines.push(["📈",`이대로면 이번 달 <b class="${dNow<0?"bad-t":"good-t"}">${man1(Math.abs(dNow))} ${dNow<0?"넘어요":"남아요"}</b>${Math.abs(ch)>=1000?` · 어제보다 ${man1(Math.abs(ch))} ${ch>0?"좋아졌어요":"나빠졌어요"}`:""}`])}
+  else lines.push(["🌱",`새 달 ${n.el+1}일째 · 이번 달 예산 ${man(n.y.B)}, 하루 평균 ${man1(n.y.B/n.total)}`]);
+  if(n.wLeft>=0)lines.push(["🗓️",`이번 주 남은 돈 <b>${won(n.wLeft)}</b> · ${n.wDays}일 남음${n.zero?` · 이번 달 무지출 ${n.zero}일`:""}`]);else if(n.zero)lines.push(["🥚",`이번 달 무지출 ${n.zero}일`]);
+  $("fundNow").innerHTML=`<div class="brief">${lines.map(([e,t])=>`<div class="sr"><span>${e}</span><span>${t}</span></div>`).join("")}</div>`;
   /* categories: what's left of each this month, the tightest first */
   const k=payYmOf(TODAY),y=n.y,rows=LIVECATS(k).map(c=>{const b=budgetAt(c,k),sp=sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount);return{c,b,sp}}).filter(x=>x.b>0).sort((a,b)=>b.sp/b.b-a.sp/a.b).slice(0,4);
   $("glanceCats").innerHTML=rows.length?`<div class="row"><strong class="small">이번 달 카테고리 남은 돈</strong><button type="button" class="link small" data-go="week">전체 ›</button></div>`+rows.map(x=>{const over=x.sp>x.b;return `<div class="rvc"><span>${look(x.c.id)[0]} ${esc(SHORT[x.c.id]||x.c.name)}</span><div class="bar"><i style="width:${Math.min(100,Math.round(x.sp/x.b*100))}%;background:${over?"var(--coral)":look(x.c.id)[1]}"></i></div><span class="num small ${over?"bad-t":""}">${over?`${man1(x.sp-x.b)} 넘음`:`${man1(x.b-x.sp)} 남음`}</span></div>`}).join(""):"";
