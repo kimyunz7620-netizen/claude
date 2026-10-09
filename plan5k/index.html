@@ -355,6 +355,17 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </div>
 
+    <div class="card" id="questCard">
+      <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
+      <div class="quest" id="quest"></div>
+      <div class="habits" id="habits" aria-label="습관 체크" hidden>
+        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건 <small class="tiny muted">자동</small></span></label>
+        <label class="hb"><input type="checkbox" id="hk_noRevolve"><span>🙅 리볼빙·현금서비스 X</span></label>
+        <label class="hb"><input type="checkbox" id="hk_appCheck"><span>📱 카드 앱 확인</span></label>
+        <label class="hb"><input type="checkbox" id="hk_48h"><span>⏳ 48시간 룰</span></label>
+      </div>
+    </div>
+
     <form class="card" id="entryForm" autocomplete="off">
       <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span></div>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
@@ -425,17 +436,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div id="fundNow"></div>
       <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
     </div>
-    <div class="card">
-      <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
-      <div class="quest" id="quest"></div>
-      <div class="habits" id="habits" aria-label="습관 체크" hidden>
-        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건 <small class="tiny muted">자동</small></span></label>
-        <label class="hb"><input type="checkbox" id="hk_noRevolve"><span>🙅 리볼빙·현금서비스 X</span></label>
-        <label class="hb"><input type="checkbox" id="hk_appCheck"><span>📱 카드 앱 확인</span></label>
-        <label class="hb"><input type="checkbox" id="hk_48h"><span>⏳ 48시간 룰</span></label>
-      </div>
-    </div>
-
     <button type="button" class="btn ghost" data-go="records">↩️ 결제 취소 · 분류 정리</button>
   </section>
 
@@ -926,7 +926,7 @@ const TASKS=[
   {id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"항공·숙박은 이미 할부 목록에 있어요. 현지 경비는 계모임 돈으로"}]},
  {g:"파킹통장",label:"10/22 파킹통장 개설",d:"2026-10-22",items:[{id:"p4",t:"파킹통장 개설하고 우리은행 저축분 옮기기",n:"월말 잔액 기록의 '우리은행' 칸을 파킹통장으로 쓰면 돼요"}]},
  {g:"구독료",label:"11/10 구독료 한 달 점검",d:"2026-11-10",items:[{id:"sub1",t:"토스뱅크·카드에서 나간 구독료 확인",n:"쿠팡와우·아이클라우드 말고 더 나가는 게 있으면 설정 › 고정비 구독료에 더해 주세요"}]},
- {g:"카드 결제일",label:"10/26(월) 카드 결제일",d:"2026-10-26",items:[{id:"b1",t:"카드값 · NH 이자 정상 출금 확인",n:"25일이 일요일이라 26일 출금"}]},
+ {g:"자동이체",label:"10/22 토스뱅크 첫 자동이체",d:"2026-10-22",items:[{id:"b2",t:"토스뱅크 자동이체가 다 나갔는지 확인",n:"월세·대출 이자·보험·계모임·경조사·구독료"}]},
  {g:"선결제",label:"12/25 결제 직후 선결제",d:"2026-12-25",items:[{id:"g1",t:"추천대로 선결제, 이마트용으로 모으기 시작",n:"이마트 선결제 시 수수료 약 32만원 절약"}]},
  {g:"연말정산",label:"27년 2월 연말정산 환급",d:"2027-02-28",items:[{id:"h1",t:"연말정산 환급금 전액 상환",n:"규칙: 인상분·성과급·환급은 전액 상환·저축"}]}
 ];
@@ -1052,15 +1052,11 @@ function questItems(){
   if(d>=CYC()&&d<=CYC()+2){const k="cycle-"+M,c=cycleOf(M),sp=sum(entriesIn(c),e=>e.amount),B=cycleBudgetFor(M);
     it.push({e:"🗓️",task:k,done:!!S.tasks[k],t:"카드 주기 마감 확인",s:`${md(c.start)}~${md(c.end)} ${won(sp)} / ${won(B)}${sp>B?` · ${won(sp-B)} 초과`:" 👍"}`})}
   const early=!!ST().payEarly;
-  if(d>=PAY()&&(d<CARD()||early&&!S.tasks["secure-"+M])){const k="secure-"+M,pl=payPlan(M);it.push({e:"💰",task:k,done:!!S.tasks[k],t:early?"월급날: 카드값 즉시결제":"월급날: 카드값·고정비 확보",s:`${early?"롯데카드 앱 즉시결제":`${SALARY}→${CARDACC()}`} 카드값 ${won(pl.card)} · 고정비 ${won(pl.fixed)} 남기기${ST().incomeActual&&ST().incomeActual[M]!=null?"":" · 받은 실수령 적기"}`})}
+  if(d>=PAY()&&(d<CARD()||early&&!S.tasks["secure-"+M])){const k="secure-"+M,pl=payPlan(M);const tx=payTxSteps(M,pl).steps.filter(x=>x.from===SALARY);it.push({e:"💸",task:k,done:!!S.tasks[k],t:"월급날 이체 끝내기",s:tx.map(x=>`${x.to} ${man1(x.amt)}`).concat(`카드값 ${early?"즉시결제":""} ${man1(pl.card)}`).join(" · ")+(ST().incomeActual&&ST().incomeActual[M]!=null?"":" · 받은 실수령 적기")+" · 월급·상환 탭에 순서 있어요"})}
   if(d>=CARD()||early&&d>=PAY()&&S.tasks["secure-"+M]){const pl=payPlan(M);if(pl.avail>0){const done=pl.rest<=0;it.push({e:"⚔️",done,t:"선결제하고 기록",s:done?"이번 달 상환 끝":`${won(pl.rest)} 남음`,btn:done?null:["열기","go:month"]})}}
   const L=Number(ymDay(M,31).slice(8));
   if(d>=L-1||d<=3){const ym=d<=3?ymAdd(M,-1):M,done=S.networth.some(n=>n.ym===ym);it.push({e:"🐷",done,t:`${ymKo(ym)} 월말 잔액 기록`,s:done?"기록했어요":"저축·현금 잔액 한 줄",btn:done?null:["기록","nw:"+ym]})}
-  /* every day: today's mission from the coach, the day's spending written down, a look at the card app; and a gift coming up */
-  const ms=todayMission();if(ms)it.unshift({e:"🎯",task:"mission-"+TODAY,done:!!S.tasks["mission-"+TODAY],t:"오늘 미션",s:ms});
-  const spentToday=sum(todays.filter(e=>!e.excl),e=>e.amount),wrote=todays.length>0||!!day.noSpend;
-  it.push({e:"✏️",done:wrote,t:"오늘 쓴 돈 다 적기",s:wrote?(todays.length?`${todays.length}건 · ${won(spentToday)}`:"무지출 🥚"):"안 썼으면 아래 '오늘은 안 썼어요'"});
-  it.push({e:"📱",task:"app-"+TODAY,done:!!S.tasks["app-"+TODAY],t:"카드 앱 이용내역 확인",s:"오늘 결제가 가계부와 같은지 저녁에 한 번"});
+  /* a gift coming up within two days */
   CATS().filter(c=>c.fund).forEach(c=>(c.fund.events||[]).forEach(x=>{const n=dayDiff(TODAY,x.date),k=`fev-${x.date}-${x.memo||""}`;if(n<0||n>2)return;
     it.push({e:/축의|결혼|부의|조의/.test(x.memo||"")?"💒":"🎁",task:k,done:!!S.tasks[k],t:`${x.memo||"경조사"} ${man1(x.amount)}${n===0?" 오늘":n===1?" 내일":" 모레"}`,s:x.card?"롯데카드로 결제 · 가계부에 경조사/선물·롯데로 적기":`${c.fund.bank}에서 이체 · 가계부에 경조사/선물로 적기`})}));
   TASKS.forEach(g=>g.items.forEach(i=>{const n=dayDiff(TODAY,g.d);if(!S.tasks[i.id]&&n<=3&&dayDiff(g.end||g.d,TODAY)<=(g.end?0:3))it.push({e:"📌",task:i.id,done:false,urgent:n<0,t:i.t,s:`${g.label||md(g.d)+" "+g.g} · ${n<0?`${-n}일 지남`:n===0?"오늘":"D-"+n}`})}));
@@ -1068,7 +1064,7 @@ function questItems(){
 }
 function renderQuest(){
   const it=questItems(),dn=it.filter(x=>x.done).length;
-  $("questCount").textContent=`${dn}/${it.length}`;$("questCount").className="chip"+(dn===it.length?" good":"");$("questCount").hidden=!it.length;$("questTitle").textContent="✅ 오늘 할 일";$("quest").hidden=!it.length;
+  $("questCount").textContent=`${dn}/${it.length}`;$("questCount").className="chip"+(dn===it.length?" good":"");$("questCount").hidden=!it.length;$("questTitle").textContent="📌 오늘 할 일";$("quest").hidden=!it.length;$("questCard").hidden=!it.length;
   $("quest").innerHTML=it.map(x=>`<div class="q ${x.done?"done":""} ${x.urgent&&!x.done?"urgent":""}"><span class="ic">${x.done?"✅":x.e}</span>
     <div style="min-width:0"><strong>${esc(x.t)}</strong><span class="s">${esc(x.s)}</span></div>
     ${x.task?`<input type="checkbox" data-task="${esc(x.task)}" ${x.done?"checked":""} aria-label="${esc(x.t)} 완료">`:x.btn?`<button type="button" class="btn ghost" data-guide="${esc(x.btn[1])}">${esc(x.btn[0])}</button>`:"<span></span>"}</div>`).join("")+
@@ -1162,7 +1158,7 @@ function renderCoach(){
   $("coach").className="coach "+(c?c.mood:"");
   $("coachBtn").hidden=!sample;$("coachBtn").textContent=c?"다시 받기":slot==="am"?"브리핑 받기":"리뷰 받기";
   $("coachWhen").textContent=c?new Date(c.createdAt).toLocaleTimeString("ko-KR",{hour:"numeric",minute:"2-digit"}):"";
-  const bub=x=>`<div class="bub"><span class="av">${{good:"🥳",ok:"🙂",warn:"🤔",bad:"🫣"}[x.mood]||"🙂"}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div class="head">${esc(x.headline)}</div>${x.summary?`<div class="small">${esc(x.summary)}</div>`:""}${x.mission?`<div class="small"><strong class="warn-t">🎯 ${slot==="am"||x!==c?"오늘":"내일"} 미션</strong> ${esc(x.mission)}</div>`:""}${x.points&&x.points.length?`<details class="more"><summary>자세히</summary><ul style="margin-top:6px">${x.points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></details>`:""}</div></div>`;
+  const bub=x=>`<div class="bub"><span class="av">${{good:"🥳",ok:"🙂",warn:"🤔",bad:"🫣"}[x.mood]||"🙂"}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div class="head">${esc(x.headline)}</div>${x.summary?`<div class="small">${esc(x.summary)}</div>`:""}${x.mission?`<div class="small" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span><strong class="warn-t">🎯 ${slot==="am"||x!==c?"오늘":"내일"} 미션</strong> ${esc(x.mission)}</span>${(slot==="am"||x!==c)&&x.mission===todayMission()?`<label class="check" style="padding:0"><input type="checkbox" data-task="mission-${TODAY}" ${S.tasks["mission-"+TODAY]?"checked":""}><span class="tiny">했어요</span></label>`:""}</div>`:""}${x.points&&x.points.length?`<details class="more"><summary>자세히</summary><ul style="margin-top:6px">${x.points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></details>`:""}</div></div>`;
   let h=c?bub(c):sample?`<p class="small muted">${slot==="am"?"오늘 아침 브리핑을 준비할게요.":"오늘 하루 리뷰를 준비할게요."}</p>`:'<p class="small muted">AI 분석은 claude.ai에서 로그인한 상태로 열었을 때 쓸 수 있어요.</p>';
   if(other)h+=`<details class="more"><summary>🌅 오늘 아침 브리핑 다시 보기</summary>${bub(other)}</details>`;
   $("coachBody").innerHTML=h;
