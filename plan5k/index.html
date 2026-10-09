@@ -359,8 +359,9 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span></div>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
       <div class="cats" id="enCats" role="group" aria-label="카테고리"></div>
+      <input type="text" id="enMemo" placeholder="어디서 · 뭘 샀나요 (예: 쿠팡 휴지)" aria-label="메모">
       <label class="check" id="enPendBox" hidden><input type="checkbox" id="enPending"><span class="small">카드 앱에 아직 취소가 안 보여요 <span class="muted">(취소 예정)</span></span></label>
-      <details class="more" id="enMore"><summary id="enMoreSum">결제수단 · 날짜 · 메모</summary>
+      <details class="more" id="enMore"><summary id="enMoreSum">결제수단 · 날짜</summary>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
           <div class="seg" id="enMethod" role="group" aria-label="결제수단">
             <button type="button" data-m="lotte" aria-pressed="true">💳 롯데 일시불</button>
@@ -373,8 +374,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
             <p class="note bad" style="grid-column:1/-1">할부는 무이자일 때만. 유이자 할부를 기록하면 '할부 0건' 체크가 꺼져요.</p>
           </div>
           <div class="fields">
-            <label class="field"><span>날짜</span><input type="date" id="enDate"></label>
-            <label class="field"><span>메모</span><input type="text" id="enMemo" placeholder="선택"></label>
+            <label class="field" style="grid-column:1/-1"><span>날짜</span><input type="date" id="enDate"></label>
           </div>
           <label class="check"><input type="checkbox" id="enExcl"><span class="small">생활비 예산에서 빼기 <span class="muted">(계모임·다른 사람 몫 등)</span></span></label>
         </div>
