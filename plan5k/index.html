@@ -351,23 +351,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </div>
 
-    <div class="card step-card" id="stepCard">
-      <div class="row"><h2>🌅 오늘의 한 걸음</h2><button type="button" class="link small" data-go="dash">앞으로의 길 ›</button></div>
-      <div class="step-big" id="stepBig"></div>
-      <div class="step-rows" id="stepRows"></div>
-      <div class="step-acts" role="group" aria-label="오늘의 한 걸음 기록">
-        <button type="button" class="pill" data-step="skip">🙅 참았어요</button>
-        <button type="button" class="pill" data-step="sell">💰 부수입</button>
-        <button type="button" class="pill" data-step="goal">🎯 이번 주 목표</button>
-      </div>
-      <form class="step-panel" id="stepPanel" hidden autocomplete="off">
-        <div class="row"><strong class="small" id="spTitle"></strong><button type="button" class="link small" id="spClose">닫기</button></div>
-        <div class="pills" id="spChips"></div>
-        <div class="fields"><label class="field"><span id="spAmtLbl">금액</span><input type="text" inputmode="numeric" id="spAmt" placeholder="0"></label><label class="field" id="spMemoBox"><span>무엇</span><input type="text" id="spMemo" placeholder="예: 배달 대신 집밥"></label></div>
-        <p class="small" id="spPreview"></p>
-        <div class="btns"><button class="btn" type="submit" style="flex:1" id="spSave">기록</button><button type="button" class="btn ghost" id="spReset" hidden>원래대로</button></div>
-      </form>
-    </div>
     <form class="card" id="entryForm" autocomplete="off">
       <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span></div>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
@@ -408,8 +391,26 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
     </div>
 
+    <div class="card step-card" id="stepCard">
+      <div class="row"><h2>🌅 오늘의 한 걸음</h2><button type="button" class="link small" data-go="dash">앞으로의 길 ›</button></div>
+      <div class="step-big" id="stepBig"></div>
+      <div class="step-rows" id="stepRows"></div>
+      <div class="step-acts" role="group" aria-label="오늘의 한 걸음 기록">
+        <button type="button" class="pill" data-step="skip">🙅 참았어요</button>
+        <button type="button" class="pill" data-step="sell">💰 부수입</button>
+        <button type="button" class="pill" data-step="goal">🎯 이번 주 목표</button>
+      </div>
+      <form class="step-panel" id="stepPanel" hidden autocomplete="off">
+        <div class="row"><strong class="small" id="spTitle"></strong><button type="button" class="link small" id="spClose">닫기</button></div>
+        <div class="pills" id="spChips"></div>
+        <div class="fields"><label class="field"><span id="spAmtLbl">금액</span><input type="text" inputmode="numeric" id="spAmt" placeholder="0"></label><label class="field" id="spMemoBox"><span>무엇</span><input type="text" id="spMemo" placeholder="예: 배달 대신 집밥"></label></div>
+        <p class="small" id="spPreview"></p>
+        <div class="btns"><button class="btn" type="submit" style="flex:1" id="spSave">기록</button><button type="button" class="btn ghost" id="spReset" hidden>원래대로</button></div>
+      </form>
+    </div>
+
     <div class="card">
-      <div class="row"><h2 id="questTitle">🎯 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
+      <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
       <div class="quest" id="quest"></div>
       <div class="habits" id="habits" aria-label="습관 체크">
         <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건 <small class="tiny muted">자동</small></span></label>
@@ -1047,7 +1048,7 @@ function questItems(){
 }
 function renderQuest(){
   const it=questItems(),dn=it.filter(x=>x.done).length;
-  $("questCount").textContent=`${dn}/${it.length}`;$("questCount").className="chip"+(dn===it.length?" good":"");$("questCount").hidden=!it.length;$("questTitle").textContent=it.length?"🎯 오늘 할 일":"🎯 오늘의 습관";$("quest").hidden=!it.length;
+  $("questCount").textContent=`${dn}/${it.length}`;$("questCount").className="chip"+(dn===it.length?" good":"");$("questCount").hidden=!it.length;$("questTitle").textContent=it.length?"✅ 오늘 할 일":"✅ 오늘의 습관";$("quest").hidden=!it.length;
   $("quest").innerHTML=it.map(x=>`<div class="q ${x.done?"done":""} ${x.urgent&&!x.done?"urgent":""}"><span class="ic">${x.done?"✅":x.e}</span>
     <div style="min-width:0"><strong>${esc(x.t)}</strong><span class="s">${esc(x.s)}</span></div>
     ${x.task?`<input type="checkbox" data-task="${esc(x.task)}" ${x.done?"checked":""} aria-label="${esc(x.t)} 완료">`:x.btn?`<button type="button" class="btn ghost" data-guide="${esc(x.btn[1])}">${esc(x.btn[0])}</button>`:"<span></span>"}</div>`).join("")+
@@ -1307,8 +1308,6 @@ function renderStep(){
   rows.push(el<1?`<div class="sr"><span>🌱</span><span>새 카드 주기 첫날! 오늘부터 아낀 돈이 ${r.goal}을 당겨요.</span></div>`
     :diff>=0?`<div class="sr"><span>🏃</span><span>이번 주기 예산 페이스보다 <b>${won(diff)}</b> 아꼈어요. ${r.goal} <span class="good-t">${fasterTxt(diff)} 당겨짐</span></span></div>`
     :`<div class="sr"><span>🐢</span><span>이번 주기 예산 페이스보다 <b>${won(-diff)}</b> 더 썼어요. ${r.goal} <span class="bad-t">${fasterTxt(-diff)} 늦어짐</span>. ${-diff<=y.B*y.left/total?`남은 ${y.left}일 아끼면 되돌릴 수 있어요.`:`${md(addDays(y.c.end,1))} 새 주기부터 다시 당겨요 💪`}</span></div>`);
-  const cur=simulate(),cut=simulate(-100000),M=ST().finalTarget||1e8,h1=cur.path.find(p=>p.net>=M),h2=cut.path.find(p=>p.net>=M),rem=Math.max(1,cur.free?ymDiff(ymOf(TODAY),cur.free)+1:12);
-  rows.push(`<div class="sr"><span>✂️</span><span>생활비를 한 달 10만 줄이면 빚 0원 <b>${fasterTxt(100000*rem)}</b>${h1&&h2&&ymDiff(h2.ym,h1.ym)>0?` · ${man(M)} <b>${ymDiff(h2.ym,h1.ym)}개월</b>`:""} 빨라져요</span></div>`);
   const W0=weekBudgetFor(TODAY),wl=weekLimit(TODAY),wr=weekRange(TODAY);
   if(wl<W0){const sp=sum(entriesIn(wr),e=>e.amount);rows.unshift(`<div class="sr"><span>🎯</span><span>이번 주 목표 <b>${man(wl)}</b> (평소보다 −${man(W0-wl)}) · 지금 ${sp?man1(sp):"0원"} 씀${sp<=wl?` · <span class="good-t">지키면 ${r.goal} ${fasterTxt(W0-wl)} 빨라져요</span>`:` · <span class="bad-t">목표를 넘었어요</span>`}</span></div>`)}
   const cw=S.wins.filter(w=>w.date>=y.c.start&&w.date<=y.c.end),sk=sum(cw.filter(w=>w.kind==="skip"),w=>w.amount),sl=sum(cw.filter(w=>w.kind==="sell"),w=>w.amount);
@@ -1481,7 +1480,7 @@ function renderSettings(){
 /* ================= EVENTS ================= */
 function go(v){
   if(!["today","records","week","month","dash","settings"].includes(v))v="today";view=v;
-  ["today","records","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);
+  ["today","records","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);$("rules").hidden=!["week","month"].includes(v);
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===(v==="records"?"today":v)?"page":"false"));
   if(v==="settings")renderSettings();renderAll();window.scrollTo(0,0);
   try{localStorage.setItem("plan5k3:view",v==="settings"?"today":v)}catch(e){}
