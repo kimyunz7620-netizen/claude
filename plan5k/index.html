@@ -761,20 +761,20 @@ function simulateRun(extra){
     const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym),liv=cycleBudgetFor(ym)+extra-cyclePledge(cycleOf(ym));
     const ab=Object.keys(closed).length?null:appBill(ym);
     const inc=(ab!=null?incomeAt(ym)-fixedCash(ym)-ab-buf:incomeAt(ym)-fixedTotal(ym)-liv-inst-buf)+intBack+extraAt(ym);
-    pot+=inc;let paid=0;
+    pot+=inc;let paid=0;const pre=[],lp=[];
     const next=ymAdd(ym,1);
     const opts=order.filter(x=>!closed[x.id]).map(x=>{const ms=itemMonths(x).filter(m=>m>=next);return{x,amt:sum(ms,m=>itemRaw(x,m).p),save:sum(ms,m=>itemRaw(x,m).fee)}}).filter(o=>o.amt>0);
-    for(const o of bestSet(opts,pot)){closed[o.x.id]=next;pot-=o.amt;paid+=o.amt;feeSaved+=o.save}
+    for(const o of bestSet(opts,pot)){closed[o.x.id]=next;pot-=o.amt;paid+=o.amt;feeSaved+=o.save;pre.push({n:o.x.name,a:o.amt})}
     const cardLeft=order.some(x=>!closed[x.id]&&itemEnd(x)>ym);
     if(!cardLeft&&!cardDone)cardDone=ym;
-    if(!cardLeft)for(const l of loans){if(l.bal<=0||pot<=0)continue;const a=Math.min(pot,l.bal);l.bal-=a;pot-=a;paid+=a;if(l.bal<=0.5){l.done=ym;intBack+=l.int}}
+    if(!cardLeft)for(const l of loans){if(l.bal<=0||pot<=0)continue;const a=Math.min(pot,l.bal);l.bal-=a;pot-=a;paid+=a;lp.push({n:l.d.name,a});if(l.bal<=0.5){l.done=ym;intBack+=l.int}}
     const anyBill=schedMonths().some(m=>m>ym&&((ITEMS().length?sum(ITEMS(),x=>bill(x,m)):baseAt(m))+newInstAt(m))>0.5);
     const wasFree=!!free;if(!free&&!cardLeft&&loans.every(l=>l.bal<=0.5)&&!anyBill)free=ym;
     const instDebt=ab!=null?Math.min(ab,effSched(ym)):inst,avail=inc+instDebt;
     const debt=wasFree?0:free?Math.min(avail,instDebt+paid):avail;
     const cardRem=sum(order.filter(x=>!closed[x.id]),x=>sum(itemMonths(x).filter(m=>m>ym),m=>itemRaw(x,m).p));
     const debtLeft=cardRem+sum(loans,l=>Math.max(0,l.bal));
-    path.push({ym,net:base+pot-debtLeft,avail,debt,save:avail-debt,inc:incomeAt(ym),dep:st.deposit||0,bank:base-(st.deposit||0)+pot,owe:debtLeft});
+    path.push({ym,net:base+pot-debtLeft,avail,debt,save:avail-debt,parts:{inst:Math.min(instDebt,debt),pre,lp,hold:Math.max(0,debt-Math.min(instDebt,debt)-sum(pre,x=>x.a)-sum(lp,x=>x.a))},inc:incomeAt(ym),dep:st.deposit||0,bank:base-(st.deposit||0)+pot,owe:debtLeft});
     ym=next;
   }
   return{cardDone,free,loans:Object.fromEntries(loans.map(l=>[l.d.id,l.done])),path,intBack,feeSaved};
@@ -1265,6 +1265,9 @@ async function fitBudget(newB){
   const gain=GF.gain??st.targetGain,T=GF.T||st.targetYm;
   try{await put("config/budget",{cats,hist:histWith()});await put("config/settings",{...st,cycleBudget:newB,weekBudget:week,targetGain:gain,targetYm:T});GF={gain:null,T:null};toast(`🎯 생활비 월 ${man(newB)} · 주 ${man1(week)}으로 맞췄어요`)}catch(_){}
 }
+/* what one month's red bar is made of */
+function debtTip(p){const q=p.parts||{},bits=[];if(q.inst)bits.push(`할부 청구 ${man1(q.inst)}`);const pr=q.pre||[];if(pr.length>2){const big=pr.slice().sort((a,b)=>b.a-a.a)[0];bits.push(`할부 ${pr.length}건 선결제 ${man1(sum(pr,x=>x.a))} (${big.n} 외)`)}else pr.forEach(x=>bits.push(`${x.n} 선결제 ${man1(x.a)}`));(q.lp||[]).forEach(x=>bits.push(`${x.n} ${man1(x.a)}`));if(q.hold>5000)bits.push(`다음 선결제용 모아두기 ${man1(q.hold)}`);
+  return `${ymKo(p.ym)} · 빚 갚기 ${man1(p.debt)}${bits.length?` = ${bits.join(" + ")}`:""}${p.save>0?` · 모으기 ${man1(p.save)}`:""}`}
 /* 앞으로의 길: where each month's spare money goes (debt vs savings) and the milestones on the way */
 function renderProjection(sim,now,target){
   const st=ST(),P=sim.path,tYm=st.targetYm||"2027-12",fin=st.finalTarget||1e8,dm=v=>(v>=0?"+":"−")+man(Math.abs(v));
@@ -1281,7 +1284,7 @@ function renderProjection(sim,now,target){
     if(p.save>0)g+=`<path class="b-save" d="M${x},${yd-1} V${ys+r} Q${x},${ys} ${x+r},${ys} H${x+w-r} Q${x+w},${ys} ${x+w},${ys+r} V${yd-1} Z"/>`;
     if(p.debt>0){const yt=p.save>0?yd+1:yd,rr=p.save>0?0:r;g+=`<path class="b-debt" d="M${x},${y(0)} V${yt+rr} Q${x},${yt} ${x+rr},${yt} H${x+w-rr} Q${x+w},${yt} ${x+w},${yt+rr} V${y(0)} Z"/>`}
     if(i%3===0)g+=`<text class="axis" x="${x+w/2}" y="${H-6}" text-anchor="middle">${ymShort(p.ym)}</text>`;
-    g+=`<rect class="hit" x="${L+i*bw}" y="${T-30}" width="${bw}" height="${H-T+30}" data-tip="${esc(`${ymKo(p.ym)} · 빚 갚기 ${won(Math.round(p.debt))} · 모으기 ${won(Math.round(p.save))}`)}"/>`});
+    g+=`<rect class="hit" x="${L+i*bw}" y="${T-30}" width="${bw}" height="${H-T+30}" data-tip="${esc(debtTip(p))}"/>`});
   let lastX=-99;Object.keys(ev).sort().forEach(ym=>{const i=D.findIndex(p=>p.ym===ym);if(i<0)return;let x=L+i*bw+bw/2;g+=`<line class="evl" x1="${x}" x2="${x}" y1="${T-12}" y2="${y(0)}"/>`;const row=x-lastX<70?1:0;lastX=row?lastX:x;g+=`<text class="ev" x="${Math.min(Math.max(x,L+30),W-40)}" y="${row?T-2:T-16}" text-anchor="middle">${ev[ym]}</text>`});
   $("pjChart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="월별로 빚 갚는 돈과 모으는 돈">${g}</svg>`;
   // timeline
