@@ -198,6 +198,15 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .rvd.today{color:var(--ink);font-weight:800}
 .rvc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.85rem;padding:4px 0}
 .rvc .bar{height:8px}
+.fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(76px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--grape);color:#fff;font-size:1.9rem;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(80,60,200,.35);z-index:20}
+.sheet{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end}
+.sheet-bg{position:absolute;inset:0;background:rgba(20,20,40,.45)}
+.sheet .sheet-body{position:relative;max-width:560px;width:100%;margin:0 auto;border-radius:22px 22px 0 0;max-height:88vh;overflow:auto;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));animation:sheetUp .18s ease-out}
+@keyframes sheetUp{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+body.sheet-on{overflow:hidden}
+.sheet .link{font:inherit;background:none;border:0;padding:4px 2px;color:var(--muted);font-weight:600;cursor:pointer;margin-left:auto}
+.daysec{border-top:1px solid var(--line);padding-top:14px;margin-top:2px}
+#v-today{padding-bottom:70px}
 .quick{display:flex;gap:6px;overflow-x:auto;align-items:center;padding-bottom:2px;scrollbar-width:none}.quick::-webkit-scrollbar{display:none}.quick .pill{white-space:nowrap;flex:none;font-size:.8rem;padding:6px 10px}.quick .tiny{flex:none}
 .coach .bh{display:flex;gap:8px;align-items:center;font-size:1rem;margin-top:4px}.coach .bh strong{font-weight:800}
 .coach .bm{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--bg);border-radius:12px;padding:10px 12px;cursor:pointer}
@@ -370,8 +379,45 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </div>
 
-    <form class="card" id="entryForm" autocomplete="off">
-      <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span></div>
+
+    <div class="card" id="calCard">
+      <div class="row"><h2 id="calLabel"></h2>
+        <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
+      <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+      <div class="cal" id="cal"></div>
+      <p class="tiny muted" id="calLegend"></p>
+      <div class="row daysec"><h2 id="dayTitle">🧾 오늘 기록</h2><span class="disp" id="dayTotal"></span></div>
+      <div class="list" id="dayList"></div>
+      <div class="list" id="dayWins"></div>
+      <div id="dayCats"></div>
+      <div id="stepCard" style="display:flex;flex-direction:column;gap:10px">
+      <div class="step-acts" role="group" aria-label="참은 돈·부수입·이번 주 목표 기록">
+        <button type="button" class="pill" data-step="skip">🙅 참았어요</button>
+        <button type="button" class="pill" data-step="sell">💰 부수입</button>
+        <button type="button" class="pill" data-step="goal">🎯 이번 주 목표</button>
+      </div>
+      <form class="step-panel" id="stepPanel" hidden autocomplete="off">
+        <div class="row"><strong class="small" id="spTitle"></strong><button type="button" class="link small" id="spClose">닫기</button></div>
+        <div class="pills" id="spChips"></div>
+        <div class="fields"><label class="field"><span id="spAmtLbl">금액</span><input type="text" inputmode="numeric" id="spAmt" placeholder="0"></label><label class="field" id="spMemoBox"><span>무엇</span><input type="text" id="spMemo" placeholder="예: 배달 대신 집밥"></label></div>
+        <p class="small" id="spPreview"></p>
+        <div class="btns"><button class="btn" type="submit" style="flex:1" id="spSave">기록</button><button type="button" class="btn ghost" id="spReset" hidden>원래대로</button></div>
+      </form>
+      </div>
+      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
+        <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>하루 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
+      <button type="button" class="btn ghost" id="calCats">이 달 카테고리별 보기</button>
+    </div>
+    <div class="coach" id="coach">
+      <div class="row"><h2 id="coachTitle">🌅 아침 브리핑</h2><span class="tiny muted" id="coachWhen"></span></div>
+      <div id="fundNow"></div>
+      <div id="coachBody"></div>
+      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
+    </div>
+    <button type="button" class="fab" id="fab" aria-label="쓴 돈 기록">＋</button>
+    <div class="sheet" id="sheet" hidden><div class="sheet-bg" data-sheetclose="1"></div>
+    <form class="card sheet-body" id="entryForm" autocomplete="off">
+      <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span><button type="button" class="link small" data-sheetclose="1" aria-label="닫기">닫기</button></div>
       <div class="quick" id="enQuick" role="group" aria-label="자주 쓰는 지출"></div>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
       <div class="cats" id="enCats" role="group" aria-label="카테고리"></div>
@@ -402,44 +448,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <button class="btn danger" type="button" id="enDel" hidden>삭제</button>
       </div>
     </form>
-
-    <div class="card">
-      <div class="row"><h2 id="dayTitle">🧾 오늘 기록</h2><span class="disp" id="dayTotal"></span></div>
-      <div class="list" id="dayList"></div>
-      <div class="list" id="dayWins"></div>
-      <div id="dayCats"></div>
-      <div id="stepCard" style="display:flex;flex-direction:column;gap:10px">
-      <div class="step-acts" role="group" aria-label="참은 돈·부수입·이번 주 목표 기록">
-        <button type="button" class="pill" data-step="skip">🙅 참았어요</button>
-        <button type="button" class="pill" data-step="sell">💰 부수입</button>
-        <button type="button" class="pill" data-step="goal">🎯 이번 주 목표</button>
-      </div>
-      <form class="step-panel" id="stepPanel" hidden autocomplete="off">
-        <div class="row"><strong class="small" id="spTitle"></strong><button type="button" class="link small" id="spClose">닫기</button></div>
-        <div class="pills" id="spChips"></div>
-        <div class="fields"><label class="field"><span id="spAmtLbl">금액</span><input type="text" inputmode="numeric" id="spAmt" placeholder="0"></label><label class="field" id="spMemoBox"><span>무엇</span><input type="text" id="spMemo" placeholder="예: 배달 대신 집밥"></label></div>
-        <p class="small" id="spPreview"></p>
-        <div class="btns"><button class="btn" type="submit" style="flex:1" id="spSave">기록</button><button type="button" class="btn ghost" id="spReset" hidden>원래대로</button></div>
-      </form>
-      </div>
-      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
-    </div>
-
-
-    <div class="card" id="calCard">
-      <div class="row"><h2 id="calLabel"></h2>
-        <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
-      <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
-      <div class="cal" id="cal"></div>
-      <div id="calDay"></div>
-      <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>하루 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
-      <button type="button" class="btn ghost" id="calCats">이 달 카테고리별 보기</button>
-    </div>
-    <div class="coach" id="coach">
-      <div class="row"><h2 id="coachTitle">🌅 아침 브리핑</h2><span class="tiny muted" id="coachWhen"></span></div>
-      <div id="fundNow"></div>
-      <div id="coachBody"></div>
-      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
     </div>
     <button type="button" class="btn ghost" data-go="records">↩️ 결제 취소 · 분류 정리</button>
   </section>
@@ -574,13 +582,13 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="road" id="road"></div>
       <div class="chips" id="nwChips"></div>
     </div>
-    <details class="card chart more"><summary>📈 월별 순자산 그래프</summary>
+    <details class="card chart more" open><summary>📈 월별 순자산 그래프</summary>
       <div class="row"><div class="legend"><span><i></i>순자산</span><span><i class="proj"></i>예상</span><span><i class="dash"></i>목표 경로</span></div></div>
       <div id="nwChart"></div>
       <div class="small" id="nwTip">그래프를 누르면 그 달 순자산이 무엇으로 이뤄졌는지 보여요.</div>
       <p class="tiny muted" id="nwHow"></p>
     </details>
-    <details class="card more">
+    <details class="card more" open>
       <summary class="row" style="display:flex"><div class="title"><span class="em">💳</span><h2>카드 할부 <span id="instCount"></span></h2></div><span class="muted small" id="instSum"></span></summary>
       <p class="small muted">연 19.6% 유이자 · 아끼는 수수료 큰 순</p>
       <div class="list" id="instList"></div>
@@ -653,7 +661,7 @@ const dom=s=>Number(s.slice(8));
 
 /* ---------- state ---------- */
 const S={settings:null,budget:null,fixed:null,schedule:null,inst:null,debts:null,tasks:{},entries:[],days:{},weekly:[],payments:[],networth:[],coach:{},accounts:null,wins:[],weekGoals:{}};
-let stepMode=null,fxOpen=false,calSel=null,calYm=null,db=null,sample=null,view="today",selDate=TODAY,selCat=null,selMethod="lotte",editingId=null,bdMode="cycle",bdKey=null;
+let stepMode=null,fxOpen=false,calYm=null,db=null,sample=null,view="today",selDate=TODAY,selCat=null,selMethod="lotte",editingId=null,bdMode="cycle",bdKey=null;
 let dayWriting=Promise.resolve(),taskWriting=Promise.resolve();
 const LS={get(k,f){try{const v=localStorage.getItem("plan5k3:"+k);return v?JSON.parse(v):f}catch(e){return f}},
           set(k,v){try{localStorage.setItem("plan5k3:"+k,JSON.stringify(v))}catch(e){}}};
@@ -989,7 +997,7 @@ function renderToday(){
 
   const ws=sum(entriesIn(wr),e=>e.amount),y=cycleSummary();
   const lim=(id,used,cap)=>{$(id).textContent=`${man1(used)} / ${man1(cap)}`;const b=$(id+"b");b.style.width=(cap?Math.min(100,used/cap*100):0)+"%";b.classList.toggle("over",used>cap)};
-  lim("lmD",spentT,dayB);lim("lmW",ws,W);$("lmW").previousElementSibling.textContent=W<weekBudgetFor(TODAY)?"이번 주 🎯":"이번 주";lim("lmC",y.spent,y.B);$("lmCk").textContent=`주기 ~${md(y.c.end)}`;
+  lim("lmD",spentT,dayB);lim("lmW",ws,W);$("lmW").previousElementSibling.textContent=W<weekBudgetFor(TODAY)?"이번 주 🎯":"이번 주";lim("lmC",y.spent,y.B);$("lmCk").textContent=`이번 달 ~${md(y.c.end)}`;
 
   /* one tap for what comes back often: same category and memo at least twice in the last 45 days, newest amount */
   const qk=$("enQuick");if(qk&&!editingId){const from=addDays(TODAY,-45),g={};S.entries.filter(e=>e.date>=from&&e.amount>0&&!e.excl&&(e.memo||"").trim()&&CATS().some(c=>c.id===e.cat)).forEach(e=>{const k=e.cat+"|"+e.memo.trim();const x=g[k]=g[k]||{cat:e.cat,memo:e.memo.trim(),n:0,last:"",amount:0,method:e.method};x.n++;if(e.date>=x.last){x.last=e.date;x.amount=e.amount;x.method=e.method}});
@@ -1037,11 +1045,9 @@ function renderCal(){
     if(!fut&&rec){recDays++;tot+=s;if(s===0)zero++}
     const cls=!fut&&rec&&s>dayB?"b":"";
     const v=fut?"":s>0?(s>=10000?man1(s):num(s)):ns?"🥚":rec?"0":"";
-    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===calSel?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span></button>`}
+    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span></button>`}
   $("cal").innerHTML=html;
-  if(!calSel||ymOf(calSel)!==calYm)$("calDay").innerHTML=`<p class="tiny muted">날짜를 누르면 그날 내역이 나와요 · <span style="color:var(--coral)">빨간 숫자</span>는 하루 한도(${man1(dayB)})를 넘은 날</p>`;
-  else{const es=S.entries.filter(e=>e.date===calSel).sort((a,b)=>(a.createdAt||"")<(b.createdAt||"")?-1:1),ns=S.days[calSel]&&S.days[calSel].noSpend;
-    $("calDay").innerHTML=`<div class="sub"><div class="row"><strong>${mdw(calSel)}</strong><span class="disp">${won(sum(es.filter(e=>!e.excl),e=>e.amount))}</span></div><div class="list">${es.length?es.map(entryRow).join(""):`<p class="empty">${ns?"🥚 무지출 데이":"기록이 없어요."}</p>`}</div><button type="button" class="btn ghost" data-addday="${calSel}">+ 이 날 지출 추가</button></div>`}
+  $("calLegend").innerHTML=`<span style="color:var(--coral)">빨간 숫자</span>는 하루 한도(${man1(dayB)})를 넘은 날 · 날짜를 누르면 그날 내역이 아래에 나와요`;
   $("calSum").textContent=won(tot);$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
 }
 
@@ -1135,6 +1141,9 @@ function renderFundNow(){const f=fundNow(),n=dailyNums(),tile=(k,v,sub,cls)=>`<d
   $("fundNow").innerHTML=`<div class="fngrid">${yT}${wT}${mT}${zT}</div>`+
     `<div class="chips" style="margin-top:10px">${todayChips(f).join("")}</div>`}
 function todayChips(f){const out=[],chip=(t,cls)=>`<span class="chip ${cls||"plain"}">${t}</span>`,r=speedRate(),dayB=weekLimit(TODAY)/7;
+  /* same number of days into last month's card cycle, so the comparison is fair */
+  {const c=cycleOf(payYmOf(TODAY)),pc=cycleOf(ymAdd(payYmOf(TODAY),-1)),n=dayDiff(c.start,TODAY),now=sum(entriesIn({start:c.start,end:addDays(TODAY,-1)}),e=>e.amount),then=sum(entriesIn({start:pc.start,end:addDays(pc.start,n-1)}),e=>e.amount);
+   if(n>=2&&then>0&&pc.start>=ledgerStart()){const d=now-then;out.push(chip(`📊 지난달 이맘때보다 ${man1(Math.abs(d))} ${d<=0?"덜":"더"} 씀`,d<=0?"good":"bad"))}}
   if(r.perDay>0)out.push(chip(`🥚 무지출 = ${r.goal} ${fasterTxt(dayB)} 빨리`));
   const y=cycleSummary(),k=payYmOf(TODAY),fr=(dayDiff(y.c.start,TODAY)+1)/(dayDiff(y.c.start,y.c.end)+1);
   LIVECATS(k).map(c=>{const b=budgetAt(c,k),sp=sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount);return{c,b,sp,r:b?sp/b:0}}).filter(x=>x.b>0&&(x.sp>x.b||x.r>fr+.15)).sort((a,b)=>b.r-a.r).slice(0,2)
@@ -1544,7 +1553,7 @@ function renderSettings(){
 /* ================= EVENTS ================= */
 function go(v){
   if(!["today","records","week","month","dash","settings"].includes(v))v="today";view=v;
-  ["today","records","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);$("rules").hidden=!["week","month"].includes(v);
+  ["today","records","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);$("rules").hidden=!["week","month"].includes(v);$("fab").hidden=v!=="today";if(v!=="today")closeSheet();
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===(v==="records"?"today":v)?"page":"false"));
   if(v==="settings")renderSettings();renderAll();window.scrollTo(0,0);
   try{localStorage.setItem("plan5k3:view",v==="settings"?"today":v)}catch(e){}
@@ -1565,11 +1574,13 @@ document.addEventListener("click",async e=>{
     return}
   if(t.dataset.act==="pay-open"){openPay(t.dataset.target,Number(t.dataset.amt)||0);return}
   if(t.dataset.mission!=null){const d=addDays(TODAY,-1),c=S.coach[d];if(!c)return;const doc={...c,missionDone:t.dataset.mission==="1"};S.coach={...S.coach,[d]:doc};render();toast(doc.missionDone?"💪 미션 성공! 멋져요":"괜찮아요. 오늘 다시 해 봐요");try{await put("coach/"+d,doc)}catch(_){}return}
-  if(t.dataset.day){calSel=calSel===t.dataset.day?null:t.dataset.day;renderCal();return}
-  if(t.dataset.addday){selDate=t.dataset.addday;if(editingId)cancelEdit();go("today");renderToday();$("entryForm").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(t.dataset.day){selDate=t.dataset.day;if(editingId)cancelEdit();renderToday();return}
+  if(t.dataset.addday){selDate=t.dataset.addday;if(editingId)cancelEdit();go("today");renderToday();openSheet();return}
+  if(t.dataset.sheetclose){if(editingId||refundOf)cancelEdit();closeSheet();renderToday();return}
+  if(t.id==="fab"){if(editingId)cancelEdit();renderToday();openSheet();return}
   if(t.id==="backToday"){selDate=TODAY;calYm=ymOf(TODAY);if(editingId)cancelEdit();renderToday();return}
-  if(t.id==="calPrev"){calYm=ymAdd(calYm,-1);calSel=null;renderCal();return}
-  if(t.id==="calNext"){calYm=ymAdd(calYm,1);calSel=null;renderCal();return}
+  if(t.id==="calPrev"){calYm=ymAdd(calYm,-1);renderCal();return}
+  if(t.id==="calNext"){calYm=ymAdd(calYm,1);renderCal();return}
   if(t.id==="calCats"){bdMode="month";bdKey=calYm;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode==="month"));go("week");$("bdMode").scrollIntoView({block:"start"});return}
   if(t.dataset.recat){const en=S.entries.find(x=>x.id===t.dataset.recat);if(!en)return;const{id,...rest}=en;const memo=(rest.memo||"").replace(/ · 카드에만 있음.*$/,"");const doc=t.dataset.cat2==="__excl"?{...rest,memo,excl:true}:{...rest,memo,cat:t.dataset.cat2};
     S.entries=S.entries.map(x=>x.id===id?{id,...doc}:x);render();
@@ -1619,10 +1630,14 @@ function startEdit(en){
   document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===selMethod));$("instBox").hidden=selMethod!=="inst";
   $("entryTitle").textContent=refundOf?"↩️ 결제 취소 고치기":"✏️ 기록 고치기";$("enMore").open=true;$("enSave").textContent="수정 저장";$("enCancel").hidden=false;$("enDel").hidden=false;
   $("enPendBox").hidden=!refundOf;$("enRefund").hidden=!!refundOf||en.method==="inst";
-  renderToday();$("entryForm").scrollIntoView({behavior:"smooth",block:"start"});
+  renderToday();openSheet();
 }
 function cancelEdit(){editingId=null;refundOf=null;$("enPendBox").hidden=true;$("enRefund").hidden=true;selCat=null;selMethod="lotte";document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m==="lotte"));$("instBox").hidden=true;$("enMore").open=false;$("enFree").checked=false;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
-$("enCancel").addEventListener("click",()=>{cancelEdit();renderToday()});
+$("enCancel").addEventListener("click",()=>{cancelEdit();closeSheet();renderToday()});
+document.addEventListener("click",e=>{if(e.target.classList&&e.target.classList.contains("sheet-bg")){if(editingId||refundOf)cancelEdit();closeSheet();renderToday()}});
+function openSheet(){$("sheet").hidden=false;document.body.classList.add("sheet-on");setTimeout(()=>{if(!editingId&&!parseNum($("enAmount").value))$("enAmount").focus()},60)}
+function closeSheet(){$("sheet").hidden=true;document.body.classList.remove("sheet-on")}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("sheet").hidden){if(editingId||refundOf)cancelEdit();closeSheet();renderToday()}});
 let orKind="lump";
 function orPreview(){const inst=orKind==="inst",x=inst&&ITEMS().find(i=>i.id===$("orItem").value),a=parseNum($("orAmt").value),d=$("orDate").value||TODAY;
   $("orItemBox").hidden=!inst;$("orAmtLbl").textContent=inst?"이미 낸 돈 중 돌려받는 금액 (모르면 0)":"취소 금액";
@@ -1644,7 +1659,7 @@ $("enRefund").addEventListener("click",()=>{const o=S.entries.find(x=>x.id===edi
   editingId=null;refundOf=o.id;selDate=TODAY;$("enDate").value=TODAY;$("enAmount").value=num(o.amount);$("enMemo").value=o.memo||"";$("enPending").checked=true;
   $("entryTitle").textContent="↩️ 결제 취소 기록";$("enSave").textContent="취소 기록하기";$("enDel").hidden=true;$("enRefund").hidden=true;$("enPendBox").hidden=false;
   toast("취소된 금액만 고쳐서 기록하세요 (부분 취소 가능)");renderToday();$("enAmount").focus()});
-$("enDel").addEventListener("click",async()=>{const b=$("enDel");if(!confirmTap(b))return;const id=editingId;cancelEdit();try{await del("entries/"+id);toast("지웠어요")}catch(_){}});
+$("enDel").addEventListener("click",async()=>{const b=$("enDel");if(!confirmTap(b))return;const id=editingId;cancelEdit();closeSheet();try{await del("entries/"+id);toast("지웠어요")}catch(_){}});
 $("entryForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const amount=parseNum($("enAmount").value);if(!(amount>0)){toast("금액을 입력해 주세요");$("enAmount").focus();return}
@@ -1663,7 +1678,7 @@ $("entryForm").addEventListener("submit",async e=>{
     if(fundOut(doc)){const fc=FUNDCAT(selCat),left=fundBalance(fc)-(S.entries.some(e=>e.id===id)?0:amount);toast(`${look(selCat)[0]} ${catName(selCat)} ${won(amount)} · ${fc.fund.bank}에서 나가요 · 남은 ${won(left)}${left<0?" (부족해요)":""}`);cancelEdit();selDate=date;renderToday();$("enSave").disabled=false;return}
     const cc=cycleOf(payYmOf(date)),cb=(CATS().find(c=>c.id===selCat)||{}).amount||0,cs=sum(entriesIn(cc,x=>x.cat===selCat&&x.id!==id),x=>x.amount)+(date>=cc.start&&date<=cc.end?amount:0);
     toast(`${look(selCat)[0]} ${catName(selCat)} ${won(amount)} ${wasEdit?"고쳤어요":"기록!"}${!doc.excl&&cb&&cs>cb?` · ${catName(selCat)} 이번 주기 ${won(cs-cb)} 초과`:date===TODAY&&allow>0?` · 오늘 남은 돈 ${won(Math.max(0,allow-todaySum))}`:""}`);
-    cancelEdit();selDate=date;$("hero").classList.remove("pop");void $("hero").offsetWidth;$("hero").classList.add("pop");renderToday();
+    cancelEdit();closeSheet();selDate=date;calYm=ymOf(date);$("hero").classList.remove("pop");void $("hero").offsetWidth;$("hero").classList.add("pop");renderToday();
   }catch(_){}
   $("enSave").disabled=false;
 });
