@@ -50,12 +50,12 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .row>*{min-width:0}
 .title{display:flex;align-items:center;gap:8px}
 .title .em{font-size:1.25rem;line-height:1}
-.hero{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));color:#fff;border-radius:22px;padding:22px 20px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.hero{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));color:#fff;border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
 .hero .lbl{font-size:.85rem;opacity:.92}
-.hero .big{font-family:var(--f-display);font-size:1.9rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
-.hero .mood{font-weight:600;font-size:.85rem;opacity:.95}
+.hero .big{font-family:var(--f-display);font-size:1.55rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.hero .mood{font-weight:600;font-size:.76rem;opacity:.95;flex:1;min-width:0;text-align:right;text-wrap:balance}
 .hero-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.hero .face{font-size:1.9rem;line-height:1}
+.hero .face{font-size:1.4rem;line-height:1}
 .hero-top{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:12px;align-items:center}
 .ring{width:92px;height:92px;position:relative}
 .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
@@ -67,8 +67,8 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .wd.w i{background:#FFE08A;color:#7A5200}
 .wd.b i{background:#FF9A9A;color:#7A1010}
 .wd.today i{outline:2px solid #fff;outline-offset:2px}
-.limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;background:rgba(255,255,255,.14);border-radius:16px;padding:12px 14px}
-.lm{display:flex;flex-direction:column;gap:6px;min-width:0}
+.limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;background:rgba(255,255,255,.14);border-radius:12px;padding:8px 12px}
+.lm{display:flex;flex-direction:column;gap:4px;min-width:0}
 .lm .k{font-size:.72rem;opacity:.9}
 .lm .v{font-size:.82rem;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
 .lm .bar>i.over{background:#FFB3B3}
@@ -346,8 +346,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
   <section class="view" id="v-today" aria-label="오늘">
     <div class="hero" id="hero">
       <div class="lbl" id="heroLbl">오늘 남은 돈</div>
-      <div class="hero-row"><div class="big" id="heroLeft">-</div><span class="face" id="ringFace">😎</span></div>
-      <div class="mood" id="heroMood"></div>
+      <div class="hero-row"><div class="big" id="heroLeft">-</div><div class="mood" id="heroMood"></div><span class="face" id="ringFace">😎</span></div>
       <div class="limits">
         <div class="lm"><span class="k">하루</span><span class="v" id="lmD"></span><div class="bar thin"><i id="lmDb" style="width:0"></i></div></div>
         <div class="lm"><span class="k">이번 주</span><span class="v" id="lmW"></span><div class="bar thin"><i id="lmWb" style="width:0"></i></div></div>
@@ -387,23 +386,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </form>
 
-    <div class="coach" id="coach">
-      <div class="row"><h2 id="coachTitle">🌅 아침 브리핑</h2><span class="tiny muted" id="coachWhen"></span></div>
-      <div id="coachBody"></div>
-      <div id="fundNow"></div>
-      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
-    </div>
-    <div class="card">
-      <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
-      <div class="quest" id="quest"></div>
-      <div class="habits" id="habits" aria-label="습관 체크" hidden>
-        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건 <small class="tiny muted">자동</small></span></label>
-        <label class="hb"><input type="checkbox" id="hk_noRevolve"><span>🙅 리볼빙·현금서비스 X</span></label>
-        <label class="hb"><input type="checkbox" id="hk_appCheck"><span>📱 카드 앱 확인</span></label>
-        <label class="hb"><input type="checkbox" id="hk_48h"><span>⏳ 48시간 룰</span></label>
-      </div>
-    </div>
-
     <div class="card">
       <div class="row"><h2 id="dayTitle">🧾 오늘 기록</h2><span class="disp" id="dayTotal"></span></div>
       <div class="list" id="dayList"></div>
@@ -427,12 +409,38 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     </div>
 
 
-    <button type="button" class="btn ghost" data-go="records">📅 지난 기록 · 달력</button>
+    <div class="card" id="calCard">
+      <div class="row"><strong id="calLabel"></strong>
+        <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
+      <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+      <div class="cal" id="cal"></div>
+      <div id="calDay"></div>
+      <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>하루 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
+      <button type="button" class="btn ghost" id="calCats">이 달 카테고리별 보기</button>
+    </div>
+    <div class="coach" id="coach">
+      <div class="row"><h2 id="coachTitle">🌅 아침 브리핑</h2><span class="tiny muted" id="coachWhen"></span></div>
+      <div id="coachBody"></div>
+      <div id="fundNow"></div>
+      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
+    </div>
+    <div class="card">
+      <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
+      <div class="quest" id="quest"></div>
+      <div class="habits" id="habits" aria-label="습관 체크" hidden>
+        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건 <small class="tiny muted">자동</small></span></label>
+        <label class="hb"><input type="checkbox" id="hk_noRevolve"><span>🙅 리볼빙·현금서비스 X</span></label>
+        <label class="hb"><input type="checkbox" id="hk_appCheck"><span>📱 카드 앱 확인</span></label>
+        <label class="hb"><input type="checkbox" id="hk_48h"><span>⏳ 48시간 룰</span></label>
+      </div>
+    </div>
+
+    <button type="button" class="btn ghost" data-go="records">↩️ 결제 취소 · 분류 정리</button>
   </section>
 
   <!-- 기록 (오늘 탭에서 들어가는 화면) -->
   <section class="view" id="v-records" aria-label="지난 기록" hidden>
-    <div class="row"><h1>📅 지난 기록</h1><button type="button" class="btn ghost" data-go="today">‹ 오늘</button></div>
+    <div class="row"><h1>↩️ 결제 취소 · 정리</h1><button type="button" class="btn ghost" data-go="today">‹ 오늘</button></div>
 
     <div class="card" id="refundCard">
       <div class="row"><h2>↩️ 결제 취소</h2><span class="chip" id="refundCount"></span></div>
@@ -457,15 +465,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <div class="list" id="uncatList"></div>
     </div>
 
-    <div class="card" id="calCard">
-      <div class="row"><strong id="calLabel"></strong>
-        <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
-      <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
-      <div class="cal" id="cal"></div>
-      <div id="calDay"></div>
-      <div class="mstats"><div><span>이 달 생활비</span><strong id="calSum">-</strong></div><div><span>하루 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
-      <button type="button" class="btn ghost" id="calCats">이 달 카테고리별 보기</button>
-    </div>
 
   </section>
 
@@ -1106,30 +1105,30 @@ function fundNow(){
 }
 function renderFundNow(){const f=fundNow(),tile=(k,v,sub,cls)=>`<div class="fn"><span class="k">${k}</span><strong class="${cls||""}">${v}</strong>${sub?`<span class="s">${sub}</span>`:""}</div>`;
   /* today/week/cycle money is already in the hero above, so the briefing shows the longer view */
-  $("fundNow").innerHTML=`<div class="fngrid">${tile("남은 빚",man(f.debt),f.free?`빚 0원 ${ymKo(f.free)}`:"")}${tile("순자산",man(f.net),f.goal?`${ymKo(f.goal.ym)} 목표 ${man(f.goal.net)}${f.goal.예상!=null?` · 예상 ${man(f.goal.예상)}`:""}`:"")}</div>`+
+  $("fundNow").innerHTML=`<div class="fngrid">${tile("남은 빚",man(f.debt),f.free?`빚 0원 ${ymKo(f.free)}`:"")}${tile("내 돈 (보증금+통장−빚)",man(f.net),f.goal?`${ymKo(f.goal.ym)} 목표 ${man(f.goal.net)}${f.goal.예상!=null?` · 예상 ${man(f.goal.예상)}`:""}`:"")}</div>`+
     `<div class="step-rows" style="margin-top:10px"><strong class="small">📌 오늘 알아둘 것</strong>${todayNotes(f).join("")}</div>`}
 /* small facts worth a glance every day: what today's restraint buys, the cycle pace, a category running hot, the next payday and gifts */
 function todayNotes(f){const n=[],row=(e,h)=>`<div class="sr"><span>${e}</span><span>${h}</span></div>`;
-  if(STEP){n.push(row("⏱️",STEP.big));n.push(...STEP.rows)}
+  if(STEP){n.push(row("⏱️",STEP.big));n.push(...STEP.rows.slice(0,1))}
   const y=cycleSummary(),k=payYmOf(TODAY),fr=(dayDiff(y.c.start,TODAY)+1)/(dayDiff(y.c.start,y.c.end)+1);
   const hot=LIVECATS(k).map(c=>{const b=budgetAt(c,k),sp=sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount);return{c,b,sp,r:b?sp/b:0}}).filter(x=>x.b>0&&(x.sp>x.b||x.r>fr+.15)).sort((a,b)=>b.r-a.r).slice(0,2);
-  hot.forEach(x=>n.push(row(look(x.c.id)[0],x.sp>x.b?`${esc(x.c.name)} 이번 주기 예산을 <b class="bad-t">${won(x.sp-x.b)} 넘었어요</b>`:`${esc(x.c.name)} 주기 예산 <b>${Math.round(x.r*100)}%</b> 썼어요 <span class="muted">(주기 ${Math.round(fr*100)}% 지남 · ${won(x.b-x.sp)} 남음)</span>`)));
+  hot.forEach(x=>n.push(row(look(x.c.id)[0],x.sp>x.b?`${esc(SHORT[x.c.id]||x.c.name)} 이번 달 예산보다 <b class="bad-t">${man1(x.sp-x.b)} 더</b> 썼어요`:`${esc(SHORT[x.c.id]||x.c.name)} 이번 달 예산 <b>${Math.round(x.r*100)}%</b> 썼어요 <span class="muted">(${man1(x.b-x.sp)} 남음)</span>`)));
   const M=nextPayYm(),pd=ymDay(M,PAY()),dd=dayDiff(TODAY,pd);
-  if(dd<=10){const pl=payPlan(M);n.push(row("💰",`${dd?`월급날 D-${dd}`:"오늘 월급날"} · 카드값 ${man1(pl.card)}${pl.avail>0?` 내고 선결제·상환 <b>${man1(pl.avail)}</b>`:""}`))}
-  f.next.filter(x=>x.d!==pd&&dayDiff(TODAY,x.d)<=14).forEach(x=>n.push(row("📅",`${esc(x.t)} ${dayDiff(TODAY,x.d)?`D-${dayDiff(TODAY,x.d)}`:"오늘"}`)));
+  if(dd<=10){const pl=payPlan(M);n.push(row("💰",`${dd?`월급날까지 ${dd}일`:"오늘 월급날"} · 카드값 ${man1(pl.card)}${pl.avail>0?` · 빚 더 갚을 돈 <b>${man1(pl.avail)}</b>`:""}`))}
+  f.next.filter(x=>x.d!==pd&&dayDiff(TODAY,x.d)<=14).forEach(x=>n.push(row("📅",`${esc(x.t)} · ${dayDiff(TODAY,x.d)?`${dayDiff(TODAY,x.d)}일 뒤`:"오늘"}`)));
   return n}
 let coachAuto={};
 async function askCoach(slot){
   slot=slot==="am"||slot==="pm"?slot:slotNow();if(!sample||coachBusy)return;coachBusy=true;coachCtl=new AbortController();
   $("coachBtn").disabled=true;$("coachStop").hidden=false;$("coachBody").innerHTML=`<p class="muted">🤔 ${slot==="am"?"오늘 아침 숫자를 보고 있어요…":"오늘 하루를 돌아보고 있어요…"}</p>`;
-  const job=slot==="am"?`지금은 아침 브리핑이야. summary에 '자금현황'을 근거로 지금 돈 상황(남은 빚과 빚 0원 시점, 순자산과 목표 대비, 이번 주·카드 주기 남은 돈)을 2문장으로 쉽게 요약해. points 3개: ①이번 주·주기 페이스와 오늘 쓸 수 있는 돈 ②다가오는 일정(월급날·경조사)에 맞춘 준비 ③'진단'에서 동기부여가 되는 큰 그림. mission은 오늘 하루 안에 할 구체적 미션.`
-    :`지금은 저녁 리뷰야. summary에 오늘 지출(오늘지출)을 평가하고 이번 주·카드 주기 페이스가 어떻게 바뀌었는지 2문장으로 써. 오늘 무지출이면 크게 칭찬해. points 3개: ①오늘 지출에서 잘한 점이나 아쉬운 점 ②남은 주·주기를 지키려면 하루 얼마 ③'진단'의 큰 그림 하나. mission은 내일 하루 동안 할 구체적 미션.`;
-  const prompt=`너는 빚을 갚고 순자산 목표를 향해 가는 사람의 다정하지만 솔직한 머니 코치야. ${job}
-규칙: 생활비는 카드 주기(${CYC()}일~다음 달 ${CYC()-1}일)당 ${won(cycleBudgetFor(payYmOf(TODAY)))}, 한 주 ${won(weekLimit(TODAY))}. 모든 결제는 일시불, 유이자 할부·리볼빙·분할납부·현금서비스 금지. 남는 돈은 수수료를 많이 아끼는 카드 할부부터 선결제.
-어제코칭과 같은 말은 반복하지 말고 다른 각도로. 말투: 다정한 존댓말, 이모지 1~2개, 숫자는 원 단위로 구체적으로. 비난하지 말고 다음 행동을 제시해. 아래 JSON 데이터만 근거로 쓰고 없는 사실은 지어내지 마.
+  const job=slot==="am"?`지금은 아침 브리핑이야. summary는 지금 돈 상황 한 문장(남은 빚, 빚 다 갚는 때, 이번 주 남은 돈). points 3개: 오늘 쓸 수 있는 돈, 곧 있을 일(월급날·경조사), 힘이 나는 한마디. mission은 오늘 할 일 하나.`
+    :`지금은 저녁 리뷰야. summary는 오늘 쓴 돈 평가 한 문장. 안 썼으면 크게 칭찬. points 3개: 오늘 잘한 점이나 아쉬운 점, 남은 날 하루에 얼마까지 쓰면 되는지, 힘이 나는 한마디. mission은 내일 할 일 하나.`;
+  const prompt=`너는 빚을 갚는 친구를 돕는 다정한 머니 코치야. ${job}
+아주 쉽게 써: 짧은 문장, 초등학생도 아는 말. '페이스', '선결제', '주기', '할부 수수료', '순자산' 같은 어려운 말 대신 '쓰는 속도', '미리 갚기', '이번 달', '이자', '내 돈' 같은 쉬운 말로. 숫자는 '7만 원'처럼 만 원 단위로 짧게.
+지킬 것: 이번 달 생활비 ${man(cycleBudgetFor(payYmOf(TODAY)))}, 이번 주 ${man(weekLimit(TODAY))}. 할부·리볼빙·현금서비스는 안 써. 어제와 같은 말은 반복하지 마. 비난하지 말고 할 일을 알려줘. 아래 데이터에 없는 건 지어내지 마. 이모지는 1개만.
 ${JSON.stringify({...coachData(),자금현황:fundNow()})}
 다음 JSON으로만 답해:
-{"mood":"good|ok|warn|bad","headline":"25자 이내 한 줄 총평","summary":"2문장, 100자 이내","points":["데이터에 근거한 관찰이나 조언 3개, 각 45자 이내"],"mission":"구체적 미션 1개, 35자 이내"}`;
+{"mood":"good|ok|warn|bad","headline":"15자 이내","summary":"한 문장, 40자 이내","points":["각 25자 이내, 3개"],"mission":"20자 이내"}`;
   try{
     const r=await sample.json(prompt,{signal:coachCtl.signal,modelTier:"default"});
     const one={mood:["good","ok","warn","bad"].includes(r.mood)?r.mood:"ok",headline:String(r.headline||"").slice(0,60),summary:String(r.summary||"").slice(0,200),points:(Array.isArray(r.points)?r.points:[]).slice(0,4).map(p=>String(p).slice(0,120)),mission:String(r.mission||"").slice(0,80),createdAt:new Date().toISOString()};
@@ -1340,14 +1339,14 @@ function renderStep(){
   const r=speedRate(),dayB=weekLimit(TODAY)/7,allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),day=S.days[TODAY]||{};
   STEP=null;if(r.perDay>0){
   const left=Math.max(0,allow-spentT);
-  const big=spentT===0?`오늘 무지출이면 ${r.goal}이 <em>${fasterTxt(dayB)}</em> 빨라져요`
+  const big=spentT===0?`오늘 안 쓰면 ${r.goal}이 <em>${fasterTxt(dayB)}</em> 빨라져요`
     :left>0?`남은 ${won(left)}을 안 쓰면 ${r.goal}이 <em>${fasterTxt(left)}</em> 빨라져요`
     :`오늘은 여기까지! 내일 무지출이면 <em>${fasterTxt(dayB)}</em> 빨라져요`;
   const y=cycleSummary(),total=dayDiff(y.c.start,y.c.end)+1,el=dayDiff(y.c.start,TODAY),paceY=y.B*el/total,spentY=sum(entriesIn({start:y.c.start,end:addDays(TODAY,-1)}),e=>e.amount),diff=paceY-spentY;
   const rows=[];
-  rows.push(el<1?`<div class="sr"><span>🌱</span><span>새 카드 주기 첫날! 오늘부터 아낀 돈이 ${r.goal}을 당겨요.</span></div>`
-    :diff>=0?`<div class="sr"><span>🏃</span><span>이번 주기 예산 페이스보다 <b>${won(diff)}</b> 아꼈어요. ${r.goal} <span class="good-t">${fasterTxt(diff)} 당겨짐</span></span></div>`
-    :`<div class="sr"><span>🐢</span><span>이번 주기 예산 페이스보다 <b>${won(-diff)}</b> 더 썼어요. ${r.goal} <span class="bad-t">${fasterTxt(-diff)} 늦어짐</span>. ${-diff<=y.B*y.left/total?`남은 ${y.left}일 아끼면 되돌릴 수 있어요.`:`${md(addDays(y.c.end,1))} 새 주기부터 다시 당겨요 💪`}</span></div>`);
+  rows.push(el<1?`<div class="sr"><span>🌱</span><span>새 달 첫날! 오늘부터 다시 시작이에요.</span></div>`
+    :diff>=0?`<div class="sr"><span>🏃</span><span>이번 달 예산보다 <b>${man1(diff)}</b> 덜 썼어요 <span class="good-t">(${r.goal} ${fasterTxt(diff)} 빨라짐)</span></span></div>`
+    :`<div class="sr"><span>🐢</span><span>이번 달 예산보다 <b>${man1(-diff)}</b> 더 썼어요 <span class="bad-t">(${r.goal} ${fasterTxt(-diff)} 늦어짐)</span></span></div>`);
   const W0=weekBudgetFor(TODAY),wl=weekLimit(TODAY),wr=weekRange(TODAY);
   if(wl<W0){const sp=sum(entriesIn(wr),e=>e.amount);rows.unshift(`<div class="sr"><span>🎯</span><span>이번 주 목표 <b>${man(wl)}</b> (평소보다 −${man(W0-wl)}) · 지금 ${sp?man1(sp):"0원"} 씀${sp<=wl?` · <span class="good-t">지키면 ${r.goal} ${fasterTxt(W0-wl)} 빨라져요</span>`:` · <span class="bad-t">목표를 넘었어요</span>`}</span></div>`)}
   const cw=S.wins.filter(w=>w.date>=y.c.start&&w.date<=y.c.end),sk=sum(cw.filter(w=>w.kind==="skip"),w=>w.amount),sl=sum(cw.filter(w=>w.kind==="sell"),w=>w.amount);
