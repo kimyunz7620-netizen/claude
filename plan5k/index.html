@@ -117,9 +117,10 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .btns{display:flex;gap:10px;flex-wrap:wrap}
 .pills{display:flex;flex-wrap:wrap;gap:8px}
 .pill{font:inherit;font-size:.85rem;border:0;background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer;font-weight:600}
-.cats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 .cat{font:inherit;border:2px solid transparent;border-radius:14px;padding:11px 2px 9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--c) 14%,var(--surface));min-width:0;overflow-wrap:anywhere;text-align:center}
 .cat .e{font-size:1.1rem;line-height:1.2}
+#enCats .cat{padding:8px 2px 7px;gap:2px;font-size:.7rem;border-radius:12px}
 .cat[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 30%,var(--surface))}
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--bg);border-radius:14px;padding:4px;gap:4px}
 .seg button{font:inherit;font-size:.84rem;font-weight:600;border:0;border-radius:10px;padding:9px 4px;background:transparent;color:var(--muted);cursor:pointer}
@@ -354,12 +355,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </div>
 
-    <div class="coach" id="coach">
-      <div class="row"><h2 id="coachTitle">🌅 아침 브리핑</h2><span class="tiny muted" id="coachWhen"></span></div>
-      <div id="fundNow"></div>
-      <div id="coachBody"></div>
-      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
-    </div>
     <form class="card" id="entryForm" autocomplete="off">
       <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span></div>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
@@ -392,19 +387,30 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </form>
 
+    <div class="coach" id="coach">
+      <div class="row"><h2 id="coachTitle">🌅 아침 브리핑</h2><span class="tiny muted" id="coachWhen"></span></div>
+      <div id="coachBody"></div>
+      <div id="fundNow"></div>
+      <div class="btns"><button type="button" class="btn ghost" id="coachBtn">브리핑 받기</button><button type="button" class="btn ghost" id="coachStop" hidden>그만</button></div>
+    </div>
+    <div class="card">
+      <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
+      <div class="quest" id="quest"></div>
+      <div class="habits" id="habits" aria-label="습관 체크" hidden>
+        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건 <small class="tiny muted">자동</small></span></label>
+        <label class="hb"><input type="checkbox" id="hk_noRevolve"><span>🙅 리볼빙·현금서비스 X</span></label>
+        <label class="hb"><input type="checkbox" id="hk_appCheck"><span>📱 카드 앱 확인</span></label>
+        <label class="hb"><input type="checkbox" id="hk_48h"><span>⏳ 48시간 룰</span></label>
+      </div>
+    </div>
+
     <div class="card">
       <div class="row"><h2 id="dayTitle">🧾 오늘 기록</h2><span class="disp" id="dayTotal"></span></div>
       <div class="list" id="dayList"></div>
       <div class="list" id="dayWins"></div>
       <div id="dayCats"></div>
-      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
-    </div>
-
-    <div class="card step-card" id="stepCard">
-      <div class="row"><h2>🌅 오늘의 한 걸음</h2><button type="button" class="link small" data-go="dash">앞으로의 길 ›</button></div>
-      <div class="step-big" id="stepBig"></div>
-      <div class="step-rows" id="stepRows"></div>
-      <div class="step-acts" role="group" aria-label="오늘의 한 걸음 기록">
+      <div id="stepCard" style="display:flex;flex-direction:column;gap:10px">
+      <div class="step-acts" role="group" aria-label="참은 돈·부수입·이번 주 목표 기록">
         <button type="button" class="pill" data-step="skip">🙅 참았어요</button>
         <button type="button" class="pill" data-step="sell">💰 부수입</button>
         <button type="button" class="pill" data-step="goal">🎯 이번 주 목표</button>
@@ -416,18 +422,10 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <p class="small" id="spPreview"></p>
         <div class="btns"><button class="btn" type="submit" style="flex:1" id="spSave">기록</button><button type="button" class="btn ghost" id="spReset" hidden>원래대로</button></div>
       </form>
+      </div>
+      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
     </div>
 
-    <div class="card">
-      <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
-      <div class="quest" id="quest"></div>
-      <div class="habits" id="habits" aria-label="습관 체크" hidden>
-        <label class="hb"><input type="checkbox" id="hk_noInst"><span>💳 할부 0건 <small class="tiny muted">자동</small></span></label>
-        <label class="hb"><input type="checkbox" id="hk_noRevolve"><span>🙅 리볼빙·현금서비스 X</span></label>
-        <label class="hb"><input type="checkbox" id="hk_appCheck"><span>📱 카드 앱 확인</span></label>
-        <label class="hb"><input type="checkbox" id="hk_48h"><span>⏳ 48시간 룰</span></label>
-      </div>
-    </div>
 
     <button type="button" class="btn ghost" data-go="records">📅 지난 기록 · 달력</button>
   </section>
@@ -706,6 +704,7 @@ const fundPlan=c=>fundWalk(c).filter(x=>x.due>=TODAY&&!x.extra).map(x=>x.ym<ymOf
 const fundTop=ym=>CATS().filter(c=>c.fund).flatMap(c=>fundPlan(c).filter(x=>x.ym===ym&&x.gap>0).map(x=>({...x,c})));
 const fundGapAt=ym=>sum(fundTop(ym),x=>x.gap);
 const LOOK={lunch:["🍱","#F2A000"],dinner:["🍲","#F25555"],coffee:["☕","#A0703C"],grocery:["🥬","#14B886"],living:["🧻","#2F9BFF"],leisure:["🛍️","#6E56F8"],beauty:["💇","#E64980"],transit:["🚇","#4C6EF5"],health:["💪","#0CA678"],subs:["📺","#868E96"],gift:["🎁","#E8590C"]};
+const SHORT={leisure:"여가·쇼핑",health:"건강",gift:"경조사",lunch:"점심",dinner:"저녁",beauty:"미용",living:"생활용품",grocery:"식재료"};
 const look=id=>LOOK[id]||["🧾","#868E96"];
 const catName=id=>{const c=ALLCATS().find(c=>c.id===id);return c?c.name:"미분류"};
 const LOANS=()=>S.debts||[];
@@ -981,7 +980,7 @@ function renderToday(){
   lim("lmD",spentT,dayB);lim("lmW",ws,W);$("lmW").previousElementSibling.textContent=W<weekBudgetFor(TODAY)?"이번 주 🎯":"이번 주";lim("lmC",y.spent,y.B);$("lmCk").textContent=`주기 ~${md(y.c.end)}`;
 
   const cats=$("enCats"),sig=CATS().map(c=>c.id).join()+"|"+selCat;
-  if(cats.dataset.sig!==sig){cats.dataset.sig=sig;cats.innerHTML=CATS().length?CATS().map(c=>{const[e,col]=look(c.id);return `<button type="button" class="cat" style="--c:${col}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="e">${e}</span>${esc(c.name)}</button>`}).join(""):'<p class="empty" style="grid-column:1/-1">카테고리를 불러오는 중이에요.</p>'}
+  if(cats.dataset.sig!==sig){cats.dataset.sig=sig;cats.innerHTML=CATS().length?CATS().map(c=>{const[e,col]=look(c.id);return `<button type="button" class="cat" style="--c:${col}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="e">${e}</span>${esc(SHORT[c.id]||c.name)}</button>`}).join(""):'<p class="empty" style="grid-column:1/-1">카테고리를 불러오는 중이에요.</p>'}
   if(document.activeElement!==$("enDate"))$("enDate").value=selDate;$("enDate").max=TODAY;
   $("enDateChip").textContent=selDate===TODAY?"오늘":mdw(selDate);
   $("enMoreSum").textContent=`${selMethod==="lotte"?"💳 롯데 일시불":selMethod==="cash"?"🏦 체크·현금":"⚠️ 할부"} · ${selDate===TODAY?"오늘":md(selDate)} · 바꾸기`;
@@ -1108,7 +1107,17 @@ function fundNow(){
 function renderFundNow(){const f=fundNow(),tile=(k,v,sub,cls)=>`<div class="fn"><span class="k">${k}</span><strong class="${cls||""}">${v}</strong>${sub?`<span class="s">${sub}</span>`:""}</div>`;
   /* today/week/cycle money is already in the hero above, so the briefing shows the longer view */
   $("fundNow").innerHTML=`<div class="fngrid">${tile("남은 빚",man(f.debt),f.free?`빚 0원 ${ymKo(f.free)}`:"")}${tile("순자산",man(f.net),f.goal?`${ymKo(f.goal.ym)} 목표 ${man(f.goal.net)}${f.goal.예상!=null?` · 예상 ${man(f.goal.예상)}`:""}`:"")}</div>`+
-    `<p class="tiny muted" style="margin-top:8px">📅 ${f.next.map(x=>`${md(x.d)} ${esc(x.t)} ${dayDiff(TODAY,x.d)?`D-${dayDiff(TODAY,x.d)}`:"오늘"}`).join(" · ")}</p>`}
+    `<div class="step-rows" style="margin-top:10px"><strong class="small">📌 오늘 알아둘 것</strong>${todayNotes(f).join("")}</div>`}
+/* small facts worth a glance every day: what today's restraint buys, the cycle pace, a category running hot, the next payday and gifts */
+function todayNotes(f){const n=[],row=(e,h)=>`<div class="sr"><span>${e}</span><span>${h}</span></div>`;
+  if(STEP){n.push(row("⏱️",STEP.big));n.push(...STEP.rows)}
+  const y=cycleSummary(),k=payYmOf(TODAY),fr=(dayDiff(y.c.start,TODAY)+1)/(dayDiff(y.c.start,y.c.end)+1);
+  const hot=LIVECATS(k).map(c=>{const b=budgetAt(c,k),sp=sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount);return{c,b,sp,r:b?sp/b:0}}).filter(x=>x.b>0&&(x.sp>x.b||x.r>fr+.15)).sort((a,b)=>b.r-a.r).slice(0,2);
+  hot.forEach(x=>n.push(row(look(x.c.id)[0],x.sp>x.b?`${esc(x.c.name)} 이번 주기 예산을 <b class="bad-t">${won(x.sp-x.b)} 넘었어요</b>`:`${esc(x.c.name)} 주기 예산 <b>${Math.round(x.r*100)}%</b> 썼어요 <span class="muted">(주기 ${Math.round(fr*100)}% 지남 · ${won(x.b-x.sp)} 남음)</span>`)));
+  const M=nextPayYm(),pd=ymDay(M,PAY()),dd=dayDiff(TODAY,pd);
+  if(dd<=10){const pl=payPlan(M);n.push(row("💰",`${dd?`월급날 D-${dd}`:"오늘 월급날"} · 카드값 ${man1(pl.card)}${pl.avail>0?` 내고 선결제·상환 <b>${man1(pl.avail)}</b>`:""}`))}
+  f.next.filter(x=>x.d!==pd&&dayDiff(TODAY,x.d)<=14).forEach(x=>n.push(row("📅",`${esc(x.t)} ${dayDiff(TODAY,x.d)?`D-${dayDiff(TODAY,x.d)}`:"오늘"}`)));
+  return n}
 let coachAuto={};
 async function askCoach(slot){
   slot=slot==="am"||slot==="pm"?slot:slotNow();if(!sample||coachBusy)return;coachBusy=true;coachCtl=new AbortController();
@@ -1326,11 +1335,12 @@ let WI=-100000;
 function speedRate(){const sim=simulate(),P=sim.path,fi=sim.free?P.findIndex(p=>p.ym===sim.free):-1,debtNow=ymOf(TODAY)<=(sim.free||"9999");
   const M=ymAdd(ymOf(TODAY),1),m=Math.max(0,incomeAt(M)-fixedTotal(M)-cycleBudgetFor(M)+(debtNow?0:sim.intBack));return{perDay:m/30.4,goal:debtNow?"빚 0원":`${man(ST().finalTarget||1e8)} 도착`}}
 function fasterTxt(amount){const r=speedRate();if(!(r.perDay>0)||!(amount>0))return"";const d=amount/r.perDay;return d<1?`약 ${Math.max(1,Math.round(d*24))}시간`:`약 ${d<10?Math.round(d*10)/10:Math.round(d)}일`}
+let STEP=null;
 function renderStep(){
   const r=speedRate(),dayB=weekLimit(TODAY)/7,allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),day=S.days[TODAY]||{};
-  $("stepCard").hidden=!(r.perDay>0);if(!(r.perDay>0))return;
+  STEP=null;if(r.perDay>0){
   const left=Math.max(0,allow-spentT);
-  $("stepBig").innerHTML=spentT===0?`오늘 무지출이면 ${r.goal}이 <em>${fasterTxt(dayB)}</em> 빨라져요`
+  const big=spentT===0?`오늘 무지출이면 ${r.goal}이 <em>${fasterTxt(dayB)}</em> 빨라져요`
     :left>0?`남은 ${won(left)}을 안 쓰면 ${r.goal}이 <em>${fasterTxt(left)}</em> 빨라져요`
     :`오늘은 여기까지! 내일 무지출이면 <em>${fasterTxt(dayB)}</em> 빨라져요`;
   const y=cycleSummary(),total=dayDiff(y.c.start,y.c.end)+1,el=dayDiff(y.c.start,TODAY),paceY=y.B*el/total,spentY=sum(entriesIn({start:y.c.start,end:addDays(TODAY,-1)}),e=>e.amount),diff=paceY-spentY;
@@ -1342,7 +1352,7 @@ function renderStep(){
   if(wl<W0){const sp=sum(entriesIn(wr),e=>e.amount);rows.unshift(`<div class="sr"><span>🎯</span><span>이번 주 목표 <b>${man(wl)}</b> (평소보다 −${man(W0-wl)}) · 지금 ${sp?man1(sp):"0원"} 씀${sp<=wl?` · <span class="good-t">지키면 ${r.goal} ${fasterTxt(W0-wl)} 빨라져요</span>`:` · <span class="bad-t">목표를 넘었어요</span>`}</span></div>`)}
   const cw=S.wins.filter(w=>w.date>=y.c.start&&w.date<=y.c.end),sk=sum(cw.filter(w=>w.kind==="skip"),w=>w.amount),sl=sum(cw.filter(w=>w.kind==="sell"),w=>w.amount);
   if(sk||sl)rows.unshift(`<div class="sr"><span>✨</span><span>이번 주기 ${sk?`참은 돈 <b>${man1(sk)}</b>`:""}${sk&&sl?" · ":""}${sl?`부수입 <b>${man1(sl)}</b>`:""} · ${r.goal} <span class="good-t">${fasterTxt(sk+sl)} 당겨짐</span></span></div>`);
-  $("stepRows").innerHTML=rows.join("");
+  STEP={big,rows}}
   document.querySelectorAll("[data-step]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.step===stepMode));
   $("stepPanel").hidden=!stepMode;if(stepMode&&!$("stepPanel").contains(document.activeElement))stepPreview();
 }
