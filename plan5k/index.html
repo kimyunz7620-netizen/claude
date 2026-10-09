@@ -1340,7 +1340,7 @@ function renderProjection(sim,now,target){
   if(sim.free)items.push([sim.free,li("good","🎉",ymKo(sim.free),"빚 0원!",sim.intBack?`대출 이자 월 ${man(sim.intBack)}도 더는 안 나가요`:"","")]);
   if(after){items.push([after.ym,li("good","💰",`${ymKo(after.ym)}부터`,"매달 저축 시작","파킹통장에 그대로 쌓아요",`월 ${man(after.save)}`)]);
     const cum=k=>sum(P.slice(fi,fi+k+1),p=>p.save);
-    [[6,"반년"],[12,"1년"]].forEach(([k,lab])=>{const p=P[fi+k];if(p)items.push([p.ym,li("good","🐷",ymKo(p.ym),`저축 ${lab}째`,`통장에 모인 돈`,man(cum(k)))])})}
+    [[6,"반년"],[12,"1년"]].forEach(([k,lab])=>{const p=P[fi+k];if(p)items.push([p.ym,li("good","🐷",ymKo(p.ym),`저축 ${lab}째`,`빚 다 갚은 뒤 파킹통장에 쌓인 돈 (누적) · 보증금 더하면 순자산 ${man(p.net)}`,man(cum(k)))])})}
   GL.forEach((g,i)=>{const at=P.find(p=>p.ym===g.ym);if(!at)return;const ok=at.net>=g.net,h=P.find(p=>p.net>=g.net);items.push([g.ym,li(ok?"good":"","🏁",ymKo(g.ym),`${GL.length>1?`${i+1}차 `:""}목표 순자산 ${man(g.net)}`,ok?`예상 ${man(at.net)} · ${at.net-g.net<10000?"딱 맞춰 도착":`목표보다 ${man(at.net-g.net)} 여유`}`:`예상 ${man(at.net)} · ${man(g.net-at.net)} 모자라요${h?` · 이대로면 ${ymKo(h.ym)} 도착`:""}`,ok?"달성 ✅":"⚠️")])});
   (st.budgetPlan||[]).forEach(x=>items.push([x.from,li("","🔁",ymKo(x.from),`생활비 월 ${man(x.budget)}으로 바뀌어요`,`2차 목표 기간 · 주 ${man1(x.week||0)}`,"")]));
   [[5e7,"🌳"],[fin,"🏆"]].filter(([v,e])=>e==="🏆"||v<fin).forEach(([v,e])=>{const h=P.find(p=>p.net>=v);items.push([h?h.ym:"9999",li("good",e,h?ymKo(h.ym):"10년 이후",`순자산 ${man(v)}`,h?"이 페이스로 도착":"","")])});
