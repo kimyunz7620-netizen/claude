@@ -1289,7 +1289,7 @@ function goalOut(){
   if(!r){o.innerHTML='<p class="small muted">시점과 늘릴 금액을 적으면 기간별로 필요한 생활비를 계산해요.</p>';return}
   const B=st.cycleBudget||0,first=payYmOf(TODAY),ok=r.stages.every(g=>g.max!=null);
   const rows=r.stages.map((g,i)=>{const per=i?`${ymKo(g.from)} ~ ${ymKo(g.ym)}`:`지금 ~ ${ymKo(g.ym)}`;
-    return `<div class="note ${g.max==null?"bad":""}"><div class="row"><strong>${i+1}차 · ${ymKo(g.ym)} 순자산 ${man(g.target)}</strong><span class="tiny muted">+${man(g.gain)}</span></div>
+    return `<div class="note ${g.max==null?"bad":""}"><div class="row"><strong>${i+1}차 · ${ymKo(g.ym)} 순자산 ${man(g.target)}</strong><span class="tiny muted">+${man(g.gain)}</span></div>${(()=>{const sd=ST().startDebt||0,dp=Math.min(sd,g.gain),sp=g.gain-dp;return `<div class="tiny muted">시작 ${man(r.base)} + ${man(g.gain)} = ${man(g.target)}${sd?` · 빚 ${man(dp)} 갚기${sp>0?` + 통장에 ${man(sp)} 모으기`:""}`:""}</div>`})()}
       <div class="small">${g.max==null?`생활비를 0원으로 줄여도 어려워요. 시점을 늦추거나 금액을 줄여 보세요.`:`<b>${per} 생활비 월 ${man(g.max)}</b>${!i?` <span class="${g.max>=B?"good-t":"bad-t"}">(${g.max===B?"지금 예산":`지금 ${man(B)}`}${g.max===B?"":g.max>B?`보다 +${man(g.max-B)}`:`보다 −${man(B-g.max)}`})</span>`:""}`}</div>
       ${i&&g.max!=null&&g.max>r.stages[0].max?`<div class="tiny muted">1차를 지키면 그 뒤엔 월 ${man(g.max-r.stages[0].max)} 더 써도 돼요</div>`:""}${!i&&r.stages[1]&&g.max!=null&&g.alone>g.max?`<div class="tiny muted">1차만 보면 월 ${man(g.alone)}까지 되지만, 2차 목표 때문에 ${man(g.max)}로 잡았어요</div>`:""}
       ${!i&&g.cur!=null?`<div class="tiny muted">지금 계획대로면 ${ymKo(g.ym)}에 ${man(g.cur)} (${g.cur>=g.target?"+":"−"}${man(Math.abs(g.cur-g.target))})${g.reach?` · 도착 ${ymKo(g.reach)}`:""}</div>`:""}</div>`}).join("");
@@ -1341,7 +1341,7 @@ function renderProjection(sim,now,target){
     const cum=k=>sum(P.slice(fi,fi+k+1),p=>p.save);
     [[6,"반년"],[12,"1년"]].forEach(([k,lab])=>{const p=P[fi+k];if(p)items.push([p.ym,li("good","🐷",ymKo(p.ym),`저축 ${lab}째`,`통장에 모인 돈`,man(cum(k)))])})}
   const atT=P.find(p=>p.ym===tYm);if(atT)items.push([tYm,li("","🏁",ymKo(tYm),"목표 시점 순자산",target!=null?`목표 ${man(target)} 대비 ${dm(atT.net-target)}`:"",man(atT.net))]);
-  [[5e7,"🌳"],[fin,"🏆"]].filter(([v])=>v<=fin).forEach(([v,e])=>{const h=P.find(p=>p.net>=v);items.push([h?h.ym:"9999",li("good",e,h?ymKo(h.ym):"10년 이후",`순자산 ${man(v)}`,h?"이 페이스로 도착":"","")])});
+  [[5e7,"🌳"],[fin,"🏆"]].filter(([v,e])=>e==="🏆"||v<fin).forEach(([v,e])=>{const h=P.find(p=>p.net>=v);items.push([h?h.ym:"9999",li("good",e,h?ymKo(h.ym):"10년 이후",`순자산 ${man(v)}`,h?"이 페이스로 도착":"","")])});
   $("pjList").innerHTML=items.sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:0).map(x=>x[1]).join("");
   if(view==="dash")renderGoalFit();
   const wi=WI,alt=simulate(wi),h1=P.find(p=>p.net>=fin),h2=alt.path.find(p=>p.net>=fin),rem=Math.max(1,sim.free?ymDiff(ymOf(TODAY),sim.free)+1:12),altAfter=alt.free?alt.path[alt.path.findIndex(p=>p.ym===alt.free)+1]:null;
