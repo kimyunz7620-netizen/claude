@@ -860,14 +860,16 @@ function payTxSteps(M,pl){
   /* the card is paid from CARDACC: move money there only if it isn't the salary account; the check-card allowance goes to 케이뱅크 */
   const ca=CARDACC(),toCard=ca===SALARY?0:pl.card-pl.giftCard+prepay;
   const byDest={};fx.forEach(x=>{const d=fixedDest(x);if(d)(byDest[d]=byDest[d]||[]).push(x)});
-  const pre=[];Object.entries(byDest).filter(([d])=>d!==(CATS().find(c=>c.fund)||{fund:{}}).fund.bank).forEach(([d,xs])=>pre.push({k:"fx-"+d,from:SALARY,to:d,amt:sum(xs,x=>x.amount),sub:xs.map(x=>`${x.name} ${won(x.amount)}`).join(" + ")+(d==="토스뱅크"?" · 22일 자동이체 전에":"")}));steps.push(...pre);
+  /* the gift shortfall goes wherever the monthly gift transfer leaves from (e.g. 토스뱅크, moved to the gift account by hand later) */
+  const fundFix=fx.find(x=>/경조사/.test(x.name+" "+x.note)),gapDest=(fundFix&&fixedDest(fundFix))||fundAcc,gapTxt=`경조사 부족분 ${won(pl.gift)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})${gapDest!==fundAcc?` · ${gapDest}에 두었다가 경조사 때 옮기기`:""}`;
+  if(pl.gift&&!byDest[gapDest])byDest[gapDest]=[];
+  const dests=Object.entries(byDest).sort(([a],[b])=>(a===fundAcc)-(b===fundAcc));
+  dests.forEach(([d,xs])=>{const extra=d===gapDest?pl.gift:0;steps.push({k:"fx-"+d,from:SALARY,to:d,amt:sum(xs,x=>x.amount)+extra,sub:xs.map(x=>`${x.name} ${won(x.amount)}`).concat(extra?[gapTxt]:[]).join(" + ")+(d==="토스뱅크"?" · 22일 자동이체 전에":"")})});
   if(toCard>0)steps.push({k:"kb",from:SALARY,to:ca,amt:toCard,sub:[`카드값 ${won(pl.card-pl.giftCard)}`,prepay?`할부 선결제용 ${won(prepay)}`:""].filter(Boolean).join(" + ")});
   if(pl.cashRes)steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,sub:"체크카드 생활비"});
   if(pl.giftCard)steps.push({k:"gc",from:fundAcc,to:ca,amt:pl.giftCard,sub:"카드로 산 경조사 선물만큼 경조사 통장에서 채워요"});
   steps.push({k:"pay",act:`롯데카드 앱 › ${early?"즉시결제":"결제계좌 확인"}`,amt:pl.card,sub:early?`결제예정금액 › 즉시결제 · ${ca}에서 빠져요`:`${md(pd)}에 ${ca}에서 자동으로 빠져요`});
   if(items.length)steps.push({k:"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 목록에서 '기록'"});
-  Object.entries(byDest).filter(([d])=>d===fundAcc).forEach(([d,xs])=>{const extra=d===fundAcc?pl.gift:0;steps.push({k:"fx-"+d,from:SALARY,to:d,amt:sum(xs,x=>x.amount)+extra,sub:xs.map(x=>`${x.name} ${won(x.amount)}`).concat(extra?[`경조사 부족분 ${won(extra)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})`]:[]).join(" + ")})});
-  if(pl.gift&&!byDest[fundAcc])steps.push({k:"gift",from:SALARY,to:fundAcc,amt:pl.gift,sub:"경조사 부족분"});
   loans.forEach(r=>steps.push({k:"loan-"+r.d.id,from:SALARY,to:r.d.name,amt:r.amt,sub:`중도상환${r.due?` · ${md(r.d.due)} 만기 전 상환`:""} · 하고 나면 '기록'`}));
   if(savePot)steps.push({k:"pot",from:SALARY,to:SAVEACC,amt:savePot,sub:`다음 선결제(${pots[0].target.x.name})용으로 모아 두기`});
   if(rest>0)steps.push({k:"save",from:SALARY,to:SAVEACC,amt:rest,sub:"빚을 다 갚고 남는 돈 · 저축"});
@@ -920,6 +922,7 @@ const TASKS=[
  {g:"여행",label:"10/15~10/18 상해 여행",d:"2026-10-15",end:"2026-10-18",items:[
   {id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"항공·숙박은 이미 할부 목록에 있어요. 현지 경비는 계모임 돈으로"}]},
  {g:"파킹통장",label:"10/22 파킹통장 개설",d:"2026-10-22",items:[{id:"p4",t:"파킹통장 개설하고 우리은행 저축분 옮기기",n:"월말 잔액 기록의 '우리은행' 칸을 파킹통장으로 쓰면 돼요"}]},
+ {g:"구독료",label:"11/10 구독료 한 달 점검",d:"2026-11-10",items:[{id:"sub1",t:"토스뱅크·카드에서 나간 구독료 확인",n:"쿠팡와우·아이클라우드 말고 더 나가는 게 있으면 설정 › 고정비 구독료에 더해 주세요"}]},
  {g:"카드 결제일",label:"10/26(월) 카드 결제일",d:"2026-10-26",items:[{id:"b1",t:"카드값 · NH 이자 정상 출금 확인",n:"25일이 일요일이라 26일 출금"}]},
  {g:"선결제",label:"12/25 결제 직후 선결제",d:"2026-12-25",items:[{id:"g1",t:"추천대로 선결제, 이마트용으로 모으기 시작",n:"이마트 선결제 시 수수료 약 32만원 절약"}]},
  {g:"연말정산",label:"27년 2월 연말정산 환급",d:"2027-02-28",items:[{id:"h1",t:"연말정산 환급금 전액 상환",n:"규칙: 인상분·성과급·환급은 전액 상환·저축"}]}
