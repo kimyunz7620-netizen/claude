@@ -199,8 +199,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .rvc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.85rem;padding:4px 0}
 .rvc .bar{height:8px}
 .brief{display:flex;flex-direction:column;gap:8px;background:var(--bg);border-radius:14px;padding:12px 14px}.brief .sr{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;font-size:.88rem;line-height:1.45}
-.glance-big{font-family:var(--f-display);font-size:1.1rem;font-weight:800;letter-spacing:-.02em;text-wrap:balance}.glance-big em{font-style:normal;color:var(--grape)}
-#glance .link{font:inherit;background:none;border:0;padding:0;color:var(--grape);font-weight:700;cursor:pointer}
+.brief-text{display:flex;flex-direction:column;gap:6px;font-size:.95rem;line-height:1.5}.brief-text p{margin:0}
 .dsub{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--line);padding:4px;border-radius:14px}
 .fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(76px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--grape);color:#fff;font-size:1.9rem;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(80,60,200,.35);z-index:20}
 .sheet{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end}
@@ -374,12 +373,9 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </div>
 
-    <div class="card" id="glance">
-      <div class="row"><h2>☀️ 오늘 브리핑</h2><span class="tiny muted">어제까지 기록 기준</span></div>
-      <div class="glance-big" id="glanceBig"></div>
-      <div id="fundNow"></div>
-      <div id="glanceCats" style="display:flex;flex-direction:column;gap:4px"></div>
-      <div class="chips" id="glanceChips"></div>
+    <div class="card" id="glance" hidden>
+      <div class="brief-text" id="briefText"></div>
+      <div class="tiny muted" id="briefWhen"></div>
     </div>
     <div class="card" id="questCard">
       <div class="row"><h2 id="questTitle">✅ 오늘 할 일</h2><span class="chip" id="questCount"></span></div>
@@ -1113,32 +1109,46 @@ function dailyNums(){
   let zero=0,run=0;for(let d=y.c.start;d<TODAY;d=addDays(d,1)){const none=!S.entries.some(e=>e.date===d&&!e.excl&&!fundOut(e)),z=none&&(!!(S.days[d]&&S.days[d].noSpend)||d<lastRec);if(z)zero++;run=z?run+1:0}
   return{yd,ySp,yRec,dayB,wLeft,wDays,y,el,total,proj,zero,run};
 }
-/* one card to glance at: what you can spend today, four numbers that change daily, the categories closest to their budget, what's coming up */
+/* 오늘 브리핑: at most three plain sentences from Claude about what changed since the last visit.
+   The last visit is a snapshot kept on this device (plan5k3:seen); the reply is cached (plan5k3:brief) until something changes. */
+const BRIEF_PREV=LS.get("seen",null);let briefBusy=false,briefAsked=false;
+function briefSnap(){const n=dailyNums();return{at:new Date().toISOString(),day:TODAY,wLeft:n.wLeft,proj:n.proj,spent:n.y.spent,debt:Math.round(totalDebt()),n:S.entries.length}}
+function briefChanges(){
+  const prev=BRIEF_PREV,since=prev?prev.at:addDays(TODAY,-1)+"T00:00:00",now=briefSnap(),n=dailyNums();
+  const added=S.entries.filter(e=>(e.createdAt||"")>since).map(e=>({날짜:e.date,카테고리:catName(e.cat),금액:e.amount,메모:e.memo||"",결제:e.method==="inst"?`할부${e.months}개월`:e.method==="cash"?"체크·현금":"카드"}));
+  const wins=S.wins.filter(w=>(w.createdAt||w.date)>since.slice(0,10)).map(w=>({종류:w.kind==="skip"?"참은 돈":"부수입",금액:w.amount}));
+  const paid=S.payments.filter(p=>(p.createdAt||p.date)>since.slice(0,10)).map(p=>({상환:p.amount}));
+  const pd=ymDay(nextPayYm(),PAY());
+  return{마지막접속:prev?prev.at:null,지금:now.at,새로적은지출:added,참은돈_부수입:wins,상환:paid,
+    이번주:{한도:Math.round(weekLimit(TODAY)),남은돈_전:prev?prev.wLeft:null,남은돈_지금:n.wLeft,남은날:n.wDays,하루한도:Math.round(n.dayB)},
+    이번달:{예산:n.y.B,쓴돈:n.y.spent,이대로면남거나넘는돈_전:prev&&prev.proj!=null?n.y.B-prev.proj:null,이대로면남거나넘는돈_지금:n.proj!=null?n.y.B-n.proj:null,남은날:n.y.left},
+    어제:{쓴돈:n.yRec?n.ySp:null},무지출일:n.zero,월급날까지:dayDiff(TODAY,pd),빚합계:{전:prev?prev.debt:null,지금:now.debt}};
+}
+function briefKey(d){return JSON.stringify([d.새로적은지출.length,d.이번주.남은돈_지금,d.이번달.쓴돈,d.상환.length,d.참은돈_부수입.length,TODAY])}
+function briefHasChange(d){const p=BRIEF_PREV;return !p||d.새로적은지출.length||d.참은돈_부수입.length||d.상환.length||p.day!==TODAY||p.wLeft!==d.이번주.남은돈_지금||p.debt!==d.빚합계.지금}
+async function askBrief(){
+  if(!sample||briefBusy)return;briefBusy=true;
+  const data=briefChanges(),key=briefKey(data);
+  const prompt=`너는 빚을 갚는 중인 30대 친구의 머니 코치야. 아래는 이 친구가 앱에 마지막으로 들어온 뒤부터 지금까지 바뀐 데이터야.
+바뀐 데이터를 분석해서, 이 친구에게 실제로 도움이 될 내용만 최대 3문장으로 말해 줘. 앱 화면에서 바로 보이는 숫자를 그대로 읊지 말고, 바뀐 것에서 읽히는 의미(새 지출이 어떤 영향을 줬는지, 흐름이 좋아졌는지 나빠졌는지, 그래서 오늘 뭘 하면 좋은지)를 말해.
+각 문장은 40자 안쪽, 자연스러운 존댓말, 제목·번호·불릿 없이 문장만. 어려운 말(페이스, 주기, 선결제, 순자산) 쓰지 말고 금액은 '1.2만 원'처럼 짧게. 데이터에 없는 건 지어내지 마. 이모지는 많아야 1개.
+도움이 될 만한 게 없으면 억지로 만들지 말고 빈 배열로 답해.
+${JSON.stringify(data)}
+JSON으로만 답해: {"lines":["문장1","문장2","문장3"]}`;
+  try{const r=await sample.json(prompt,{modelTier:"default"});const lines=(Array.isArray(r.lines)?r.lines:[]).map(x=>String(x).trim()).filter(Boolean).slice(0,3).map(x=>x.slice(0,90));
+    LS.set("brief",{key,lines,at:new Date().toISOString(),since:data.마지막접속});LS.set("seen",briefSnap())}
+  catch(e){if(e&&e.code==="not_granted")sample=null}
+  briefBusy=false;renderCoach();
+}
+/* 지난 접속 이후 바뀐 데이터를 AI가 분석한 최대 3줄. 쓸 말이 없거나 AI를 못 쓰면 카드 자체를 숨김 */
 function renderCoach(){
-  const n=dailyNums(),f=fundNow();
-  const perDay=n.wLeft>0?Math.floor(n.wLeft/n.wDays/100)*100:0;
-  $("glanceBig").innerHTML=n.wLeft>0?`이번 주는 하루 <em>${won(perDay)}</em>까지 써도 돼요`:`이번 주 한도를 <em class="bad-t">${won(-n.wLeft)}</em> 넘었어요 · 남은 ${n.wDays}일은 무지출로`;
-  /* today's briefing: what changed up to yesterday, in three lines */
-  const ydE=entriesIn({start:n.yd,end:n.yd}),topY=Object.values(ydE.reduce((a,e)=>{(a[e.cat]=a[e.cat]||{cat:e.cat,s:0}).s+=e.amount;return a},{})).sort((a,b)=>b.s-a.s)[0];
-  const lines=[];
-  lines.push(!n.yRec?["📝","어제 기록이 없어요 · 쓴 게 있으면 달력에서 어제를 눌러 적어 주세요"]:n.ySp===0?["🥚",`어제는 무지출! ${n.run>1?`${n.run}일째 연속이에요`:"잘했어요"}`]
-    :[n.ySp<=n.dayB?"👍":"⚠️",`어제 <b>${won(n.ySp)}</b> 썼어요 · ${n.ySp<=n.dayB?"하루 한도 안":`한도보다 ${man1(n.ySp-n.dayB)} 더`}${topY?` (${look(topY.cat)[0]} ${esc(SHORT[topY.cat]||catName(topY.cat))} ${man1(topY.s)})`:""}`]);
-  if(n.el>=3){const spPrev=sum(entriesIn({start:n.y.c.start,end:addDays(n.yd,-1)}),e=>e.amount),projPrev=Math.round(spPrev/(n.el-1)*n.total),dNow=n.y.B-n.proj,dPrev=n.y.B-projPrev,ch=dNow-dPrev;
-    lines.push(["📈",`이대로면 이번 달 <b class="${dNow<0?"bad-t":"good-t"}">${man1(Math.abs(dNow))} ${dNow<0?"넘어요":"남아요"}</b>${Math.abs(ch)>=1000?` · 어제보다 ${man1(Math.abs(ch))} ${ch>0?"좋아졌어요":"나빠졌어요"}`:""}`])}
-  else lines.push(["🌱",`새 달 ${n.el+1}일째 · 이번 달 예산 ${man(n.y.B)}, 하루 평균 ${man1(n.y.B/n.total)}`]);
-  if(n.wLeft>=0)lines.push(["🗓️",`이번 주 남은 돈 <b>${won(n.wLeft)}</b> · ${n.wDays}일 남음${n.zero?` · 이번 달 무지출 ${n.zero}일`:""}`]);else if(n.zero)lines.push(["🥚",`이번 달 무지출 ${n.zero}일`]);
-  $("fundNow").innerHTML=`<div class="brief">${lines.map(([e,t])=>`<div class="sr"><span>${e}</span><span>${t}</span></div>`).join("")}</div>`;
-  /* categories: what's left of each this month, the tightest first */
-  const k=payYmOf(TODAY),y=n.y,rows=LIVECATS(k).map(c=>{const b=budgetAt(c,k),sp=sum(entriesIn(y.c,e=>e.cat===c.id),e=>e.amount);return{c,b,sp}}).filter(x=>x.b>0).sort((a,b)=>b.sp/b.b-a.sp/a.b).slice(0,4);
-  $("glanceCats").innerHTML=rows.length?`<div class="row"><strong class="small">이번 달 카테고리 남은 돈</strong><button type="button" class="link small" data-go="week">전체 ›</button></div>`+rows.map(x=>{const over=x.sp>x.b;return `<div class="rvc"><span>${look(x.c.id)[0]} ${esc(SHORT[x.c.id]||x.c.name)}</span><div class="bar"><i style="width:${Math.min(100,Math.round(x.sp/x.b*100))}%;background:${over?"var(--coral)":look(x.c.id)[1]}"></i></div><span class="num small ${over?"bad-t":""}">${over?`${man1(x.sp-x.b)} 넘음`:`${man1(x.b-x.sp)} 남음`}</span></div>`}).join(""):"";
-  /* coming up and how this month compares */
-  const chips=[],chip=(t,cls)=>`<span class="chip ${cls||"plain"}">${t}</span>`;
-  {const c=cycleOf(k),pc=cycleOf(ymAdd(k,-1)),dd=dayDiff(c.start,TODAY),now=sum(entriesIn({start:c.start,end:addDays(TODAY,-1)}),e=>e.amount),then=sum(entriesIn({start:pc.start,end:addDays(pc.start,dd-1)}),e=>e.amount);
-   if(dd>=2&&then>0&&pc.start>=ledgerStart()){const df=now-then;chips.push(chip(`📊 지난달 이맘때보다 ${man1(Math.abs(df))} ${df<=0?"덜":"더"}`,df<=0?"good":"bad"))}}
-  const pd=ymDay(nextPayYm(),PAY()),pdd=dayDiff(TODAY,pd);chips.push(chip(`💰 월급날 ${pdd?`D-${pdd}`:"오늘"}`));
-  f.next.filter(x=>x.d!==pd&&dayDiff(TODAY,x.d)<=14).forEach(x=>chips.push(chip(`📅 ${esc(x.t)} ${dayDiff(TODAY,x.d)?`D-${dayDiff(TODAY,x.d)}`:"오늘"}`)));
-  if(f.free)chips.push(chip(`🎉 빚 0원 ${ymKo(f.free)}`));
-  $("glanceChips").innerHTML=chips.join("");
+  const card=$("glance");if(!card)return;
+  const ready=S.settings&&S.budget,d=ready?briefChanges():null,key=d?briefKey(d):null,b=LS.get("brief",null);
+  const show=!!(b&&b.key===key&&b.lines&&b.lines.length);
+  card.hidden=!show;
+  if(show){const ago=t=>{const m=Math.round((Date.now()-new Date(t))/60000);return m<60?`${Math.max(1,m)}분 전`:m<1440?`${Math.round(m/60)}시간 전`:`${Math.round(m/1440)}일 전`};
+    $("briefText").innerHTML=b.lines.map(l=>`<p>${esc(l)}</p>`).join("");$("briefWhen").textContent=b.since?`💬 ${ago(b.since)} 접속 이후 바뀐 것`:"💬 바뀐 것"}
+  if(sample&&!briefBusy&&!briefAsked&&view==="today"&&ready&&S.entries.length&&(!b||b.key!==key)&&briefHasChange(d)){briefAsked=true;setTimeout(askBrief,800)}
 }
 
 /* ---------- 주간 점검 ---------- */
