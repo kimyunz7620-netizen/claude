@@ -392,7 +392,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     <div class="card" id="calCard">
       <div class="row"><h2 id="calLabel"></h2>
         <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
-      <div class="cal-h"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+      <div class="cal-h"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
       <div class="cal" id="cal"></div>
       <p class="tiny muted" id="calLegend"></p>
       <div class="row daysec"><h2 id="dayTitle">🧾 오늘 기록</h2><span class="disp" id="dayTotal"></span></div>
@@ -1045,7 +1045,7 @@ function renderToday(){
 
 function renderCal(){
   if(!calYm)calYm=ymOf(TODAY);
-  const [y,m]=calYm.split("-").map(Number),first=calYm+"-01",days=new Date(y,m,0).getDate(),lead=(parse(first).getDay()+6)%7,dayLim=d=>weekLimit(d)/7,segs=[];
+  const [y,m]=calYm.split("-").map(Number),first=calYm+"-01",days=new Date(y,m,0).getDate(),lead=parse(first).getDay(),dayLim=d=>weekLimit(d)/7,segs=[];
   $("calLabel").textContent=`📅 ${m}월 기록${y!==Number(TODAY.slice(0,4))?` (${y})`:""}`;$("calNext").disabled=calYm>=ymOf(TODAY);
   let html="",tot=0,recDays=0,zero=0;
   for(let i=0;i<lead;i++)html+='<span class="cd pad"></span>';
