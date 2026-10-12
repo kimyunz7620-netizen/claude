@@ -759,8 +759,14 @@ const fixedCash=ym=>sum(fixedAt(ym).filter(x=>!x.card),x=>x.amount),fixedCard=ym
 
 /* ---------- entries ---------- */
 // cardIn: everything that hits the card; entriesIn: what counts against the living budget (excl = 계모임·회사 경비 등)
-const cardIn=(r,f)=>S.entries.filter(e=>inRange(e.date,r)&&(!f||f(e)));
-const entriesIn=(r,f)=>cardIn(r,e=>!e.excl&&!fundOut(e)&&(!f||f(e)));
+/* a cancellation belongs with the purchase it cancels: for the 생활비 it counts on the original day (bDate), and on the card it comes off
+   the original's bill while that bill is still unpaid (cDate). An entry may also carry its own budgetDate (a re-payment of an earlier purchase). */
+let ORIGC={ref:null,m:null};
+const origOf=e=>{if(!e.cancelOf)return null;if(ORIGC.ref!==S.entries)ORIGC={ref:S.entries,m:new Map(S.entries.map(x=>[x.id,x]))};return ORIGC.m.get(e.cancelOf)||null};
+const bDate=e=>e.budgetDate||(origOf(e)||e).date;
+const cDate=e=>{const o=origOf(e);return o&&e.date<=payDateOf(payYmOf(o.date))?o.date:e.date};
+const cardIn=(r,f)=>S.entries.filter(e=>inRange(cDate(e),r)&&(!f||f(e)));
+const entriesIn=(r,f)=>S.entries.filter(e=>inRange(bDate(e),r)&&!e.excl&&!fundOut(e)&&(!f||f(e)));
 const ledgerStart=()=>ST().ledgerStart||S.entries.map(e=>e.date).sort()[0]||TODAY;
 const partial=r=>r.start<ledgerStart()&&r.end>=ledgerStart();
 const gapTxt=r=>`${md(r.start)}~${md(addDays(ledgerStart(),-1))} 기록이 없어 실제보다 적게 보여요`;
@@ -813,7 +819,10 @@ function loanBal(d){return Math.max(0,Math.round((d.balance||0)-sum(S.payments.f
 const loanTotal=()=>sum(LOANS(),loanBal);
 const totalDebt=()=>cardDebt()+loanTotal();
 const loanOrder=()=>LOANS().filter(d=>loanBal(d)>0).slice().sort((a,b)=>(a.last?1:0)-(b.last?1:0)||(b.apr||0)-(a.apr||0));
-function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort((a,b)=>a.date<b.date?1:-1)[0];if(!w)return null;const a=instAt(ym,payDateOf(ym)),b=instAt(ym,w.date);return a!=null&&b!=null?w.nextBill+a-b:w.nextBill}
+function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort((a,b)=>a.date<b.date?1:-1)[0];if(!w)return null;const a=instAt(ym,payDateOf(ym)),b=instAt(ym,w.date);
+  /* cancellations of this bill's purchases that the card app number doesn't hold yet (still pending, or recorded after it was entered) */
+  const late=sum(S.entries.filter(e=>e.amount<0&&e.method!=="cash"&&(o=>o&&payYmOf(o.date)===ym)(origOf(e))&&(e.pending||(e.createdAt||"")>(w.savedAt||w.date))),e=>e.amount);
+  return (a!=null&&b!=null?w.nextBill+a-b:w.nextBill)+late}
 function cardFixedEst(ym){const c=cycleOf(ym);return sum(fixedAt(ym).filter(x=>x.card&&!S.entries.some(e=>e.fixedId===x.id&&inRange(e.date,c))),x=>x.amount)}
 function lumpEst(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"&&!e.pending),e=>e.amount)+cardFixedEst(ym)}
 function estBill(ym,upTo){return lumpEst(ym,upTo)+effSched(ym)}
@@ -914,7 +923,7 @@ function renderPayTx(M,pl,phase){
   el.innerHTML=`<div class="row"><h2>💸 ${md(ymDay(M,PAY()))} 월급날 이체 순서</h2>${pre?`<span class="chip">D-${dayDiff(TODAY,ymDay(M,PAY()))}</span>`:""}</div><p class="small muted">월급은 ${SALARY}(급여)으로 들어와요. 위에서부터 하나씩 하고 체크하세요.</p>
     <ol class="tx">${steps.map((s,i)=>{const id=`tx-${M}-${s.k}`,dn=!!S.tasks[id];return `<li class="${dn?"done":""}"><span class="txn">${dn?"✓":i+1}</span><div><div class="txr">${s.act?`<span>${esc(s.act)}</span>`:`<span class="acc">${esc(s.from)}</span><span>→</span><span class="acc">${esc(s.to)}</span>`}</div>${s.sub?`<div class="txs">${esc(s.sub)}</div>`:""}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(Math.round(s.amt))}</span><input type="checkbox" data-task="${id}" ${dn?"checked":""} aria-label="${i+1}번 했어요"></div></li>`}).join("")}
     <li class="${S.tasks[`tx-${M}-keep`]?"done":""}"><span class="txn" style="background:var(--muted)">🏦</span><div><div class="txr"><span class="acc">${SALARY}</span><span>에 그대로 두기</span></div><div class="txs">${auto.map(x=>`${esc(x.name)} ${won(x.amount)}`).join(" · ")||"남는 돈 없음"}${ded.length?`<br>${ded.map(x=>`${esc(x.name)} ${won(x.amount)}`).join(" · ")}은 실수령에서 따로 빠져요`:""}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(keep)}</span>${pot?`<input type="checkbox" data-task="tx-${M}-keep" data-pot="${M}:${Math.round(pot)}" ${S.tasks[`tx-${M}-keep`]?"checked":""} aria-label="모아 둔 돈 확인">`:""}</div></li></ol>${pot?`<p class="tiny muted">체크하면 모아 둔 ${won(pot)}이 다음 월급날 선결제 계산에 더해져요.</p>`:""}
-    <p class="small ${Math.abs(left)<1000?"good-t":"bad-t"}" style="margin-top:10px">${Math.abs(left)<1000?`✅ 이렇게 하면 ${SALARY}에 ${won(keep)}이 남아요`:left>0?`${SALARY}에 ${won(left)}이 더 남아요`:`⚠️ ${won(-left)}이 모자라요 · 위 '선결제·상환 가능'이 마이너스예요`}</p>`;
+    <p class="small ${Math.abs(left)<1000?"good-t":"bad-t"}" style="margin-top:10px">${Math.abs(left)<1000?`✅ 이렇게 하면 ${SALARY}에 ${won(keep)}이 남아요`:left>0?`${SALARY}에 ${won(left)}이 더 남아요`:`⚠️ ${won(-left)}이 모자라요 · 위 '선결제·상환 가능'이 마이너스예요`}</p>${left<=-1000?balHint(-left):""}`;
 }
 
 /* ---------- payday plan ---------- */
@@ -1009,7 +1018,7 @@ function entryRow(e){const[em,col]=look(e.cat),rf=e.amount<0,cx=rf?0:sum(S.entri
   if(rf)return `<div class="li" style="--c:${col}"><span class="av">↩️</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(refName(e))} 결제 취소${e.memo&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.pending?"⏳ 취소 예정 · 카드 앱에 뜨면 체크":"✅ 카드 취소 완료"}${e.cancelItem?` · ${ymKo(e.fromYm)} 청구부터 없음`:e.excl?" · 예전 결제라 생활비엔 안 들어가요":""}</div></button><div class="a good-t">${e.amount?`−${num(-e.amount)}`:"취소"}</div></div>`;
   return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":`⚠️ 할부 ${e.months}개월${e.free?" 무이자":""}`}${e.excl?" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
 function renderToday(){
-  const allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
+  const allow=todayAllowance(),todays=S.entries.filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=won(Math.max(0,left));
   $("heroLbl").textContent=allow>0?`오늘 남은 돈 · 오늘 ${won(spentT)} 씀`:"오늘 남은 돈 · 이번 주 한도 다 씀";
   const ratio=allow>0?spentT/allow:spentT>0?2:0;
@@ -1067,7 +1076,7 @@ function renderCal(){
   $("calLabel").textContent=`📅 ${m}월 기록${y!==Number(TODAY.slice(0,4))?` (${y})`:""}`;$("calNext").disabled=calYm>=ymOf(TODAY);
   let html="",tot=0,recDays=0,zero=0;
   for(let i=0;i<lead;i++)html+='<span class="cd pad"></span>';
-  for(let k=1;k<=days;k++){const d=calYm+"-"+pad(k),fut=d>TODAY,es=S.entries.filter(e=>e.date===d&&!e.excl&&!fundOut(e)),dayB=dayLim(d),s=sum(es,e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,rec=es.length>0||!!ns||recorded(d); /* the calendar shows every day with data, imported ones too (the streak stays app-only) */
+  for(let k=1;k<=days;k++){const d=calYm+"-"+pad(k),fut=d>TODAY,es=S.entries.filter(e=>bDate(e)===d&&!e.excl&&!fundOut(e)),dayB=dayLim(d),s=sum(es,e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,rec=es.length>0||!!ns||recorded(d); /* the calendar shows every day with data, imported ones too (the streak stays app-only) */
     if(!fut&&rec){recDays++;tot+=s;if(s===0)zero++}
     const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b";
     /* the daily limit follows each week's own limit, so it can change inside a month (new card cycle, a lower week goal) */
@@ -1130,7 +1139,7 @@ function dailyNums(){
   const y=cycleSummary(),el=dayDiff(y.c.start,TODAY),total=dayDiff(y.c.start,y.c.end)+1,spentBefore=sum(entriesIn({start:y.c.start,end:yd}),e=>e.amount),proj=el>0?Math.round(spentBefore/el*total):null;
   /* a day counts as no-spend when marked so, or when it has no entries but a later day does (so it wasn't just left unrecorded) */
   const lastRec=S.entries.filter(e=>e.date<TODAY).map(e=>e.date).sort().pop()||"";
-  let zero=0,run=0;for(let d=y.c.start;d<TODAY;d=addDays(d,1)){const none=!S.entries.some(e=>e.date===d&&!e.excl&&!fundOut(e)),z=none&&(!!(S.days[d]&&S.days[d].noSpend)||d<lastRec);if(z)zero++;run=z?run+1:0}
+  let zero=0,run=0;for(let d=y.c.start;d<TODAY;d=addDays(d,1)){const none=!S.entries.some(e=>bDate(e)===d&&!e.excl&&!fundOut(e)),z=none&&(!!(S.days[d]&&S.days[d].noSpend)||d<lastRec);if(z)zero++;run=z?run+1:0}
   return{yd,ySp,yRec,dayB,wLeft,wDays,y,el,total,proj,zero,run};
 }
 /* 오늘 브리핑: at most three plain sentences from Claude about what changed since the last visit.
@@ -1252,6 +1261,10 @@ function renderWeek(){
 }
 
 /* ---------- 월급·상환 ---------- */
+/* money already sitting in my accounts (last saved balances, gift account left out) that can cover a payday shortfall */
+function balHint(short){const a=S.accounts||{},names={hana:SALARY,kbank:CHECKACC,woori:SAVEACC,toss:"토스뱅크"},rows=Object.keys(names).filter(k=>a[k]>0).map(k=>({n:names[k],v:a[k]}));if(!rows.length)return"";
+  const t=sum(rows,r=>r.v),when=a.updatedAt?md(iso(new Date(a.updatedAt))):"";
+  return `<p class="small" style="margin-top:8px">💡 마지막으로 적은 통장 잔액${when?`(${when})`:""}: ${rows.map(r=>`${esc(r.n)} ${num(r.v)}`).join(" · ")}${rows.length>1?` · 합계 ${num(t)}`:""}<br>${t>=short?`<b class="good-t">월급날 전에 ${esc(SALARY)}으로 옮기면 모자란 ${won(short)}을 다 메울 수 있어요.</b>`:`월급날 전에 ${esc(SALARY)}으로 옮기면 ${won(t)}을 메우고, <b class="bad-t">${won(short-t)}</b>이 남아요.`}</p>`}
 function renderMonth(){
   const d=dom(TODAY),M=ymOf(TODAY),pl=payPlan(M),early=!!ST().payEarly,sk="secure-"+M,phase=d<PAY()?"before":early?(S.tasks[sk]?"repay":"secure"):d<CARD()?"secure":"repay";
   const secured=!!S.tasks[sk]||phase==="repay",es=earlySave(M),nwDone=S.networth.some(n=>n.ym===M),repDone=phase==="repay"&&pl.avail>0&&pl.rest<=0;
@@ -1266,7 +1279,7 @@ function renderMonth(){
     ${pl.cashRes?`<div class="fl"><span>🏦 케뱅에 남길 체크카드 생활비 <span class="tiny muted">${pl.resSrc}</span></span><span class="num">−${num(pl.cashRes)}</span></div>`:""}${ST().buffer?`<div class="fl"><span>🛟 버퍼</span><span class="num">−${num(ST().buffer)}</span></div>`:""}
     <div class="fl total"><span>⚔️ 선결제·상환 가능</span><span class="${pl.avail<0?"bad-t":"good-t"}">${won(pl.avail)}</span></div></div>`;
   let body="";
-  if(pl.avail<0)body='<p class="note bad">고정비와 카드값을 다 덮지 못해요. 생활비를 줄여 메우고, 리볼빙·분할납부는 누르지 마세요.</p>';
+  if(pl.avail<0)body='<p class="note bad">고정비와 카드값을 다 덮지 못해요. 생활비를 줄여 메우고, 리볼빙·분할납부는 누르지 마세요.</p>'+balHint(-pl.avail);
   else{const rows=allocate(phase==="repay"?pl.rest:pl.avail,phase==="repay"?TODAY:ymDay(M,early?PAY():CARD()));
     body=(phase==="repay"&&pl.paid?`<p class="small muted">이번 달 이미 기록한 상환 ${won(pl.paid)} · 남은 ${won(pl.rest)}</p>`:"")+`<h3>${phase==="repay"?"🗡️ 이렇게 넣으세요":early?"🗡️ 카드값 낸 뒤 넣을 곳 (예정)":"🗡️ 25일 뒤 넣을 곳 (예정)"}</h3><p class="tiny muted">이 돈으로 아낄 수 있는 수수료 합계가 가장 큰 조합이에요. 아끼는 수수료가 큰 순서로 적었어요.</p>`+
       (rows.length?`<div class="list">${rows.map(r=>r.kind==="item"?`<div class="li"><span class="av">💳</span><div><div class="t">${esc(r.x.name)}</div><div class="s">${md(r.x.date)} 할부 · 수수료 ${won(r.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(r.amt)}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(r.x.id)}">기록</button></div></div>`
@@ -1351,7 +1364,7 @@ function speedRate(){const sim=simulate(),P=sim.path,fi=sim.free?P.findIndex(p=>
 function fasterTxt(amount){const r=speedRate();if(!(r.perDay>0)||!(amount>0))return"";const d=amount/r.perDay;return d<1?`약 ${Math.max(1,Math.round(d*24))}시간`:`약 ${d<10?Math.round(d*10)/10:Math.round(d)}일`}
 let STEP=null,QUICK=[];
 function renderStep(){
-  const r=speedRate(),dayB=weekLimit(TODAY)/7,allow=todayAllowance(),todays=S.entries.filter(e=>e.date===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),day=S.days[TODAY]||{};
+  const r=speedRate(),dayB=weekLimit(TODAY)/7,allow=todayAllowance(),todays=S.entries.filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),day=S.days[TODAY]||{};
   STEP=null;if(r.perDay>0){
   const left=Math.max(0,allow-spentT);
   const big=spentT===0?`오늘 안 쓰면 ${r.goal}이 <em>${fasterTxt(dayB)}</em> 빨라져요`
