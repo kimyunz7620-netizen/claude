@@ -87,7 +87,7 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .q.urgent .ic{background:var(--sun-soft)}
 .q strong{font-weight:600}
 .q.done strong{color:var(--muted);text-decoration:line-through}
-.q .s{display:block;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.q .s{display:block;white-space:pre-line;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
 .q input{width:24px;height:24px;accent-color:var(--mint);margin:0}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:999px;background:var(--grape-soft);color:var(--grape);font-size:.78rem;font-weight:600;white-space:nowrap}
 .chip.good{background:var(--mint-soft);color:var(--mint)} .chip.warn{background:var(--sun-soft);color:var(--sun)} .chip.bad{background:var(--coral-soft);color:var(--coral)} .chip.plain{background:var(--bg);color:var(--muted)}
@@ -1131,15 +1131,34 @@ function questItems(){
   /* a gift coming up within two days */
   CATS().filter(c=>c.fund).forEach(c=>(c.fund.events||[]).forEach(x=>{const n=dayDiff(TODAY,x.date),k=`fev-${x.date}-${x.memo||""}`;if(n<0||n>2)return;
     it.push({e:/축의|결혼|부의|조의/.test(x.memo||"")?"💒":"🎁",task:k,done:!!S.tasks[k],t:`${x.memo||"경조사"} ${man1(x.amount)}${n===0?" 오늘":n===1?" 내일":" 모레"}`,s:x.card?"롯데카드로 결제 · 가계부에 경조사/선물·롯데로 적기":`${c.fund.bank}에서 이체 · 가계부에 경조사/선물로 적기`})}));
+  /* payday coming up short: say how much, and what to do about it (move saved money first, then trim the 생활비 until payday) */
+  {const Mn=d<PAY()?M:ymAdd(M,1),pd=ymDay(Mn,PAY()),n=dayDiff(TODAY,pd);
+   if(n>=0&&n<=14&&!S.tasks["secure-"+Mn]){const pl=payPlan(Mn);if(pl.avail<0){const short=-pl.avail,k="short-"+Mn,a=S.accounts||{},names={hana:SALARY,kbank:CHECKACC,woori:SAVEACC,toss:"토스뱅크"},rows=Object.keys(names).filter(x=>a[x]>0&&names[x]!==SALARY),have=sum(rows,x=>a[x]),mv=Math.min(have,short),rest=short-mv,days=Math.max(1,n);
+     const steps=[];if(mv>0)steps.push(`① ${rows.map(x=>names[x]).join("·")} → ${SALARY} ${won(mv)} 옮기기`);if(rest>0)steps.push(`${mv>0?"②":"①"} 남은 ${won(rest)}은 월급날까지 생활비에서 줄이기 (하루 ${won(Math.ceil(rest/days/100)*100)}씩)`);steps.push("리볼빙·분할납부·현금서비스 ✕");
+     it.push({e:"⚠️",task:k,done:!!S.tasks[k],urgent:true,t:`${md(pd)} 월급날 ${won(short)} 모자라요`,s:steps.join("\n")+(a.updatedAt?`\n(통장 잔액은 ${md(iso(new Date(a.updatedAt)))}에 적은 기준)`:"\n통장 잔액을 먼저 적어 주세요"),btn:["보기","pay:"]})}}}
+  /* the 생활비 that meets the goals has moved away from the one in use: tell which way and send to the goal panel */
+  {const g=goalStatus();if(g)it.push({e:"🎯",done:false,urgent:g.short,t:g.t,s:g.s,btn:[g.short?"맞추기":"보기","goal:"]})}
+  /* a 2차 stage budget kicks in with this card cycle */
+  (ST().budgetPlan||[]).forEach(x=>{const c=cycleOf(x.from);if(TODAY>=c.start&&dayDiff(c.start,TODAY)<=3){const k="stage-"+x.from;it.push({e:"🔁",task:k,done:!!S.tasks[k],t:`이번 주기부터 생활비 ${man1(x.budget)}`,s:`2차 목표 기간 · 주 ${man1(x.week||weekOf(x.budget))} · 하루 ${won(Math.floor((x.week||weekOf(x.budget))/7))}`})}});
   TASKS.forEach(g=>g.items.forEach(i=>{const n=dayDiff(TODAY,g.d);if(!S.tasks[i.id]&&n<=3&&dayDiff(g.end||g.d,TODAY)<=(g.end?0:3))it.push({e:"📌",task:i.id,done:false,urgent:n<0,t:i.t,s:`${g.label||md(g.d)+" "+g.g} · ${n<0?`${-n}일 지남`:n===0?"오늘":"D-"+n}`})}));
   return it;
+}
+/* is the 생활비 in use still the one the goals call for? null when it is (within 1만 under) or no goals are set */
+function goalStatus(){const r=GOALS().length?budgetForGoals():null;if(!r)return null;const B=ST().cycleBudget||0,st=r.stages;
+  if(st.some(g=>g.max==null))return{short:true,t:"목표에 도착하기 어려워졌어요",s:"생활비를 0원으로 줄여도 못 미쳐요 · 목표 시점이나 금액을 다시 정해 주세요"};
+  const m=st[0].max,plan=ST().budgetPlan||[],s2=st[1]&&st[1].max!==m?st[1]:null,okB=B<=m&&m-B<10000,okP=s2?plan.length===1&&plan[0].from===s2.from&&plan[0].budget<=s2.max&&s2.max-plan[0].budget<10000:!plan.length;
+  if(okB&&okP)return null;
+  const g1=st[0],cur=g1.cur!=null?Math.round(g1.cur-g1.target):null;
+  if(B>m)return{short:true,t:`이대로면 ${ymKo(g1.ym)} 목표에 못 미쳐요`,s:`생활비 ${man1(B)} → ${man1(m)}으로 낮추면 순자산 ${man(g1.target)}에 도착해요${cur!=null&&cur<0?` (지금 계획 ${man(-cur)} 부족)`:""}`};
+  if(!okB)return{short:false,t:"목표 기준 생활비가 늘었어요",s:`생활비 ${man1(B)} → 월 ${man1(m)}까지 써도 ${ymKo(g1.ym)}에 ${man(g1.target)} 도착`};
+  return{short:!!(s2&&plan[0]&&plan[0].budget>s2.max),t:"2차 기간 생활비를 다시 맞춰 주세요",s:s2?`${ymKo(s2.from)}부터 월 ${man1(s2.max)}${plan[0]?` (지금 ${man1(plan[0].budget)})`:""}`:"2차 기간을 따로 나눌 필요가 없어졌어요"};
 }
 function renderQuest(){
   const it=questItems(),dn=it.filter(x=>x.done).length;
   $("questCount").textContent=`${dn}/${it.length}`;$("questCount").className="chip"+(dn===it.length?" good":"");$("questCount").hidden=!it.length;$("questTitle").textContent="📌 오늘 할 일";$("quest").hidden=!it.length;$("questCard").hidden=!it.length;
   $("quest").innerHTML=it.map(x=>`<div class="q ${x.done?"done":""} ${x.urgent&&!x.done?"urgent":""}"><span class="ic">${x.done?"✅":x.e}</span>
     <div style="min-width:0"><strong>${esc(x.t)}</strong><span class="s">${esc(x.s)}</span></div>
-    ${x.task?`<input type="checkbox" data-task="${esc(x.task)}" ${x.done?"checked":""} aria-label="${esc(x.t)} 완료">`:x.btn?`<button type="button" class="btn ghost" data-guide="${esc(x.btn[1])}">${esc(x.btn[0])}</button>`:"<span></span>"}</div>`).join("")+
+    ${x.task&&x.btn&&!x.done?`<span style="display:flex;gap:6px;align-items:center"><button type="button" class="btn ghost" data-guide="${esc(x.btn[1])}">${esc(x.btn[0])}</button><input type="checkbox" data-task="${esc(x.task)}" aria-label="${esc(x.t)} 완료"></span>`:x.task?`<input type="checkbox" data-task="${esc(x.task)}" ${x.done?"checked":""} aria-label="${esc(x.t)} 완료">`:x.btn?`<button type="button" class="btn ghost" data-guide="${esc(x.btn[1])}">${esc(x.btn[0])}</button>`:"<span></span>"}</div>`).join("")+
     (it.length&&dn===it.length?'<div class="party pop">🎉 오늘 할 일 끝!</div>':"");
 }
 
@@ -1596,6 +1615,8 @@ document.addEventListener("click",async e=>{
     if(k==="go")go(v);
     if(k==="scroll"){selDate=TODAY;renderToday();$(v).scrollIntoView({behavior:"smooth",block:"start"})}
     if(k==="nw"){go("month");setMonthSub("nw");$("nwMonth").value=v}
+    if(k==="goal"){go("dash");setDashSub("plan");setTimeout(()=>$("goalFit").scrollIntoView({behavior:"smooth",block:"start"}),60)}
+    if(k==="pay"){go("month");setMonthSub("pay")}
     return}
   if(t.dataset.act==="pay-open"){openPay(t.dataset.target,Number(t.dataset.amt)||0);return}
   if(t.dataset.mission!=null){const d=addDays(TODAY,-1),c=S.coach[d];if(!c)return;const doc={...c,missionDone:t.dataset.mission==="1"};S.coach={...S.coach,[d]:doc};render();toast(doc.missionDone?"💪 미션 성공! 멋져요":"괜찮아요. 오늘 다시 해 봐요");try{await put("coach/"+d,doc)}catch(_){}return}
