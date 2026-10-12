@@ -320,8 +320,11 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 .banner{background:var(--sun-soft);border-radius:12px;padding:10px 12px;font-size:.85rem}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:.9rem;font-weight:600;z-index:20;max-width:calc(100% - 32px);text-align:center}
 .cal,.cal-h{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+/* every day block is the same size whatever it holds (spend, income, fixed cost) */
+.cal{grid-auto-rows:68px}
+.cd>span{line-height:1.2}
 .cal-h span{text-align:center;font-size:.72rem;color:var(--muted);font-weight:600}
-.cd{font:inherit;border:2px solid transparent;border-radius:10px;padding:5px 1px;min-height:52px;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:0}
+.cd{font:inherit;border:2px solid transparent;border-radius:10px;padding:5px 1px;height:100%;min-height:0;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--bg);color:var(--ink);cursor:pointer;min-width:0}
 .cd .n{font-size:.72rem;color:var(--muted)}
 .cd .v{font-size:.68rem;font-weight:800;white-space:nowrap}
 .cd .f{font-size:.58rem;font-weight:600;color:var(--muted);white-space:nowrap}
