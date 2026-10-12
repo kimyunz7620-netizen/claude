@@ -105,7 +105,7 @@ details.rules ul{margin:8px 0 2px;padding-left:20px;display:flex;flex-direction:
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>span{font-size:.82rem;color:var(--muted);font-weight:600}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-input[type=number],input[type=date],input[type=text],input[type=month],select{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;min-width:0;height:48px;line-height:1.2}
+input[type=number],input[type=date],input[type=text],input[type=month],input[type=search],select{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;min-width:0;height:48px;line-height:1.2}
 input[type=date],input[type=month]{-webkit-appearance:none;appearance:none;display:block;text-align:left}
 input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
 input.amount{font-weight:800;letter-spacing:-.02em;font-size:1.5rem;height:auto;padding:10px 14px;text-align:right;background:var(--surface);border-color:var(--grape-soft)}
@@ -397,7 +397,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 
     <div class="card" id="calCard">
       <div class="row"><h2 id="calLabel"></h2>
-        <div class="btns"><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
+        <div class="btns"><button type="button" class="btn ghost" data-act="search" aria-label="지출 찾기">🔍</button><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
       <div class="cal-h"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
       <div class="cal" id="cal"></div>
       <p class="tiny muted" id="calLegend"></p>
@@ -459,12 +459,18 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
     </form>
     </div>
-    <button type="button" class="btn ghost" data-go="records">↩️ 결제 취소 · 분류 정리</button>
+    <button type="button" class="btn ghost" data-act="search">🔍 찾기 · ↩️ 결제 취소 · 분류 정리</button>
   </section>
 
   <!-- 기록 (오늘 탭에서 들어가는 화면) -->
   <section class="view" id="v-records" aria-label="지난 기록" hidden>
     <div class="row"><h1>↩️ 결제 취소 · 정리</h1><button type="button" class="btn ghost" data-go="today">‹ 오늘</button></div>
+    <div class="card" id="srchCard">
+      <h2>🔍 지출 찾기</h2>
+      <input type="search" id="srch" placeholder="가맹점·메모·카테고리·금액 (예: 자라, 111900)" aria-label="지출 찾기" autocomplete="off">
+      <p class="tiny muted">찾은 기록을 누르면 수정 화면이 열려요. 거기서 <b>↩️ 결제 취소</b>로 전체·부분 취소를 적을 수 있어요.</p>
+      <div class="list" id="srchList"></div>
+    </div>
 
     <div class="card" id="refundCard">
       <div class="row"><h2>↩️ 결제 취소</h2><span class="chip" id="refundCount"></span></div>
@@ -980,7 +986,7 @@ const TASKS=[
 
 /* ================= RENDER ================= */
 let raf=0;function render(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;SIMC={};renderAll()})}
-function renderAll(){SIMC={};renderHeader();renderToday();renderStep();renderQuest();renderCoach();renderWeek();renderMonth();renderDash()}
+function renderAll(){SIMC={};renderHeader();renderToday();renderStep();renderQuest();renderCoach();renderWeek();renderMonth();renderDash();if(view==="records"&&$("srch").value)renderSearch()}
 function renderHeader(){const st0=ST(),pk=payYmOf(TODAY),cb=cycleBudgetFor(pk),wb=weekBudgetFor(TODAY),nb=st0.cycleBudget||0;$("ruleLimit").textContent=`생활비 한도: 하루 ${man1(wb/7)} · 주 ${man1(wb)} · 카드 주기(${CYC()}일~${CYC()-1}일) ${man1(cb)}${cb!==nb?` · ${md(cycleOf(ymAdd(pk,1)).start)}부터 ${man1(nb)} · 주 ${man1(st0.weekBudget||0)}`:""}`;
   const t=parse(TODAY),h=new Date().getHours();
   $("today").textContent=`${t.getMonth()+1}월 ${t.getDate()}일 ${DOW[t.getDay()]}요일 · 머니플랜`;
@@ -1621,6 +1627,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.quick!=null){const x=QUICK[Number(t.dataset.quick)];if(!x)return;$("enAmount").value=num(x.amount);selCat=x.cat;$("enMemo").value=x.memo;if(["lotte","cash"].includes(x.method)){selMethod=x.method;document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===selMethod))}renderToday();$("enSave").focus();toast("금액은 바꿔도 돼요 · 기록하기를 누르세요");return}
   if(t.dataset.m){selMethod=t.dataset.m;document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b===t));$("instBox").hidden=selMethod!=="inst";renderToday();return}
   if(t.dataset.edit){const en=S.entries.find(x=>x.id===t.dataset.edit);if(en)startEdit(en);return}
+  if(t.dataset.act==="search"){go("records");setTimeout(()=>{$("srch").focus();renderSearch()},50);return}
   if(t.dataset.mode){bdMode=t.dataset.mode;bdKey=null;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b===t));renderWeek();return}
   if(t.dataset.delWeek){if(!confirmTap(t))return;try{await del("weekly/"+t.dataset.delWeek)}catch(_){}return}
   if(t.dataset.delPay){if(!confirmTap(t))return;try{await del("payments/"+t.dataset.delPay);toast("상환 기록을 지웠어요")}catch(_){}return}
@@ -1635,6 +1642,12 @@ $("pfTarget").addEventListener("change",pfAuto);
 $("enDate").addEventListener("change",e=>{selDate=e.target.value||TODAY;calYm=ymOf(selDate);if(editingId)cancelEdit();renderToday()});
 $("wkDate").addEventListener("change",renderWeek);
 let refundOf=null;
+/* search every record by memo, category or amount (digits match the amount, commas ignored) */
+function renderSearch(){const q=($("srch").value||"").trim().toLowerCase(),el=$("srchList");if(!q){el.innerHTML="";return}
+  const dq=q.replace(/[,원\s]/g,""),isNum=/^\d+$/.test(dq);
+  const hit=S.entries.filter(e=>{const m=(e.memo||"").toLowerCase(),c=catName(e.cat).toLowerCase(),a=String(Math.abs(e.amount));return m.includes(q)||c.includes(q)||(isNum&&a.includes(dq))}).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+  el.innerHTML=hit.length?hit.slice(0,40).map(e=>`<div class="tiny muted" style="margin-top:6px">${mdw(e.date)}${e.date.slice(0,4)!==TODAY.slice(0,4)?` (${e.date.slice(0,4)})`:""}</div>${entryRow(e)}`).join("")+(hit.length>40?`<p class="tiny muted">${hit.length}건 중 최근 40건이에요. 더 자세히 적어 주세요.</p>`:"")
+    :'<p class="empty">찾는 기록이 없어요.</p>';}
 function startEdit(en){
   if(view!=="today")go("today");
   refundOf=en.amount<0?(en.cancelOf||"?"):null;
@@ -1642,7 +1655,7 @@ function startEdit(en){
   $("enAmount").value=num(Math.abs(en.amount));$("enMemo").value=en.memo||"";$("enPending").checked=!!en.pending;$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;$("enExcl").checked=!!en.excl;$("enFund").checked=!!en.fromFund;$("enFund").dataset.cat=en.cat+en.date;
   document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===selMethod));$("instBox").hidden=selMethod!=="inst";
   $("entryTitle").textContent=refundOf?"↩️ 결제 취소 고치기":"✏️ 기록 고치기";$("enMore").open=true;$("enSave").textContent="수정 저장";$("enCancel").hidden=false;$("enDel").hidden=false;
-  $("enPendBox").hidden=!refundOf;$("enRefund").hidden=!!refundOf||en.method==="inst";
+  $("enPendBox").hidden=!refundOf;$("enRefund").hidden=!!refundOf;$("enRefund").textContent=en.method==="inst"?"↩️ 할부 결제 취소":"↩️ 결제 취소";
   renderToday();openSheet();
 }
 function cancelEdit(){editingId=null;refundOf=null;$("enFund").dataset.cat="";$("enPendBox").hidden=true;$("enRefund").hidden=true;selCat=null;selMethod="lotte";document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m==="lotte"));$("instBox").hidden=true;$("enMore").open=false;$("enFree").checked=false;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
@@ -1669,6 +1682,10 @@ $("oldRefForm").addEventListener("submit",async e=>{e.preventDefault();
 });
 /* turn the open entry into a new cancellation of it: same card, category and budget flag, today, full amount by default */
 $("enRefund").addEventListener("click",()=>{const o=S.entries.find(x=>x.id===editingId);if(!o)return;
+  /* an installment is cancelled against its card installment (it leaves the debt and the schedule), so hand over to that form with the matching item picked */
+  if(o.method==="inst"){cancelEdit();closeSheet();go("records");orKind="inst";$("oldRefBox").open=true;$("orDate").value=TODAY;$("orMemo").value=o.memo||"";$("orPending").checked=true;
+    const its=ITEMS().filter(x=>itemBal(x)>0),pick=its.find(x=>x.date===o.date&&(x.name||"").toLowerCase().includes((o.memo||"").toLowerCase().split(/\s+/)[0]||"\u0000"))||its.find(x=>x.date===o.date)||its.find(x=>(o.memo||"").toLowerCase().includes((x.name||"").toLowerCase()));
+    orPreview();if(pick){$("orItem").value=pick.id;orPreview()}$("oldRefBox").scrollIntoView({block:"start"});toast(pick?`${pick.name} 할부를 골라 뒀어요. 확인하고 기록해 주세요`:"취소되는 할부 건을 골라 주세요");return}
   editingId=null;refundOf=o.id;selDate=TODAY;$("enDate").value=TODAY;$("enAmount").value=num(o.amount);$("enMemo").value=o.memo||"";$("enPending").checked=true;
   $("entryTitle").textContent="↩️ 결제 취소 기록";$("enSave").textContent="취소 기록하기";$("enDel").hidden=true;$("enRefund").hidden=true;$("enPendBox").hidden=false;
   toast("취소된 금액만 고쳐서 기록하세요 (부분 취소 가능)");renderToday();$("enAmount").focus()});
@@ -1749,6 +1766,7 @@ $("nwForm").addEventListener("submit",async e=>{
   try{await saveAccounts();await put("networth/"+ym,{ym,...acc,cash,deposit,debt,net:deposit+cash-debt,savedAt:new Date().toISOString()});toast(`🐷 ${ymKo(ym)} 순자산 ${won(deposit+cash-debt)}`)}catch(_){}
 });
 const val=id=>$(id)?$(id).value:"";
+$("srch").addEventListener("input",renderSearch);
 $("setBase").addEventListener("submit",async e=>{e.preventDefault();
   const s={...ST(),income:parseNum(val("s_income")),raisePct:Number(val("s_raise"))||0,raiseFromYm:val("s_raiseFrom"),raiseBackMonths:Number(val("s_raiseBack"))||0,buffer:parseNum(val("s_buffer")),cycleBudget:parseNum(val("s_cycle")),weekBudget:parseNum(val("s_week")),deposit:parseNum(val("s_deposit")),startDebt:parseNum(val("s_startDebt")),finalTarget:parseNum(val("s_final")),warnDiff:parseNum(val("s_warn")),cashReserve:val("s_res").trim()===""?null:parseNum(val("s_res")),payEarly:!!($("s_early")&&$("s_early").checked)};
   try{await put("config/settings",s);toast("수입·목표를 저장했어요")}catch(_){}});
