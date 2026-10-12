@@ -874,13 +874,15 @@ function allocateRest(amount,date){
    Each month records avail (money that month can put toward debt or savings), debt (the part that went to debt) and save. */
 let SIMC={},rvSel=null;
 function simulate(extra=0,plan){const k=extra+"|"+(plan?JSON.stringify(plan):"");if(SIMC[k])return SIMC[k];return SIMC[k]=simulateRun(extra,plan)}
+/* my share of an interest-free installment already sits inside that cycle's 생활비 (LIV), so the plan must not count it again as an installment bill */
+const freeOwnAt=ym=>{const c=cycleOf(ym);return sum(LIV().filter(e=>e.method==="inst"&&e.free&&!e.excl&&!fundOut(e)&&inRange(bDate(e),c)),e=>e.amount)};
 function simulateRun(extra,plan){
   const st=ST(),living=(st.cycleBudget||0)+extra,base=(st.deposit||0)+(cashNow()||0),path=[],buf=st.buffer||0,closed={};let pot=0,intBack=0,feeSaved=0;
   const loans=loanOrder().map(d=>({d,bal:loanBal(d),done:null,int:Math.round(loanBal(d)*(d.apr||0)/1200)})),order=cardOrder(TODAY).map(o=>o.x);
   const bill=(x,m)=>closed[x.id]&&m>=closed[x.id]?0:itemBill(x,m);
   let ym=ymAdd(lastPassed(),1),cardDone=null,free=null;
   for(let i=0;i<120;i++){
-    const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym),liv=budgetIn(ym,plan)+extra-cyclePledge(cycleOf(ym));
+    const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym)-freeOwnAt(ym),liv=budgetIn(ym,plan)+extra-cyclePledge(cycleOf(ym));
     const ab=Object.keys(closed).length?null:appBill(ym);
     const inc=(ab!=null?incomeAt(ym)-fixedCash(ym)-ab+fundCardIn(ym)-buf:incomeAt(ym)-fixedTotal(ym)-liv-inst-buf)+intBack+extraAt(ym)-fundGapAt(ym);
     pot+=inc;let paid=0;const pre=[],lp=[];
