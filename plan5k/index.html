@@ -199,7 +199,9 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .rvc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.85rem;padding:4px 0}
 .rvc .bar{height:8px}
 .brief{display:flex;flex-direction:column;gap:8px;background:var(--bg);border-radius:14px;padding:12px 14px}.brief .sr{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;font-size:.88rem;line-height:1.45}
-.brief-text{display:flex;flex-direction:column;gap:6px;font-size:.95rem;line-height:1.5}.brief-text p{margin:0}
+.brief-text{display:flex;flex-direction:column;gap:5px;font-size:.86rem;line-height:1.5}.brief-text p{margin:0}
+/* iOS zooms in on a focused field whose text is under 16px, so every field stays at 16px or more */
+input,select,textarea{font-size:max(16px,1em)!important}
 .dsub{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--line);padding:4px;border-radius:14px}
 .fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(76px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--grape);color:#fff;font-size:1.9rem;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(80,60,200,.35);z-index:20}
 .sheet{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end}
@@ -532,9 +534,10 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
   <section class="view" id="v-month" aria-label="월급·상환" hidden>
     <div class="intro"><h1>💰 월급·상환</h1></div>
     <div class="steps" id="monthSteps" hidden></div>
-    <div class="card" id="payPanel"></div>
-    <div class="card" id="payTx"></div>
-    <div class="card" id="pmCard">
+    <div class="seg dsub" id="monthSub" role="tablist" aria-label="월급·상환 나누어 보기"><button type="button" data-msub="pay" aria-pressed="true">💸 월급날·상환</button><button type="button" data-msub="nw" aria-pressed="false">🐷 월말 잔액</button><button type="button" data-msub="todo" aria-pressed="false">📌 할 일</button></div>
+    <div class="card" id="payPanel" data-mpart="pay"></div>
+    <div class="card" id="payTx" data-mpart="pay"></div>
+    <div class="card" id="pmCard" data-mpart="pay">
       <div class="row"><h2>⚔️ 선결제·상환 기록</h2><span class="muted small">하고 나면 여기 적어요</span></div>
       <form id="payForm" autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
         <label class="field"><span>어디에</span><select id="pfTarget"></select></label>
@@ -548,7 +551,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </form>
       <div class="list" id="pmList"></div>
     </div>
-    <details class="card more" id="nwBox"><summary>🐷 월말 잔액 기록</summary><form id="nwForm" autocomplete="off" style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+    <div class="card" id="nwBox" data-mpart="nw"><h2>🐷 월말 잔액 기록</h2><form id="nwForm" autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
       <p class="small muted">통장 잔액을 그대로 적어 주세요. 보증금은 자동으로 더해요.</p><p class="tiny muted" id="fundHint"></p>
       <label class="field"><span>월</span><input type="month" id="nwMonth"></label>
       <div class="fields">
@@ -561,8 +564,8 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </div>
       <p class="tiny muted" id="acAsOf"></p>
       <div class="btns"><button class="btn" type="submit" style="flex:1">월말 잔액으로 기록</button><button class="btn ghost" type="button" id="acSave">잔액만 저장</button></div>
-    </form></details>
-    <details class="card more"><summary>📌 날짜별 할 일 <span class="muted small" id="taskCount"></span></summary><div id="tasks"></div></details>
+    </form></div>
+    <div class="card" data-mpart="todo"><div class="row"><h2>📌 날짜별 할 일</h2><span class="muted small" id="taskCount"></span></div><div id="tasks"></div></div>
   </section>
 
   <!-- 현황 -->
@@ -1127,14 +1130,14 @@ function briefChanges(){
     이번달:{예산:n.y.B,쓴돈:n.y.spent,이대로면남거나넘는돈_전:prev&&prev.proj!=null?n.y.B-prev.proj:null,이대로면남거나넘는돈_지금:n.proj!=null?n.y.B-n.proj:null,남은날:n.y.left},
     어제:{쓴돈:n.yRec?n.ySp:null},무지출일:n.zero,월급날까지:dayDiff(TODAY,pd),빚합계:{전:prev?prev.debt:null,지금:now.debt}};
 }
-function briefKey(d){return JSON.stringify([d.새로적은지출.length,d.이번주.남은돈_지금,d.이번달.쓴돈,d.상환.length,d.참은돈_부수입.length,TODAY])}
+function briefKey(d){return JSON.stringify(["v2",d.새로적은지출.length,d.이번주.남은돈_지금,d.이번달.쓴돈,d.상환.length,d.참은돈_부수입.length,TODAY])}
 function briefHasChange(d){const p=BRIEF_PREV;return !p||d.새로적은지출.length||d.참은돈_부수입.length||d.상환.length||p.day!==TODAY||p.wLeft!==d.이번주.남은돈_지금||p.debt!==d.빚합계.지금}
 async function askBrief(){
   if(!sample||briefBusy)return;briefBusy=true;
   const data=briefChanges(),key=briefKey(data);
   const prompt=`너는 빚을 갚는 중인 30대 친구의 머니 코치야. 아래는 이 친구가 앱에 마지막으로 들어온 뒤부터 지금까지 바뀐 데이터야.
 바뀐 데이터를 분석해서, 이 친구에게 실제로 도움이 될 내용만 최대 3문장으로 말해 줘. 앱 화면에서 바로 보이는 숫자를 그대로 읊지 말고, 바뀐 것에서 읽히는 의미(새 지출이 어떤 영향을 줬는지, 흐름이 좋아졌는지 나빠졌는지, 그래서 오늘 뭘 하면 좋은지)를 말해.
-각 문장은 40자 안쪽, 자연스러운 존댓말, 제목·번호·불릿 없이 문장만. 어려운 말(페이스, 주기, 선결제, 순자산) 쓰지 말고 금액은 '1.2만 원'처럼 짧게. 데이터에 없는 건 지어내지 마. 이모지는 많아야 1개.
+각 문장은 40자 안쪽, 자연스러운 존댓말, 제목·번호·불릿 없이 문장만. 어려운 말(페이스, 주기, 선결제, 순자산) 쓰지 말고 금액은 '1.2만 원'처럼 짧게. 데이터에 없는 건 지어내지 마. 각 문장 맨 앞에 내용에 맞는 이모지를 1개씩 붙여 (예: 🍱 ☕ 👍 ⚠️ 💰 🎯).
 도움이 될 만한 게 없으면 억지로 만들지 말고 빈 배열로 답해.
 ${JSON.stringify(data)}
 JSON으로만 답해: {"lines":["문장1","문장2","문장3"]}`;
@@ -1273,7 +1276,6 @@ function renderMonth(){
   $("taskCount").textContent=`${dn}/${n} 완료`;
   if(!$("payForm").contains(document.activeElement)){fillTargets();if(!$("pfDate").value)$("pfDate").value=TODAY;if(!$("pfAmount").value)pfAuto()}
   if(!$("nwMonth").value)$("nwMonth").value=ymOf(TODAY);
-  {const L=Number(ymDay(M,31).slice(8));if((d>=L-1||d<=3)&&!$("nwBox").dataset.auto){$("nwBox").open=true;$("nwBox").dataset.auto=1}}
   $("fundHint").textContent=CATS().filter(c=>c.fund).map(c=>`🎁 ${c.fund.bank} 예상 잔액 ${num(fundBalance(c))} (매달 이체 + 모자랄 때 채운 돈 − 쓴 돈)`).join(" · ");
   if(!$("nwForm").contains(document.activeElement)){const a=S.accounts||{};ACC.forEach(([k,id])=>$(id).value=a[k]!=null?num(a[k]):"");}
   $("acSum").textContent=won(accTotal(readAcc()));
@@ -1291,7 +1293,7 @@ function pfAuto(){
   else{$("pfHint").textContent="대출은 일부만 갚아도 돼요. NH는 중도상환수수료를 먼저 확인하세요."}
 }
 function openPay(target,amt){
-  if(view!=="month")go("month");
+  if(view!=="month")go("month");setMonthSub("pay");
   fillTargets(target);$("pfDate").value=TODAY;$("pfMemo").value="";pfAuto();
   if(amt&&target&&target.startsWith("d:"))$("pfAmount").value=num(amt);
   $("payForm").scrollIntoView({behavior:"smooth",block:"start"});
@@ -1513,12 +1515,14 @@ function renderSettings(){
 
 /* ================= EVENTS ================= */
 let dashSub=(()=>{try{return localStorage.getItem("plan5k3:dsub")||"plan"}catch(e){return"plan"}})();
+let monthSub=(()=>{try{return localStorage.getItem("plan5k3:msub")||"pay"}catch(e){return"pay"}})();
+function setMonthSub(k){monthSub=k;try{localStorage.setItem("plan5k3:msub",k)}catch(e){}document.querySelectorAll("#monthSub button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.msub===k));document.querySelectorAll("#v-month [data-mpart]").forEach(el=>el.hidden=el.dataset.mpart!==k);window.scrollTo(0,0)}
 function setDashSub(k){dashSub=k;try{localStorage.setItem("plan5k3:dsub",k)}catch(e){}document.querySelectorAll("#dashSub button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.dsub===k));document.querySelectorAll("#v-dash [data-sub]").forEach(el=>el.hidden=el.dataset.sub!==k);window.scrollTo(0,0)}
 function go(v){
   if(!["today","records","week","month","dash","settings"].includes(v))v="today";view=v;
   ["today","records","week","month","dash","settings"].forEach(k=>$("v-"+k).hidden=k!==v);$("rules").hidden=!["week","month"].includes(v);$("fab").hidden=v!=="today";if(v!=="today")closeSheet();
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===(v==="records"?"today":v)?"page":"false"));
-  if(v==="settings")renderSettings();renderAll();if(v==="dash")setDashSub(dashSub);window.scrollTo(0,0);
+  if(v==="settings")renderSettings();renderAll();if(v==="dash")setDashSub(dashSub);if(v==="month")setMonthSub(monthSub);window.scrollTo(0,0);
   try{localStorage.setItem("plan5k3:view",v==="settings"?"today":v)}catch(e){}
 }
 async function saveFev(id,fn){const cats=ALLCATS().map(c=>c.id===id&&c.fund?{...c,fund:{...c.fund,events:fn(c.fund.events||[]).sort((a,b)=>a.date<b.date?-1:1)}}:c);S.budget={...S.budget,cats};renderSettings();render();try{await put("config/budget",{...S.budget,cats})}catch(_){}}
@@ -1528,12 +1532,13 @@ document.addEventListener("click",async e=>{
   const t=e.target.closest("button,[data-tip]");if(!t)return;
   if(t.dataset.go){go(t.dataset.go);return}
   if(t.dataset.dsub){setDashSub(t.dataset.dsub);return}
+  if(t.dataset.msub){setMonthSub(t.dataset.msub);return}
   if(t.dataset.rvday!=null){rvSel=t.dataset.rvday&&t.dataset.rvday!==rvSel?t.dataset.rvday:null;renderWeek();return}
   if(t.dataset.tip!=null){const box=t.closest("[data-tipbox]");$(box?box.dataset.tipbox:"nwTip").textContent=t.dataset.tip;return}
   if(t.dataset.guide){const[k,v]=t.dataset.guide.split(":");
     if(k==="go")go(v);
     if(k==="scroll"){selDate=TODAY;renderToday();$(v).scrollIntoView({behavior:"smooth",block:"start"})}
-    if(k==="nw"){go("month");$("nwMonth").value=v;$("nwBox").open=true;$("nwBox").scrollIntoView({block:"start"})}
+    if(k==="nw"){go("month");setMonthSub("nw");$("nwMonth").value=v}
     return}
   if(t.dataset.act==="pay-open"){openPay(t.dataset.target,Number(t.dataset.amt)||0);return}
   if(t.dataset.mission!=null){const d=addDays(TODAY,-1),c=S.coach[d];if(!c)return;const doc={...c,missionDone:t.dataset.mission==="1"};S.coach={...S.coach,[d]:doc};render();toast(doc.missionDone?"💪 미션 성공! 멋져요":"괜찮아요. 오늘 다시 해 봐요");try{await put("coach/"+d,doc)}catch(_){}return}
