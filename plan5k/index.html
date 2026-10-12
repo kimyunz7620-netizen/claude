@@ -1186,23 +1186,31 @@ const BRIEF_PREV=LS.get("seen",null);let briefBusy=false,briefAsked=false;
 function briefSnap(){const n=dailyNums();return{at:new Date().toISOString(),day:TODAY,wLeft:n.wLeft,proj:n.proj,spent:n.y.spent,debt:Math.round(totalDebt()),n:S.entries.length}}
 function briefChanges(){
   const prev=BRIEF_PREV,since=prev?prev.at:addDays(TODAY,-1)+"T00:00:00",now=briefSnap(),n=dailyNums();
-  const added=S.entries.filter(e=>(e.createdAt||"")>since).map(e=>({날짜:e.date,카테고리:catName(e.cat),금액:e.amount,메모:e.memo||"",결제:e.method==="inst"?`할부${e.months}개월`:e.method==="cash"?"체크·현금":"카드"}));
+  /* each new record says plainly what it is, so a cancellation isn't read as spending and an installment as a one-off */
+  const what=e=>{const o=origOf(e);if(e.amount<0)return e.cancelItem?"할부 취소(남은 할부가 빚에서 빠짐)":`결제 취소 · 돈이 돌아옴${o?` (${md(o.date)} ${o.memo||catName(o.cat)} 결제를 취소)`:""}${e.pending?" · 카드 앱엔 아직 안 뜸":""}`;
+    if(e.method==="inst")return e.free?`무이자 ${e.months}개월 할부 · 생활비엔 월 ${Math.floor(e.amount/e.months)}원씩`:`유이자 ${e.months}개월 할부 (피해야 하는 결제)`;
+    return e.method==="cash"?"체크·현금":"카드 일시불"};
+  const added=S.entries.filter(e=>(e.createdAt||"")>since).map(e=>({날짜:e.date,카테고리:e.cat==="refund"?"예전 결제 취소":catName(e.cat),금액:e.amount,메모:e.memo||"",종류:what(e),...(e.excl?{생활비:"제외 (계모임 등 다른 사람 몫)"}:fundOut(e)?{생활비:"제외 (경조사 통장에서 냄)"}:{})}));
+  const sameCycle=prev&&payYmOf(prev.day||TODAY)===payYmOf(TODAY),pl=payPlan(nextPayYm()),gs=goalStatus();
   const wins=S.wins.filter(w=>(w.createdAt||w.date)>since.slice(0,10)).map(w=>({종류:w.kind==="skip"?"참은 돈":"부수입",금액:w.amount}));
   const paid=S.payments.filter(p=>(p.createdAt||p.date)>since.slice(0,10)).map(p=>({상환:p.amount}));
   const pd=ymDay(nextPayYm(),PAY());
   return{마지막접속:prev?prev.at:null,지금:now.at,새로적은지출:added,참은돈_부수입:wins,상환:paid,
-    이번주:{한도:Math.round(weekLimit(TODAY)),남은돈_전:prev?prev.wLeft:null,남은돈_지금:n.wLeft,남은날:n.wDays,하루한도:Math.round(n.dayB)},
-    이번달:{예산:n.y.B,쓴돈:n.y.spent,이대로면남거나넘는돈_전:prev&&prev.proj!=null?n.y.B-prev.proj:null,이대로면남거나넘는돈_지금:n.proj!=null?n.y.B-n.proj:null,남은날:n.y.left},
-    어제:{쓴돈:n.yRec?n.ySp:null},무지출일:n.zero,월급날까지:dayDiff(TODAY,pd),빚합계:{전:prev?prev.debt:null,지금:now.debt}};
+    이번주:{한도:Math.round(weekLimit(TODAY)),남은돈_전:prev&&weekRange(prev.day||TODAY).start===weekRange(TODAY).start?prev.wLeft:null,남은돈_지금:n.wLeft,남은날:n.wDays,하루한도:Math.round(n.dayB)},
+    이번달:{기간:`${md(n.y.c.start)}~${md(n.y.c.end)}`,예산:n.y.B,쓴돈:n.y.spent,이대로면남거나넘는돈_전:sameCycle&&prev.proj!=null?n.y.B-prev.proj:null,이대로면남거나넘는돈_지금:n.proj!=null?n.y.B-n.proj:null,남은날:n.y.left,...(sameCycle||!prev?{}:{참고:"마지막 접속 뒤 새 카드 주기가 시작됐어요"})},
+    어제:{쓴돈:n.yRec?n.ySp:null},무지출일:n.zero,
+    월급날:{날짜:pd,남은날:dayDiff(TODAY,pd),카드값예상:Math.round(pl.card),선결제상환가능:Math.round(pl.avail),...(pl.avail<0?{모자람:Math.round(-pl.avail)}:{})},
+    ...(gs?{목표알림:gs.t+" · "+gs.s}:{}),
+    빚합계:{전:prev?prev.debt:null,지금:now.debt,참고:"카드 할부를 새로 하면 그 금액만큼 빚 합계가 늘어요 (일시불 카드값이 할부로 바뀐 것)"}};
 }
-function briefKey(d){return JSON.stringify(["v2",d.새로적은지출.length,d.이번주.남은돈_지금,d.이번달.쓴돈,d.상환.length,d.참은돈_부수입.length,TODAY])}
+function briefKey(d){return JSON.stringify(["v3",d.새로적은지출.length,d.이번주.남은돈_지금,d.이번달.쓴돈,d.상환.length,d.참은돈_부수입.length,TODAY])}
 function briefHasChange(d){const p=BRIEF_PREV;return !p||d.새로적은지출.length||d.참은돈_부수입.length||d.상환.length||p.day!==TODAY||p.wLeft!==d.이번주.남은돈_지금||p.debt!==d.빚합계.지금}
 async function askBrief(){
   if(!sample||briefBusy)return;briefBusy=true;
   const data=briefChanges(),key=briefKey(data);
   const prompt=`너는 빚을 갚는 중인 30대 친구의 머니 코치야. 아래는 이 친구가 앱에 마지막으로 들어온 뒤부터 지금까지 바뀐 데이터야.
 바뀐 데이터를 분석해서, 이 친구에게 실제로 도움이 될 내용만 최대 3문장으로 말해 줘. 앱 화면에서 바로 보이는 숫자를 그대로 읊지 말고, 바뀐 것에서 읽히는 의미(새 지출이 어떤 영향을 줬는지, 흐름이 좋아졌는지 나빠졌는지, 그래서 오늘 뭘 하면 좋은지)를 말해.
-각 문장은 40자 안쪽, 자연스러운 존댓말, 제목·번호·불릿 없이 문장만. 어려운 말(페이스, 주기, 선결제, 순자산) 쓰지 말고 금액은 '1.2만 원'처럼 짧게. 데이터에 없는 건 지어내지 마. 각 문장 맨 앞에 내용에 맞는 이모지를 1개씩 붙여 (예: 🍱 ☕ 👍 ⚠️ 💰 🎯).
+각 문장은 40자 안쪽, 자연스러운 존댓말, 제목·번호·불릿 없이 문장만. 어려운 말(페이스, 주기, 선결제, 순자산) 쓰지 말고 금액은 '1.2만 원'처럼 짧게. 데이터에 없는 건 지어내지 마. 금액이 마이너스인 기록은 결제 취소라 돈이 돌아온 거고, '생활비: 제외'인 기록은 이 친구 생활비가 아니야. 각 문장 맨 앞에 내용에 맞는 이모지를 1개씩 붙여 (예: 🍱 ☕ 👍 ⚠️ 💰 🎯).
 도움이 될 만한 게 없으면 억지로 만들지 말고 빈 배열로 답해.
 ${JSON.stringify(data)}
 JSON으로만 답해: {"lines":["문장1","문장2","문장3"]}`;
