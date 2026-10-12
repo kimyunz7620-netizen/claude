@@ -431,6 +431,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
       <div class="cats" id="enCats" role="group" aria-label="카테고리"></div>
       <input type="text" id="enMemo" placeholder="어디서 · 뭘 샀나요 (예: 쿠팡 휴지)" aria-label="메모">
+      <label class="check" id="enFundBox" hidden><input type="checkbox" id="enFund"><span class="small" id="enFundLbl">🎁 경조사 통장 돈으로 냈어요</span></label>
       <label class="check" id="enPendBox" hidden><input type="checkbox" id="enPending"><span class="small">카드 앱에 아직 취소가 안 보여요 <span class="muted">(취소 예정)</span></span></label>
       <details class="more" id="enMore"><summary id="enMoreSum">결제수단 · 날짜</summary>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
@@ -700,7 +701,8 @@ const CYC=()=>ST().cycleDay||12, CARD=()=>ST().cardDay||25, PAY=()=>ST().payday|
 const ALLCATS=()=>(S.budget&&S.budget.cats)||[],CATS=()=>ALLCATS().filter(c=>!c.hidden);
 /* a category with fund = {bank, from, monthly} is paid from its own account: monthly is a fixed transfer, its spending leaves the 생활비 budget from fund.from */
 const FUNDCAT=id=>{const c=ALLCATS().find(c=>c.id===id);return c&&c.fund?c:null};
-const fundOut=e=>{const c=FUNDCAT(e.cat);return!!c&&e.date>=(c.fund.from||"")};
+/* a 경조사 spend comes out of the gift account only when it was marked so (enFund); paid from my own money it is ordinary 생활비 */
+const fundOut=e=>{const c=FUNDCAT(e.cat);return!!c&&e.date>=(c.fund.from||"")&&!!e.fromFund};
 const LIVECATS=(key)=>CATS().filter(c=>!(c.fund&&(!key||key>=payYmOf(c.fund.from))));
 const fundCardIn=ym=>sum(S.entries.filter(e=>fundOut(e)&&e.method==="lotte"&&payYmOf(e.date)===ym&&!e.excl),e=>e.amount);
 /* planned fund spending (birthdays …) in fund.events [{date,amount,memo}]: what the account won't hold by then is topped up from the main account on the payday before */
@@ -711,7 +713,7 @@ const fundDue=x=>x.card?payDateOf(payYmOf(x.date)):x.date;
 /* the gift account from fund.from on, in order of when money leaves it: monthly transfers come in on paydays, each planned event
    (or a recorded purchase no event planned) goes out, and whatever the balance can't cover is topped up on the payday before.
    A recorded event uses the recorded amount. Walking from the start keeps past top-ups in the balance. */
-function fundWalk(c){const f=c.fund,from=f.from||"",ents=S.entries.filter(e=>e.cat===c.id&&e.date>=from&&!e.excl).sort((a,b)=>b.amount-a.amount),evs=(f.events||[]).map(x=>({...x,got:[]}));
+function fundWalk(c){const f=c.fund,from=f.from||"",ents=S.entries.filter(e=>e.cat===c.id&&e.date>=from&&!e.excl&&!!e.fromFund).sort((a,b)=>b.amount-a.amount),evs=(f.events||[]).map(x=>({...x,got:[]}));
   /* match each recorded purchase to a planned event on the same day, card with card, nearest amount first */
   const extras=[];ents.forEach(e=>{const lot=e.method==="lotte",same=evs.filter(x=>x.date===e.date),pool=same.filter(x=>!!x.card===lot).length?same.filter(x=>!!x.card===lot):same;
     const free=pool.filter(x=>!x.got.length),pick=(free.length?free:pool).sort((a,b)=>Math.abs(a.amount-e.amount)-Math.abs(b.amount-e.amount))[0];if(pick)pick.got.push(e);else extras.push(e)});
@@ -1027,6 +1029,9 @@ function renderToday(){
   if(cats.dataset.sig!==sig){cats.dataset.sig=sig;cats.innerHTML=CATS().length?CATS().map(c=>{const[e,col]=look(c.id);return `<button type="button" class="cat" style="--c:${col}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="e">${e}</span>${esc(SHORT[c.id]||c.name)}</button>`}).join(""):'<p class="empty" style="grid-column:1/-1">카테고리를 불러오는 중이에요.</p>'}
   if(document.activeElement!==$("enDate"))$("enDate").value=selDate;$("enDate").max=TODAY;
   $("enDateChip").textContent=selDate===TODAY?"오늘":mdw(selDate);
+  {const fc=FUNDCAT(selCat);$("enFundBox").hidden=!fc;if(fc){$("enFundLbl").textContent=`🎁 ${fc.fund.bank} 돈으로 냈어요 (안 체크하면 생활비에서 나간 걸로 봐요)`;
+    /* a fresh 경조사 entry near a planned event starts ticked; anything else starts unticked */
+    if(!editingId&&$("enFund").dataset.cat!==selCat+selDate){$("enFund").dataset.cat=selCat+selDate;$("enFund").checked=(fc.fund.events||[]).some(x=>Math.abs(dayDiff(x.date,selDate))<=3)}}}
   $("enMoreSum").textContent=`${selMethod==="lotte"?"💳 롯데 일시불":selMethod==="cash"?"🏦 체크·현금":"⚠️ 할부"} · ${selDate===TODAY?"오늘":md(selDate)} · 바꾸기`;
 
   const isToday=selDate===TODAY;$("dayTitle").textContent=isToday?"🧾 오늘 기록":`🧾 ${mdw(selDate)} 기록`;
@@ -1069,8 +1074,10 @@ function renderCal(){
     if(d<=TODAY||k===1){const v1=Math.round(dayB);if(!segs.length||segs[segs.length-1].v!==v1)segs.push({d,v:v1})}
     /* money in that day: side income, and the salary on payday */
     const inc=sum(S.wins.filter(w=>w.kind==="sell"&&w.date===d),w=>w.amount)+(dom(d)===PAY()&&!fut?incomeAt(ymOf(d)):0);
-    const v=fut?"":s>0?(s>=10000?manC(s):num(s)):ns?"🥚":rec?"0":"",fxs=sum(fixedOn(d),x=>x.amount);
-    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${fxs?`<span class="f">📌${fxs>=10000?manC(fxs):num(fxs)}</span>`:""}</button>`}
+    /* 경조사 paid from its own account stays out of the 생활비 colour but still shows on the day */
+    const gs=sum(S.entries.filter(e=>e.date===d&&!e.excl&&fundOut(e)),e=>e.amount),gtxt=gs?`🎁${gs>=10000?manC(gs):num(gs)}`:"";
+    const v=fut?"":s>0?(s>=10000?manC(s):num(s)):gs?gtxt:ns?"🥚":rec?"0":"",fxs=sum(fixedOn(d),x=>x.amount),ftxt=fxs?`📌${fxs>=10000?manC(fxs):num(fxs)}`:s>0&&gs?gtxt:"";
+    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
   $("cal").innerHTML=html;
   $("calLegend").innerHTML=`<span class="cdk g"></span>하루 한도(${segs.length>1?segs.map((x,i)=>`${i?md(x.d)+"~ ":"~"+md(addDays(segs[1].d,-1))+" "}${man1(x.v)}`).join(", "):man1(segs[0].v)}) 안 · <span class="cdk w"></span>조금 넘음 · <span class="cdk b"></span>많이 넘음 · <span style="color:var(--mint);font-weight:700">+초록</span>은 들어온 돈 · 📌는 고정비 나가는 날`;
   $("calSum").textContent=won(tot);$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
@@ -1240,7 +1247,7 @@ function renderWeek(){
     const right=b<=0&&s>0?'<span class="bad-t">예산 없음</span>':over?`<span class="bad-t">${ratio>=2?`${(Math.floor(ratio*10)/10)}배`:`+${man1(s-b)}`} 초과</span>`:f>=1?`<span class="good-t">${man1(b-s)} 남김</span>`:`<span class="${fast?"warn-t":"muted"}">남은 <b>${man1(b-s)}</b>${fast?" · 빠름":""}</span>`;
     return{lvl,ratio,html:`<div class="crow${over?" over":fast?" fast":""}"><span class="e">${em}</span><span class="nm">${esc(c.name)}${c.accumulate&&bdMode==="cycle"?' <span class="tiny muted">적립</span>':""}<span class="amt">${s?manC(s):"0원"} / ${manC(b)}</span></span><span class="rt small">${right}</span>
       <span class="cbar"><i style="width:${b>0?Math.min(100,s/b*100):s>0?100:0}%"></i>${live&&b>0?`<b style="left:${f*100}%"></b>`:""}</span></div>`}}).sort((a,b)=>a.lvl-b.lvl||b.ratio-a.ratio);
-  $("bdCats").innerHTML=`${live?'<p class="tiny muted">막대 속 세로선 = 오늘까지 써도 되는 선. 선을 넘으면 빠른 거예요.</p>':""}<div class="clist">${rows.map(x=>x.html).join("")}</div>`+(other?`<p class="small muted">미분류 ${won(other)}</p>`:"");
+  $("bdCats").innerHTML=`${live?'<p class="tiny muted">막대 속 세로선 = 오늘까지 써도 되는 선. 선을 넘으면 빠른 거예요.</p>':""}<div class="clist">${rows.map(x=>x.html).join("")}</div>`+(other?`<p class="small muted">미분류 ${won(other)}</p>`:"")+(()=>{const own=sum(es.filter(e=>FUNDCAT(e.cat)&&!fundOut(e)),e=>e.amount);return own?`<p class="small muted">🎁 경조사/선물 중 내 돈으로 낸 것 ${won(own)} (생활비에 포함)</p>`:""})();
   $("bdAll").parentElement.hidden=true;
 }
 
@@ -1609,13 +1616,13 @@ function startEdit(en){
   if(view!=="today")go("today");
   refundOf=en.amount<0?(en.cancelOf||"?"):null;
   editingId=en.id;selDate=en.date;selCat=en.cat;selMethod=en.method;
-  $("enAmount").value=num(Math.abs(en.amount));$("enMemo").value=en.memo||"";$("enPending").checked=!!en.pending;$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;$("enExcl").checked=!!en.excl;
+  $("enAmount").value=num(Math.abs(en.amount));$("enMemo").value=en.memo||"";$("enPending").checked=!!en.pending;$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;$("enExcl").checked=!!en.excl;$("enFund").checked=!!en.fromFund;$("enFund").dataset.cat=en.cat+en.date;
   document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===selMethod));$("instBox").hidden=selMethod!=="inst";
   $("entryTitle").textContent=refundOf?"↩️ 결제 취소 고치기":"✏️ 기록 고치기";$("enMore").open=true;$("enSave").textContent="수정 저장";$("enCancel").hidden=false;$("enDel").hidden=false;
   $("enPendBox").hidden=!refundOf;$("enRefund").hidden=!!refundOf||en.method==="inst";
   renderToday();openSheet();
 }
-function cancelEdit(){editingId=null;refundOf=null;$("enPendBox").hidden=true;$("enRefund").hidden=true;selCat=null;selMethod="lotte";document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m==="lotte"));$("instBox").hidden=true;$("enMore").open=false;$("enFree").checked=false;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
+function cancelEdit(){editingId=null;refundOf=null;$("enFund").dataset.cat="";$("enPendBox").hidden=true;$("enRefund").hidden=true;selCat=null;selMethod="lotte";document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m==="lotte"));$("instBox").hidden=true;$("enMore").open=false;$("enFree").checked=false;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
 $("enCancel").addEventListener("click",()=>{cancelEdit();closeSheet();renderToday()});
 document.addEventListener("click",e=>{if(e.target.classList&&e.target.classList.contains("sheet-bg")){if(editingId||refundOf)cancelEdit();closeSheet();renderToday()}});
 function openSheet(){$("sheet").hidden=false;document.body.classList.add("sheet-on");setTimeout(()=>{if(!editingId&&!parseNum($("enAmount").value))$("enAmount").focus()},60)}
@@ -1652,7 +1659,7 @@ $("entryForm").addEventListener("submit",async e=>{
   if(refundOf){if(refundOf!=="?")doc.cancelOf=refundOf;if($("enPending").checked)doc.pending=true;const o=S.entries.find(x=>x.id===refundOf);if(o&&o.excl)$("enExcl").checked=true}
   if(prev&&prev.cardItem)doc.cardItem=prev.cardItem;
   if(prev&&prev.cancelItem){doc.cancelItem=prev.cancelItem;doc.fromYm=prev.fromYm}
-  if($("enExcl").checked)doc.excl=true;
+  if($("enExcl").checked)doc.excl=true;if(FUNDCAT(doc.cat)&&$("enFund").checked)doc.fromFund=true;
   if(selMethod==="inst"){doc.months=Math.max(2,Math.min(36,Number($("enMonths").value)||3));doc.free=$("enFree").checked}
   $("enSave").disabled=true;
   try{await put("entries/"+id,doc);
