@@ -776,8 +776,8 @@ const cardIn=(r,f)=>S.entries.filter(e=>inRange(cDate(e),r)&&(!f||f(e)));
    then the same day of each following month (the card bill and installment schedule still use the real entry) */
 let LIVC={ref:null,list:null};
 function LIV(){if(LIVC.ref===S.entries)return LIVC.list;const out=[];
-  S.entries.forEach(e=>{if(e.method!=="inst"||!e.free||!(e.months>1)||e.amount<=0){out.push(e);return}
-    const n=e.months,each=Math.floor(e.amount/n),d0=bDate(e),last=d=>Number(ymDay(ymOf(d),31).slice(8));
+  S.entries.forEach(e=>{if(e.method!=="inst"||!e.free||!(e.months>1)){out.push(e);return}
+    const n=e.months,each=Math.trunc(e.amount/n),d0=bDate(e),last=d=>Number(ymDay(ymOf(d),31).slice(8));
     for(let k=0;k<n;k++){const m=ymAdd(ymOf(d0),k),dd=ymDay(m,Math.min(dom(d0),last(m+"-01")));out.push({...e,id:e.id+(k?"#"+k:""),amount:k===n-1?e.amount-each*(n-1):each,budgetDate:dd,date:k?dd:e.date,memo:`${e.memo||""} (${k+1}/${n})`.trim(),part:k})}});
   LIVC={ref:S.entries,list:out};return out}
 const entriesIn=(r,f)=>LIV().filter(e=>inRange(bDate(e),r)&&!e.excl&&!fundOut(e)&&(!f||f(e)));
@@ -786,8 +786,10 @@ const partial=r=>r.start<ledgerStart()&&r.end>=ledgerStart();
 const gapTxt=r=>`${md(r.start)}~${md(addDays(ledgerStart(),-1))} 기록이 없어 실제보다 적게 보여요`;
 // installments typed into the ledger; ones already in the card's list carry cardItem
 const ledgerInst=()=>S.entries.filter(e=>e.method==="inst"&&!e.cardItem&&(e.months||0)>=2);
-function newInstAt(ym){return sum(ledgerInst(),e=>{const k=ymDiff(payYmOf(e.date),ym);return k>=0&&k<e.months?Math.round(e.amount/e.months):0})}
-function newInstLeft(){const lp=lastPassed();return sum(ledgerInst(),e=>{const f=payYmOf(e.date);let t=0;for(let k=0;k<e.months;k++)if(ymAdd(f,k)>lp)t+=e.amount/e.months;return t})}
+function newInstAt(ym){return sum(ledgerInst(),e=>{const k=ymDiff(instYm(e),ym);return k>=0&&k<e.months?Math.round(e.amount/e.months):0})}
+/* a cancelled installment runs on its original's schedule, so the two cancel month by month */
+const instYm=e=>payYmOf((origOf(e)||e).date);
+function newInstLeft(){const lp=lastPassed();return sum(ledgerInst(),e=>{const f=instYm(e);let t=0;for(let k=0;k<e.months;k++)if(ymAdd(f,k)>lp)t+=e.amount/e.months;return t})}
 
 /* ---------- card installments (one row per 건 from the card app) ---------- */
 const ITEMS=()=>(S.inst&&S.inst.items)||[];
@@ -834,8 +836,8 @@ const loanTotal=()=>sum(LOANS(),loanBal);
 const totalDebt=()=>cardDebt()+loanTotal();
 const loanOrder=()=>LOANS().filter(d=>loanBal(d)>0).slice().sort((a,b)=>(a.last?1:0)-(b.last?1:0)||(b.apr||0)-(a.apr||0));
 function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort((a,b)=>a.date<b.date?1:-1)[0];if(!w)return null;const a=instAt(ym,payDateOf(ym)),b=instAt(ym,w.date);
-  /* cancellations of this bill's purchases that the card app number doesn't hold yet (still pending, or recorded after it was entered) */
-  const late=sum(S.entries.filter(e=>e.amount<0&&e.method!=="cash"&&(o=>o&&payYmOf(o.date)===ym)(origOf(e))&&(e.pending||(e.createdAt||"")>(w.savedAt||w.date))),e=>e.amount);
+  /* cancellations of this bill's purchases that the card app number doesn't hold yet (still pending, or recorded or confirmed after it was entered) */
+  const late=sum(S.entries.filter(e=>e.amount<0&&e.method==="lotte"&&(o=>o&&payYmOf(o.date)===ym)(origOf(e))&&(e.pending||(e.confirmedAt||e.createdAt||"")>(w.savedAt||w.date))),e=>e.amount);
   return (a!=null&&b!=null?w.nextBill+a-b:w.nextBill)+late}
 function cardFixedEst(ym){const c=cycleOf(ym);return sum(fixedAt(ym).filter(x=>x.card&&!S.entries.some(e=>e.fixedId===x.id&&inRange(e.date,c))),x=>x.amount)}
 function lumpEst(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"&&!e.pending),e=>e.amount)+cardFixedEst(ym)}
@@ -1619,7 +1621,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.delbonus!=null){if(!confirmTap(t))return;const bonuses=BONUS().filter((_,i)=>i!==Number(t.dataset.delbonus));S.settings={...ST(),bonuses};renderSettings();render();try{await put("config/settings",S.settings);toast("지웠어요")}catch(_){}return}
   if(t.dataset.fitgoals){if(!confirmTap(t))return;await fitGoals();return}
   if(t.dataset.delref){if(!confirmTap(t))return;try{await del("entries/"+t.dataset.delref);toast("취소 기록을 지웠어요")}catch(_){}return}
-  if(t.dataset.refundok){const e0=S.entries.find(x=>x.id===t.dataset.refundok);if(!e0)return;const{pending,...rest}=e0;const{id:_i,...doc}=rest;try{await put("entries/"+e0.id,doc);toast("✅ 카드 취소 확인!")}catch(_){}return}
+  if(t.dataset.refundok){const e0=S.entries.find(x=>x.id===t.dataset.refundok);if(!e0)return;const{pending,...rest}=e0;const{id:_i,...doc}=rest;doc.confirmedAt=new Date().toISOString();try{await put("entries/"+e0.id,doc);toast("✅ 카드 취소 확인!")}catch(_){}return}
   if(t.dataset.wi){WI=Number(t.dataset.wi);renderDash();return}
   if(t.dataset.increset){saveIncome(t.dataset.increset,null);return}
   if(t.dataset.fxreset){saveFixedOverride(t.dataset.fxreset,t.dataset.ym,null);return}
@@ -1683,8 +1685,8 @@ $("oldRefForm").addEventListener("submit",async e=>{e.preventDefault();
 /* turn the open entry into a new cancellation of it: same card, category and budget flag, today, full amount by default */
 $("enRefund").addEventListener("click",()=>{const o=S.entries.find(x=>x.id===editingId);if(!o)return;
   /* an installment is cancelled against its card installment (it leaves the debt and the schedule), so hand over to that form with the matching item picked */
-  if(o.method==="inst"){cancelEdit();closeSheet();go("records");orKind="inst";$("oldRefBox").open=true;$("orDate").value=TODAY;$("orMemo").value=o.memo||"";$("orPending").checked=true;
-    const its=ITEMS().filter(x=>itemBal(x)>0),pick=its.find(x=>x.date===o.date&&(x.name||"").toLowerCase().includes((o.memo||"").toLowerCase().split(/\s+/)[0]||"\u0000"))||its.find(x=>x.date===o.date)||its.find(x=>(o.memo||"").toLowerCase().includes((x.name||"").toLowerCase()));
+  if(o.method==="inst"&&o.cardItem&&ITEMS().some(x=>x.id===o.cardItem)){cancelEdit();closeSheet();go("records");orKind="inst";$("oldRefBox").open=true;$("orDate").value=TODAY;$("orMemo").value=o.memo||"";$("orPending").checked=true;
+    const its=ITEMS().filter(x=>itemBal(x)>0),pick=its.find(x=>x.id===o.cardItem)||its.find(x=>x.date===o.date&&(x.name||"").toLowerCase().includes((o.memo||"").toLowerCase().split(/\s+/)[0]||"\u0000"))||its.find(x=>x.date===o.date)||its.find(x=>(o.memo||"").toLowerCase().includes((x.name||"").toLowerCase()));
     orPreview();if(pick){$("orItem").value=pick.id;orPreview()}$("oldRefBox").scrollIntoView({block:"start"});toast(pick?`${pick.name} 할부를 골라 뒀어요. 확인하고 기록해 주세요`:"취소되는 할부 건을 골라 주세요");return}
   editingId=null;refundOf=o.id;selDate=TODAY;$("enDate").value=TODAY;$("enAmount").value=num(o.amount);$("enMemo").value=o.memo||"";$("enPending").checked=true;
   $("entryTitle").textContent="↩️ 결제 취소 기록";$("enSave").textContent="취소 기록하기";$("enDel").hidden=true;$("enRefund").hidden=true;$("enPendBox").hidden=false;
@@ -1696,7 +1698,7 @@ $("entryForm").addEventListener("submit",async e=>{
   if(!selCat){toast("카테고리를 골라 주세요");return}
   const date=$("enDate").value||TODAY,prev=editingId?S.entries.find(x=>x.id===editingId):null,id=editingId||newId(),wasEdit=!!editingId;
   const doc={date,cat:selCat,amount:refundOf?-amount:amount,method:selMethod,memo:$("enMemo").value.trim(),createdAt:prev?prev.createdAt:new Date().toISOString()};
-  if(refundOf){if(refundOf!=="?")doc.cancelOf=refundOf;if($("enPending").checked)doc.pending=true;const o=S.entries.find(x=>x.id===refundOf);if(o&&o.excl)$("enExcl").checked=true}
+  if(refundOf){if(refundOf!=="?")doc.cancelOf=refundOf;if($("enPending").checked)doc.pending=true;else{const p0=editingId&&S.entries.find(x=>x.id===editingId),ca=p0&&(p0.confirmedAt||(p0.pending?new Date().toISOString():null));if(ca)doc.confirmedAt=ca}const o=S.entries.find(x=>x.id===refundOf);if(o&&o.excl)$("enExcl").checked=true}
   if(prev&&prev.cardItem)doc.cardItem=prev.cardItem;
   if(prev&&prev.cancelItem){doc.cancelItem=prev.cancelItem;doc.fromYm=prev.fromYm}
   if($("enExcl").checked)doc.excl=true;if(FUNDCAT(doc.cat)&&$("enFund").checked)doc.fromFund=true;
