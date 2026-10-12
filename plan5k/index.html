@@ -766,7 +766,15 @@ const origOf=e=>{if(!e.cancelOf)return null;if(ORIGC.ref!==S.entries)ORIGC={ref:
 const bDate=e=>e.budgetDate||(origOf(e)||e).date;
 const cDate=e=>{const o=origOf(e);return o&&e.date<=payDateOf(payYmOf(o.date))?o.date:e.date};
 const cardIn=(r,f)=>S.entries.filter(e=>inRange(cDate(e),r)&&(!f||f(e)));
-const entriesIn=(r,f)=>S.entries.filter(e=>inRange(bDate(e),r)&&!e.excl&&!fundOut(e)&&(!f||f(e)));
+/* for the 생활비, an interest-free installment is spent a month at a time, the way the card bills it: 1/n on the purchase day,
+   then the same day of each following month (the card bill and installment schedule still use the real entry) */
+let LIVC={ref:null,list:null};
+function LIV(){if(LIVC.ref===S.entries)return LIVC.list;const out=[];
+  S.entries.forEach(e=>{if(e.method!=="inst"||!e.free||!(e.months>1)||e.amount<=0){out.push(e);return}
+    const n=e.months,each=Math.floor(e.amount/n),d0=bDate(e),last=d=>Number(ymDay(ymOf(d),31).slice(8));
+    for(let k=0;k<n;k++){const m=ymAdd(ymOf(d0),k),dd=ymDay(m,Math.min(dom(d0),last(m+"-01")));out.push({...e,id:e.id+(k?"#"+k:""),amount:k===n-1?e.amount-each*(n-1):each,budgetDate:dd,date:k?dd:e.date,memo:`${e.memo||""} (${k+1}/${n})`.trim(),part:k})}});
+  LIVC={ref:S.entries,list:out};return out}
+const entriesIn=(r,f)=>LIV().filter(e=>inRange(bDate(e),r)&&!e.excl&&!fundOut(e)&&(!f||f(e)));
 const ledgerStart=()=>ST().ledgerStart||S.entries.map(e=>e.date).sort()[0]||TODAY;
 const partial=r=>r.start<ledgerStart()&&r.end>=ledgerStart();
 const gapTxt=r=>`${md(r.start)}~${md(addDays(ledgerStart(),-1))} 기록이 없어 실제보다 적게 보여요`;
@@ -1016,9 +1024,9 @@ function paintBar(el,spent,budget,pace){
 const refName=e=>e.cancelItem?`${(ITEMS().find(x=>x.id===e.cancelItem)||{name:"할부"}).name} 할부`:ALLCATS().some(c=>c.id===e.cat)?catName(e.cat):(e.memo||"예전 결제");
 function entryRow(e){const[em,col]=look(e.cat),rf=e.amount<0,cx=rf?0:sum(S.entries.filter(x=>x.cancelOf===e.id),x=>-x.amount);
   if(rf)return `<div class="li" style="--c:${col}"><span class="av">↩️</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(refName(e))} 결제 취소${e.memo&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.pending?"⏳ 취소 예정 · 카드 앱에 뜨면 체크":"✅ 카드 취소 완료"}${e.cancelItem?` · ${ymKo(e.fromYm)} 청구부터 없음`:e.excl?" · 예전 결제라 생활비엔 안 들어가요":""}</div></button><div class="a good-t">${e.amount?`−${num(-e.amount)}`:"취소"}</div></div>`;
-  return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":`⚠️ 할부 ${e.months}개월${e.free?" 무이자":""}`}${e.excl?" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
+  return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":(e.free?`💳 무이자 ${e.months}개월 · 생활비엔 월 ${num(Math.floor(e.amount/e.months))}씩`:`⚠️ 할부 ${e.months}개월`)}${e.excl?" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
 function renderToday(){
-  const allow=todayAllowance(),todays=S.entries.filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
+  const allow=todayAllowance(),todays=LIV().filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=won(Math.max(0,left));
   $("heroLbl").textContent=allow>0?`오늘 남은 돈 · 오늘 ${won(spentT)} 씀`:"오늘 남은 돈 · 이번 주 한도 다 씀";
   const ratio=allow>0?spentT/allow:spentT>0?2:0;
@@ -1045,8 +1053,10 @@ function renderToday(){
 
   const isToday=selDate===TODAY;$("dayTitle").textContent=isToday?"🧾 오늘 기록":`🧾 ${mdw(selDate)} 기록`;
   const list=S.entries.filter(e=>e.date===selDate).sort((a,b)=>(a.createdAt||"")<(b.createdAt||"")?-1:1);
-  $("dayTotal").textContent=won(sum(list,e=>e.amount));
-  $("dayList").innerHTML=list.length?list.map(entryRow).join("")
+  /* the day total is that day's 생활비, same as the calendar: cancellations sit on the original day, installments by the month */
+  $("dayTotal").textContent=won(sum(LIV().filter(e=>bDate(e)===selDate&&!e.excl&&!fundOut(e)),e=>e.amount));
+  const parts=LIV().filter(e=>e.part>0&&e.budgetDate===selDate&&!e.excl),partRow=e=>`<div class="li"><span class="av">💳</span><div><div class="t">${esc(e.memo)}</div><div class="s">무이자 할부 이번 달 몫 · 생활비에 들어가요</div></div><div class="a">${num(e.amount)}</div></div>`;
+  $("dayList").innerHTML=list.length||parts.length?list.map(entryRow).join("")+parts.map(partRow).join("")
     :`<p class="empty">${isToday?"아직 없어요.":"이날 기록이 없어요."}</p>`;
   const wl=S.wins.filter(w=>w.date===selDate);
   const fxd=fixedOn(selDate);
@@ -1076,7 +1086,7 @@ function renderCal(){
   $("calLabel").textContent=`📅 ${m}월 기록${y!==Number(TODAY.slice(0,4))?` (${y})`:""}`;$("calNext").disabled=calYm>=ymOf(TODAY);
   let html="",tot=0,recDays=0,zero=0;
   for(let i=0;i<lead;i++)html+='<span class="cd pad"></span>';
-  for(let k=1;k<=days;k++){const d=calYm+"-"+pad(k),fut=d>TODAY,es=S.entries.filter(e=>bDate(e)===d&&!e.excl&&!fundOut(e)),dayB=dayLim(d),s=sum(es,e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,rec=es.length>0||!!ns||recorded(d); /* the calendar shows every day with data, imported ones too (the streak stays app-only) */
+  for(let k=1;k<=days;k++){const d=calYm+"-"+pad(k),fut=d>TODAY,es=LIV().filter(e=>bDate(e)===d&&!e.excl&&!fundOut(e)),dayB=dayLim(d),s=sum(es,e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,rec=es.length>0||!!ns||recorded(d); /* the calendar shows every day with data, imported ones too (the streak stays app-only) */
     if(!fut&&rec){recDays++;tot+=s;if(s===0)zero++}
     const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b";
     /* the daily limit follows each week's own limit, so it can change inside a month (new card cycle, a lower week goal) */
@@ -1139,7 +1149,7 @@ function dailyNums(){
   const y=cycleSummary(),el=dayDiff(y.c.start,TODAY),total=dayDiff(y.c.start,y.c.end)+1,spentBefore=sum(entriesIn({start:y.c.start,end:yd}),e=>e.amount),proj=el>0?Math.round(spentBefore/el*total):null;
   /* a day counts as no-spend when marked so, or when it has no entries but a later day does (so it wasn't just left unrecorded) */
   const lastRec=S.entries.filter(e=>e.date<TODAY).map(e=>e.date).sort().pop()||"";
-  let zero=0,run=0;for(let d=y.c.start;d<TODAY;d=addDays(d,1)){const none=!S.entries.some(e=>bDate(e)===d&&!e.excl&&!fundOut(e)),z=none&&(!!(S.days[d]&&S.days[d].noSpend)||d<lastRec);if(z)zero++;run=z?run+1:0}
+  let zero=0,run=0;for(let d=y.c.start;d<TODAY;d=addDays(d,1)){const none=!LIV().some(e=>bDate(e)===d&&!e.excl&&!fundOut(e)),z=none&&(!!(S.days[d]&&S.days[d].noSpend)||d<lastRec);if(z)zero++;run=z?run+1:0}
   return{yd,ySp,yRec,dayB,wLeft,wDays,y,el,total,proj,zero,run};
 }
 /* 오늘 브리핑: at most three plain sentences from Claude about what changed since the last visit.
@@ -1364,7 +1374,7 @@ function speedRate(){const sim=simulate(),P=sim.path,fi=sim.free?P.findIndex(p=>
 function fasterTxt(amount){const r=speedRate();if(!(r.perDay>0)||!(amount>0))return"";const d=amount/r.perDay;return d<1?`약 ${Math.max(1,Math.round(d*24))}시간`:`약 ${d<10?Math.round(d*10)/10:Math.round(d)}일`}
 let STEP=null,QUICK=[];
 function renderStep(){
-  const r=speedRate(),dayB=weekLimit(TODAY)/7,allow=todayAllowance(),todays=S.entries.filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),day=S.days[TODAY]||{};
+  const r=speedRate(),dayB=weekLimit(TODAY)/7,allow=todayAllowance(),todays=LIV().filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),day=S.days[TODAY]||{};
   STEP=null;if(r.perDay>0){
   const left=Math.max(0,allow-spentT);
   const big=spentT===0?`오늘 안 쓰면 ${r.goal}이 <em>${fasterTxt(dayB)}</em> 빨라져요`
