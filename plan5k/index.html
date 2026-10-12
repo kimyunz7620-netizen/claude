@@ -773,11 +773,11 @@ const origOf=e=>{if(!e.cancelOf)return null;if(ORIGC.ref!==S.entries)ORIGC={ref:
 const bDate=e=>e.budgetDate||(origOf(e)||e).date;
 const cDate=e=>{const o=origOf(e);return o&&e.date<=payDateOf(payYmOf(o.date))?o.date:e.date};
 const cardIn=(r,f)=>S.entries.filter(e=>inRange(cDate(e),r)&&(!f||f(e)));
-/* for the 생활비, an interest-free installment is spent a month at a time, the way the card bills it: 1/n on the purchase day,
+/* for the 생활비, an installment recorded here (not one from the card app's list, which is paid down as debt) is spent a month at a time, the way the card bills it: 1/n on the purchase day,
    then the same day of each following month (the card bill and installment schedule still use the real entry) */
 let LIVC={ref:null,list:null};
 function LIV(){if(LIVC.ref===S.entries)return LIVC.list;const out=[];
-  S.entries.forEach(e=>{if(e.method!=="inst"||!e.free||!(e.months>1)){out.push(e);return}
+  S.entries.forEach(e=>{if(e.method!=="inst"||e.cardItem||!(e.months>1)){out.push(e);return}
     const n=e.months,each=Math.trunc(e.amount/n),d0=bDate(e),last=d=>Number(ymDay(ymOf(d),31).slice(8));
     for(let k=0;k<n;k++){const m=ymAdd(ymOf(d0),k),dd=ymDay(m,Math.min(dom(d0),last(m+"-01")));out.push({...e,id:e.id+(k?"#"+k:""),amount:k===n-1?e.amount-each*(n-1):each,budgetDate:dd,date:k?dd:e.date,memo:`${e.memo||""} (${k+1}/${n})`.trim(),part:k})}});
   LIVC={ref:S.entries,list:out};return out}
@@ -874,8 +874,8 @@ function allocateRest(amount,date){
    Each month records avail (money that month can put toward debt or savings), debt (the part that went to debt) and save. */
 let SIMC={},rvSel=null;
 function simulate(extra=0,plan){const k=extra+"|"+(plan?JSON.stringify(plan):"");if(SIMC[k])return SIMC[k];return SIMC[k]=simulateRun(extra,plan)}
-/* my share of an interest-free installment already sits inside that cycle's 생활비 (LIV), so the plan must not count it again as an installment bill */
-const freeOwnAt=ym=>{const c=cycleOf(ym);return sum(LIV().filter(e=>e.method==="inst"&&e.free&&!e.excl&&!fundOut(e)&&inRange(bDate(e),c)),e=>e.amount)};
+/* my share of an installment recorded here already sits inside that cycle's 생활비 (LIV), so the plan must not count it again as an installment bill */
+const freeOwnAt=ym=>{const c=cycleOf(ym);return sum(LIV().filter(e=>e.method==="inst"&&!e.cardItem&&!e.excl&&!fundOut(e)&&inRange(bDate(e),c)),e=>e.amount)};
 function simulateRun(extra,plan){
   const st=ST(),living=(st.cycleBudget||0)+extra,base=(st.deposit||0)+(cashNow()||0),path=[],buf=st.buffer||0,closed={};let pot=0,intBack=0,feeSaved=0;
   const loans=loanOrder().map(d=>({d,bal:loanBal(d),done:null,int:Math.round(loanBal(d)*(d.apr||0)/1200)})),order=cardOrder(TODAY).map(o=>o.x);
@@ -1038,7 +1038,7 @@ function paintBar(el,spent,budget,pace){
 const refName=e=>e.cancelItem?`${(ITEMS().find(x=>x.id===e.cancelItem)||{name:"할부"}).name} 할부`:ALLCATS().some(c=>c.id===e.cat)?catName(e.cat):(e.memo||"예전 결제");
 function entryRow(e){const[em,col]=look(e.cat),rf=e.amount<0,cx=rf?0:sum(S.entries.filter(x=>x.cancelOf===e.id),x=>-x.amount);
   if(rf)return `<div class="li" style="--c:${col}"><span class="av">↩️</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(refName(e))} 결제 취소${e.memo&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.pending?"⏳ 취소 예정 · 카드 앱에 뜨면 체크":"✅ 카드 취소 완료"}${e.cancelItem?` · ${ymKo(e.fromYm)} 청구부터 없음`:e.excl?" · 예전 결제라 생활비엔 안 들어가요":""}</div></button><div class="a good-t">${e.amount?`−${num(-e.amount)}`:"취소"}</div></div>`;
-  return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":(e.free?`💳 무이자 ${e.months}개월 · 생활비엔 월 ${num(Math.floor(e.amount/e.months))}씩`:`⚠️ 할부 ${e.months}개월`)}${e.excl?" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
+  return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":(e.cardItem?`💳 할부 ${e.months}개월${e.free?" 무이자":""} · 카드 할부 목록에서 갚는 중`:`💳 할부 ${e.months}개월${e.free?" 무이자":" 유이자 ⚠️"} · 생활비엔 월 ${num(Math.floor(e.amount/e.months))}씩`)}${e.excl?" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
 function renderToday(){
   const allow=todayAllowance(),todays=LIV().filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=won(Math.max(0,left));
@@ -1193,7 +1193,7 @@ function briefChanges(){
   const prev=BRIEF_PREV,since=prev?prev.at:addDays(TODAY,-1)+"T00:00:00",now=briefSnap(),n=dailyNums();
   /* each new record says plainly what it is, so a cancellation isn't read as spending and an installment as a one-off */
   const what=e=>{const o=origOf(e);if(e.amount<0)return e.cancelItem?"할부 취소(남은 할부가 빚에서 빠짐)":`결제 취소 · 돈이 돌아옴${o?` (${md(o.date)} ${o.memo||catName(o.cat)} 결제를 취소)`:""}${e.pending?" · 카드 앱엔 아직 안 뜸":""}`;
-    if(e.method==="inst")return e.free?`무이자 ${e.months}개월 할부 · 생활비엔 월 ${Math.floor(e.amount/e.months)}원씩`:`유이자 ${e.months}개월 할부 (피해야 하는 결제)`;
+    if(e.method==="inst")return `${e.free?"무이자":"유이자(피해야 하는 결제)"} ${e.months}개월 할부${e.cardItem?"":` · 생활비엔 월 ${Math.floor(e.amount/e.months)}원씩`}`;
     return e.method==="cash"?"체크·현금":"카드 일시불"};
   const added=S.entries.filter(e=>(e.createdAt||"")>since).map(e=>({날짜:e.date,카테고리:e.cat==="refund"?"예전 결제 취소":catName(e.cat),금액:e.amount,메모:e.memo||"",종류:what(e),...(e.excl?{생활비:"제외 (계모임 등 다른 사람 몫)"}:fundOut(e)?{생활비:"제외 (경조사 통장에서 냄)"}:{})}));
   const sameCycle=prev&&payYmOf(prev.day||TODAY)===payYmOf(TODAY),pl=payPlan(nextPayYm()),gs=goalStatus();
