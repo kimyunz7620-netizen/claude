@@ -917,10 +917,13 @@ function payTxSteps(M,pl){
   const ca=CARDACC(),toCard=ca===SALARY?0:pl.card-pl.giftCard+prepay;
   const byDest={};fx.forEach(x=>{const d=fixedDest(x);if(d)(byDest[d]=byDest[d]||[]).push(x)});
   /* the gift shortfall goes wherever the monthly gift transfer leaves from (e.g. 토스뱅크, moved to the gift account by hand later) */
-  const fundFix=fx.find(x=>/경조사/.test(x.name+" "+x.note)),gapDest=(fundFix&&fixedDest(fundFix))||fundAcc,gapTxt=`경조사 부족분 ${won(pl.gift)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})${gapDest!==fundAcc?` · ${gapDest}에 넣은 뒤 ${fundAcc}${(c=>c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28&&(c-0xAC00)%28!==8?"으로":"로")(fundAcc.charCodeAt(fundAcc.length-1))} 직접 옮기기`:""}`;
+  const fundFix=fx.find(x=>/경조사/.test(x.name+" "+x.note)),gapDest=(fundFix&&fixedDest(fundFix))||fundAcc,gapTxt=`경조사 부족분 ${won(pl.gift)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})${gapDest!==fundAcc?" · 다음 단계에서 직접 옮겨요":""}`;
   if(pl.gift&&!byDest[gapDest])byDest[gapDest]=[];
   const dests=Object.entries(byDest).sort(([a],[b])=>(a===fundAcc)-(b===fundAcc));
   dests.forEach(([d,xs])=>{const extra=d===gapDest?pl.gift:0;steps.push({k:"fx-"+d,from:SALARY,to:d,amt:sum(xs,x=>x.amount)+extra,sub:xs.map(x=>`${x.name} ${won(x.amount)}`).concat(extra?[gapTxt]:[]).join(" + ")+(d==="토스뱅크"?" · 22일 자동이체 전에":"")})});
+  /* only the monthly gift transfer is automatic; the shortfall has to be moved into the gift account by hand */
+  if(pl.gift&&gapDest!==fundAcc){const ro=(c=>c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28&&(c-0xAC00)%28!==8?"으로":"로")(fundAcc.charCodeAt(fundAcc.length-1));
+    steps.push({k:"giftmove",from:gapDest,to:fundAcc,amt:pl.gift,sub:`✋ 자동이체 아님 · 직접 옮기기 (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")}) · 매달 ${won((fundFix&&fundFix.amount)||0)}은 ${(fundFix&&fundFix.day)||22}일에 자동으로 ${fundAcc}${ro} 들어가요`})}
   if(toCard>0)steps.push({k:"kb",from:SALARY,to:ca,amt:toCard,sub:[`카드값 ${won(pl.card-pl.giftCard)}`,prepay?`할부 선결제용 ${won(prepay)}`:""].filter(Boolean).join(" + ")});
   if(pl.cashRes)steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,sub:"체크카드 생활비"});
   if(pl.giftCard)steps.push({k:"gc",from:fundAcc,to:ca,amt:pl.giftCard,sub:"카드로 산 경조사 선물만큼 경조사 통장에서 채워요"});
@@ -1124,7 +1127,7 @@ function questItems(){
   if(d>=CYC()&&d<=CYC()+2){const k="cycle-"+M,c=cycleOf(M),sp=sum(entriesIn(c),e=>e.amount),B=cycleBudgetFor(M);
     it.push({e:"🗓️",task:k,done:!!S.tasks[k],t:"카드 주기 마감 확인",s:`${md(c.start)}~${md(c.end)} ${won(sp)} / ${won(B)}${sp>B?` · ${won(sp-B)} 초과`:" 👍"}`})}
   const early=!!ST().payEarly;
-  if(d>=PAY()&&(d<CARD()||early&&!S.tasks["secure-"+M])){const k="secure-"+M,pl=payPlan(M);const tx=payTxSteps(M,pl).steps.filter(x=>x.from===SALARY);it.push({e:"💸",task:k,done:!!S.tasks[k],t:"월급날 이체 끝내기",s:tx.map(x=>`${x.to} ${man1(x.amt)}`).concat(`카드값 ${early?"즉시결제":""} ${man1(pl.card)}`).join(" · ")+(ST().incomeActual&&ST().incomeActual[M]!=null?"":" · 받은 실수령 적기")+" · 월급·상환 탭에 순서 있어요"})}
+  if(d>=PAY()&&(d<CARD()||early&&!S.tasks["secure-"+M])){const k="secure-"+M,pl=payPlan(M);const tx=payTxSteps(M,pl).steps.filter(x=>x.from);it.push({e:"💸",task:k,done:!!S.tasks[k],t:"월급날 이체 끝내기",s:tx.map(x=>`${x.to} ${man1(x.amt)}`).concat(`카드값 ${early?"즉시결제":""} ${man1(pl.card)}`).join(" · ")+(ST().incomeActual&&ST().incomeActual[M]!=null?"":" · 받은 실수령 적기")+" · 월급·상환 탭에 순서 있어요"})}
   if(d>=CARD()||early&&d>=PAY()&&S.tasks["secure-"+M]){const pl=payPlan(M);if(pl.avail>0){const done=pl.rest<=0;it.push({e:"⚔️",done,t:"선결제하고 기록",s:done?"이번 달 상환 끝":`${won(pl.rest)} 남음`,btn:done?null:["열기","go:month"]})}}
   const L=Number(ymDay(M,31).slice(8));
   if(d>=L-1||d<=3){const ym=d<=3?ymAdd(M,-1):M,done=S.networth.some(n=>n.ym===ym);it.push({e:"🐷",done,t:`${ymKo(ym)} 월말 잔액 기록`,s:done?"기록했어요":"저축·현금 잔액 한 줄",btn:done?null:["기록","nw:"+ym]})}
