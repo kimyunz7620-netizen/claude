@@ -838,8 +838,11 @@ const loanTotal=()=>sum(LOANS(),loanBal);
 const totalDebt=()=>cardDebt()+loanTotal();
 const loanOrder=()=>LOANS().filter(d=>loanBal(d)>0).slice().sort((a,b)=>(a.last?1:0)-(b.last?1:0)||(b.apr||0)-(a.apr||0));
 function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort((a,b)=>a.date<b.date?1:-1)[0];if(!w)return null;const a=instAt(ym,payDateOf(ym)),b=instAt(ym,w.date);
-  /* cancellations of this bill's purchases that the card app number doesn't hold yet (still pending, or recorded or confirmed after it was entered) */
-  const late=sum(S.entries.filter(e=>e.amount<0&&e.method==="lotte"&&(o=>o&&payYmOf(o.date)===ym)(origOf(e))&&(e.pending||(e.confirmedAt||e.createdAt||"")>(w.savedAt||w.date))),e=>e.amount);
+  /* cancellations of this bill's purchases that the card app number doesn't hold yet (still pending and not yet in it, or recorded or confirmed after it was entered) */
+  const mine=S.entries.filter(e=>e.amount<0&&e.method==="lotte"&&(o=>o&&payYmOf(o.date)===ym)(origOf(e))),at=w.savedAt||w.date;
+  /* still-pending ones already showing in that figure (its 일시불 matches the ledger only with them taken off) count as posted */
+  const pend=mine.filter(e=>e.pending&&(e.createdAt||"")<=at),posted=pend.length&&w.lump>0&&Math.abs(w.lump-(lumpEst(ym,w.date)+sum(pend,e=>e.amount)))<=Math.max(ST().warnDiff||30000,w.lump*0.03);
+  const late=sum(mine.filter(e=>e.pending?!posted||(e.createdAt||"")>at:(e.confirmedAt||e.createdAt||"")>at),e=>e.amount);
   return (a!=null&&b!=null?w.nextBill+a-b:w.nextBill)+late}
 function cardFixedEst(ym){const c=cycleOf(ym);return sum(fixedAt(ym).filter(x=>x.card&&!S.entries.some(e=>e.fixedId===x.id&&inRange(e.date,c))),x=>x.amount)}
 function lumpEst(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"&&!e.pending),e=>e.amount)+cardFixedEst(ym)}
@@ -1249,7 +1252,9 @@ function weeklyCompareRaw(w){
   if(w.lump>0)items.push({k:"결제예정 중 일시불",act:w.lump,exp:lump});
   if(w.nextBill>0)items.push({k:`${Number(P.slice(5))}/${CARD()} 결제예정 합계`,act:w.nextBill,exp:lump+(instAt(P,w.date)??effSched(P))});
   if(!w.lump&&w.usage>0){const cu=cycleOf(payYmOf(w.date));items.push({k:"이번 주기 이용금액",act:w.usage,exp:sum(cardIn({start:cu.start,end:upTo},e=>e.method!=="cash"),e=>e.amount)})}
-  items.forEach(x=>{x.diff=x.act-x.exp;x.bad=Math.abs(x.diff)>tol(x.act)});return items;
+  /* cancellations still marked pending may already be on the card: if the gap is just them, it matches and they can be confirmed */
+  const pr=S.entries.filter(e=>e.pending&&e.amount<0&&e.method==="lotte"&&(o=>o&&payYmOf(o.date)===P)(origOf(e))),pSum=sum(pr,e=>e.amount);
+  items.forEach(x=>{x.diff=x.act-x.exp;x.bad=Math.abs(x.diff)>tol(x.act);if(x.bad&&pr.length&&Math.abs(x.diff-pSum)<=tol(x.act)){x.bad=false;x.refunds={n:pr.length,sum:pSum,ids:pr.map(e=>e.id)}}});return items;
 }
 function compareHTML(w){
   const cu=cycleOf(payYmOf(w.date));
@@ -1258,6 +1263,7 @@ function compareHTML(w){
   const pend=sum(cardIn({start:addDays(w.date,-1),end:w.date},e=>e.method==="lotte"),e=>e.amount);
   return weeklyCompare(w).map(x=>`<div class="note ${x.bad?"bad":"good"}"><div class="row"><strong>${x.bad?"🔍":"✅"} ${x.k}</strong><span class="num">${x.bad?signed(x.diff):x.diff?"거의 일치":"일치"}</span></div>
     <div class="small">카드 앱 ${num(x.act)} · 가계부 예상 ${num(x.exp)}</div>
+    ${x.refunds?`<div class="small">↩️ 취소 예정 ${x.refunds.n}건(${won(-x.refunds.sum)})이 카드 앱엔 이미 반영됐어요. <button type="button" class="link" data-refundsok="${esc(x.refunds.ids.join(","))}" data-at="${esc(w.savedAt||w.date)}">취소 확인으로 바꾸기</button></div>`:""}
     ${!x.bad?"":`<div class="small">${x.diff>0?"가계부에 빠진 지출이나 모르는 할부가 있을 수 있어요. 카드 앱 이용내역을 열어 확인하세요.":"가계부엔 있는데 카드엔 아직 안 잡힌 금액이에요. 취소·부분취소 건인지 확인하세요."}</div>`}</div>`).join("")+(pend&&!(w.lump>0&&Math.abs(lumpEst(w.payYm,w.date)-w.lump)<Math.abs(lumpEst(w.payYm,addDays(w.date,-2))-w.lump))?`<p class="tiny muted">최근 이틀 롯데 결제 ${won(pend)}은 카드 앱에 늦게 잡혀서 비교에서 뺐어요.</p>`:"");
 }
 function bdRange(){if(bdMode==="cycle"){const c=cycleOf(bdKey);return{start:c.start,end:c.end,label:`${md(c.start)}~${md(c.end)} (${Number(bdKey.slice(5))}월 결제)`}}return{...monthRange(bdKey),label:ymKo(bdKey)}}
@@ -1662,6 +1668,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.delbonus!=null){if(!confirmTap(t))return;const bonuses=BONUS().filter((_,i)=>i!==Number(t.dataset.delbonus));S.settings={...ST(),bonuses};renderSettings();render();try{await put("config/settings",S.settings);toast("지웠어요")}catch(_){}return}
   if(t.dataset.fitgoals){if(!confirmTap(t))return;await fitGoals();return}
   if(t.dataset.delref){if(!confirmTap(t))return;try{await del("entries/"+t.dataset.delref);toast("취소 기록을 지웠어요")}catch(_){}return}
+  if(t.dataset.refundsok){const ids=t.dataset.refundsok.split(","),at=t.dataset.at||new Date().toISOString();try{for(const id of ids){const e0=S.entries.find(x=>x.id===id);if(!e0)continue;const{pending,id:_i,...doc}=e0;doc.confirmedAt=at;await put("entries/"+id,doc)}toast(`✅ 취소 ${ids.length}건 확인!`)}catch(_){}return}
   if(t.dataset.refundok){const e0=S.entries.find(x=>x.id===t.dataset.refundok);if(!e0)return;const{pending,...rest}=e0;const{id:_i,...doc}=rest;doc.confirmedAt=new Date().toISOString();try{await put("entries/"+e0.id,doc);toast("✅ 카드 취소 확인!")}catch(_){}return}
   if(t.dataset.wi){WI=Number(t.dataset.wi);renderDash();return}
   if(t.dataset.increset){saveIncome(t.dataset.increset,null);return}
