@@ -757,7 +757,7 @@ const BONUS=()=>(ST().bonuses||[]).filter(x=>x&&x.ym&&x.amount>0);
 const bonusAt=ym=>sum(BONUS().filter(x=>x.ym===ym),x=>x.amount);
 function incomeAt(ym){return baseIncomeAt(ym)+bonusAt(ym)}
 function baseIncomeAt(ym){const s=ST();if(s.incomeActual&&s.incomeActual[ym]!=null)return s.incomeActual[ym];const b=s.income||0;if(!(s.raiseFromYm&&ym>=s.raiseFromYm))return b;return Math.round(b*(1+(s.raisePct||0)/100))+(ym===s.raiseFromYm?backPay():0)}
-function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amount||0;(it.changes||[]).slice().sort((x,y)=>x.fromYm<y.fromYm?-1:1).forEach(c=>{if(c.fromYm<=ym)a=c.amount});const ov=it.overrides&&it.overrides[ym]!=null;if(ov)a=it.overrides[ym];return{id:it.id,name:it.name,amount:a,card:!!it.card,acct:it.acct||"",note:it.note||"",day:it.day||null,saving:!!it.saving,ov}})}
+function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amount||0;(it.changes||[]).slice().sort((x,y)=>x.fromYm<y.fromYm?-1:1).forEach(c=>{if(c.fromYm<=ym)a=c.amount});const ov=it.overrides&&it.overrides[ym]!=null;if(ov)a=it.overrides[ym];return{id:it.id,name:it.name,amount:a,card:!!it.card,acct:it.acct||"",note:it.note||"",day:it.day||null,saving:!!it.saving,match:it.match||0,ov}})}
 /* fixed costs that leave on a given date (a day past the month's end falls on its last day; salary deductions are not shown) */
 function fixedOn(d){const last=Number(ymDay(ymOf(d),31).slice(8));return fixedAt(ymOf(d)).filter(x=>x.day&&x.amount>0&&x.acct!=="급여 공제"&&Math.min(x.day,last)===dom(d))}
 const fxWhere=x=>x.card?"💳 카드":x.acct?esc(x.acct):"🏦 통장";
@@ -901,8 +901,9 @@ function simulateRun(extra,plan){
     const debt=wasFree?0:free?Math.min(avail,instDebt+paid):avail;
     const cardRem=sum(ITEMS().filter(x=>!closed[x.id]),x=>sum(itemMonths(x).filter(m=>m>ym),m=>itemPrincipalAt(x,m)));
     const debtLeft=cardRem+sum(loans,l=>Math.max(0,l.bal));
-    svAcc+=sum(fixedAt(ym).filter(x=>x.saving),x=>x.amount);
-    path.push({ym,net:base+pot+svAcc-debtLeft,avail,debt,save:avail-debt,parts:{inst:Math.min(instDebt,debt),pre,lp,hold:Math.max(0,debt-Math.min(instDebt,debt)-sum(pre,x=>x.a)-sum(lp,x=>x.a))},inc:incomeAt(ym),dep:st.deposit||0,bank:base-(st.deposit||0)+pot+svAcc,sv:svAcc,owe:debtLeft});
+    /* a savings plan's payment plus the government match it earns (청년미래적금 일반형 6%) */
+    const svMon=Math.round(sum(fixedAt(ym).filter(x=>x.saving),x=>x.amount*(1+(x.match||0))));svAcc+=svMon;
+    path.push({ym,net:base+pot+svAcc-debtLeft,avail,debt,save:avail-debt+svMon,svMon,parts:{inst:Math.min(instDebt,debt),pre,lp,hold:Math.max(0,debt-Math.min(instDebt,debt)-sum(pre,x=>x.a)-sum(lp,x=>x.a))},inc:incomeAt(ym),dep:st.deposit||0,bank:base-(st.deposit||0)+pot+svAcc,sv:svAcc,owe:debtLeft});
     ym=next;
   }
   return{cardDone,free,loans:Object.fromEntries(loans.map(l=>[l.d.id,l.done])),dueShort:Object.fromEntries(loans.filter(l=>l.short>0.5).map(l=>[l.d.id,l.short])),path,intBack,feeSaved};
@@ -1532,7 +1533,7 @@ function renderProjection(sim,now,target){
     $("pjSub").textContent=`빚 0원까지 ${Math.max(0,ymDiff(ymOf(TODAY),sim.free))}개월 · 지금은 매달 약 ${man(P[1]?P[1].debt:first.debt)}을 빚 갚는 데 써요`}
   else{$("pjWhen").textContent="";$("pjBig").textContent="빚을 갚는 중이에요";$("pjSub").textContent="지금 숫자로는 완납 시점을 계산할 수 없어요."}
   // chart: from now to a year after the last debt (at most 24 months)
-  const n=Math.min(P.length,Math.max(12,fi>=0?fi+13:12),24),D=P.slice(0,n),W=600,H=210,L=40,Rr=8,T=34,B=24,bw=(W-L-Rr)/n,mx=Math.max(...D.map(p=>p.avail),1),step=mx>2e6?1e6:5e5,top=Math.ceil(mx/step)*step,y=v=>T+(H-T-B)*(1-v/top);
+  const n=Math.min(P.length,Math.max(12,fi>=0?fi+13:12),24),D=P.slice(0,n),W=600,H=210,L=40,Rr=8,T=34,B=24,bw=(W-L-Rr)/n,mx=Math.max(...D.map(p=>Math.max(p.avail,p.debt+p.save)),1),step=mx>2e6?1e6:5e5,top=Math.ceil(mx/step)*step,y=v=>T+(H-T-B)*(1-v/top);
   let g="";for(let v=0;v<=top+1;v+=step)g+=`<line class="grid" x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L-6}" y="${y(v)+4}" text-anchor="end">${v?man(v):"0"}</text>`;
   const ev={};if(sim.cardDone)ev[sim.cardDone]="💳 카드 끝";if(st.raiseFromYm)ev[st.raiseFromYm]=(ev[st.raiseFromYm]?ev[st.raiseFromYm]+" ":"")+"💵 인상";if(sim.free)ev[sim.free]="🎉 빚 0원";GL.forEach((g,i)=>{ev[g.ym]=(ev[g.ym]?ev[g.ym]+" ":"")+`🏁${GL.length>1?i+1+"차":"목표"}`});
   D.forEach((p,i)=>{const x=L+i*bw+2,w=Math.max(2,bw-4),yd=y(p.debt),ys=y(p.debt+p.save),r=Math.min(4,w/2);
@@ -1548,10 +1549,10 @@ function renderProjection(sim,now,target){
   if(sim.cardDone)items.push([sim.cardDone,li("","💳",ymKo(sim.cardDone),"유이자 카드 할부 끝","그 돈으로 NH 대출부터 갚아요","")]);
   if(st.raiseFromYm&&(!sim.free||st.raiseFromYm<=ymAdd(sim.free,24))){const before=baseIncomeAt(ymAdd(st.raiseFromYm,-1)),aft=baseIncomeAt(ymAdd(st.raiseFromYm,1)),bp=backPay();if(aft>before)items.push([st.raiseFromYm,li("","💵",ymKo(st.raiseFromYm),`월급 ${st.raisePct||0}% 인상`,bp?`${st.raiseBackMonths}개월 소급분 ${man(bp)}도 이달에 · 전부 상환·저축으로`:"인상분은 전부 상환·저축으로",`월 ${dm(aft-before)}`)])}
   /* a savings plan (적금) starting or stepping up */
-  ((S.fixed&&S.fixed.items)||[]).filter(x=>x.saving).forEach(x=>{(x.changes||[]).filter(c=>c.fromYm>=ymOf(TODAY)).forEach(c=>items.push([c.fromYm,li("good","🌱",ymKo(c.fromYm),`${esc(x.name)} 월 ${man1(c.amount)}`,"자유적립 · 빚 갚기와 별도로 모여요 (순자산에 포함)","")]))});
+  ((S.fixed&&S.fixed.items)||[]).filter(x=>x.saving).forEach(x=>{(x.changes||[]).filter(c=>c.fromYm>=ymOf(TODAY)).forEach(c=>items.push([c.fromYm,li("good","🌱",ymKo(c.fromYm),`${esc(x.name)} 월 ${man1(c.amount)}`,`자유적립${x.match?` · 정부기여금 ${Math.round(x.match*100)}% 포함 월 ${man1(c.amount*(1+x.match))}씩 모여요`:""}`,"")]))});
   BONUS().filter(x=>x.ym>=ymOf(TODAY)&&x.ym<=tYm).forEach(x=>items.push([x.ym,li("","🧾",ymKo(x.ym),esc(x.memo||"보너스·환급"),"한 번 들어오는 돈 · 전부 상환·저축으로",`+${man(x.amount)}`)]));
   if(sim.free)items.push([sim.free,li("good","🎉",ymKo(sim.free),"빚 0원!",sim.intBack?`대출 이자 월 ${man(sim.intBack)}도 더는 안 나가요`:"","")]);
-  if(after){items.push([after.ym,li("good","💰",`${ymKo(after.ym)}부터`,"매달 저축 시작","파킹통장에 그대로 쌓아요",`월 ${man(after.save)}`)]);
+  if(after){items.push([after.ym,li("good","💰",`${ymKo(after.ym)}부터`,"매달 저축 시작",after.svMon?`${esc(SAVEACC)} ${man(after.save-after.svMon)} + 청년미래적금 ${man(after.svMon)} (기여금 포함)`:"파킹통장에 그대로 쌓아요",`월 ${man(after.save)}`)]);
     const cum=k=>sum(P.slice(fi,fi+k+1),p=>p.save);
     [[6,"반년"],[12,"1년"]].forEach(([k,lab])=>{const p=P[fi+k];if(p)items.push([p.ym,li("good","🐷",ymKo(p.ym),`저축 ${lab}째`,`빚 다 갚은 뒤 파킹통장에 쌓인 돈 (누적) · 보증금 더하면 순자산 ${man(p.net)}`,man(cum(k)))])})}
   GL.forEach((g,i)=>{const at=P.find(p=>p.ym===g.ym);if(!at)return;const ok=at.net>=g.net,h=P.find(p=>p.net>=g.net);items.push([g.ym,li(ok?"good":"","🏁",ymKo(g.ym),`${GL.length>1?`${i+1}차 `:""}목표 순자산 ${man(g.net)}`,ok?`예상 ${man(at.net)} · ${at.net-g.net<10000?"딱 맞춰 도착":`목표보다 ${man(at.net-g.net)} 여유`}`:`예상 ${man(at.net)} · ${man(g.net-at.net)} 모자라요${h?` · 이대로면 ${ymKo(h.ym)} 도착`:""}`,ok?"달성 ✅":"⚠️")])});
