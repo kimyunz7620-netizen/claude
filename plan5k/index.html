@@ -331,7 +331,6 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 .cd.g{background:var(--mint-soft)} .cd.w{background:var(--sun-soft)} .cd.b{background:var(--coral-soft)}
 .cdk{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:3px}.cdk.g{background:var(--mint-soft)}.cdk.w{background:var(--sun-soft)}.cdk.b{background:var(--coral-soft)}
 .cd .i{font-size:.6rem;font-weight:700;color:var(--mint);white-space:nowrap}
-.cd .bk{font-size:.6rem;font-weight:800;color:var(--coral);white-space:nowrap}.cd .bk.got{color:var(--mint);font-weight:700}
 .back-t{color:var(--coral);font-weight:700}.back-t.got{color:var(--mint)}
 .cd.today .n{color:var(--grape);font-weight:800}
 .cd.sel{border-color:var(--grape)}
@@ -1130,11 +1129,10 @@ function renderCal(){
     const inc=sum(S.wins.filter(w=>w.kind==="sell"&&w.date===d),w=>w.amount)+(dom(d)===PAY()&&!fut?incomeAt(ymOf(d)):0);
     /* 경조사 paid from its own account stays out of the 생활비 colour but still shows on the day */
     const gs=sum(S.entries.filter(e=>e.date===d&&!e.excl&&fundOut(e)),e=>e.amount),gtxt=gs?`🎁${gs>=10000?manC(gs):num(gs)}`:"";
-    const bk=S.entries.filter(e=>e.date===d&&e.back&&e.excl&&e.amount>0),bs=sum(bk,e=>e.amount),bOpen=bk.some(e=>!S.tasks["back-"+e.id]);
     const v=fut?"":s>0?(s>=10000?manC(s):num(s)):gs?gtxt:ns?"🥚":rec?"0":"",fxs=sum(fixedOn(d),x=>x.amount),ftxt=fxs?`📌${fxs>=10000?manC(fxs):num(fxs)}`:s>0&&gs?gtxt:"";
-    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${bs?`<span class="bk ${bOpen?"":"got"}">💵${bs>=10000?manC(bs):num(bs)}${bOpen?"":"✓"}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
+    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
   $("cal").innerHTML=html;
-  $("calLegend").innerHTML=`<span class="cdk g"></span>하루 한도(${segs.length>1?segs.map((x,i)=>`${i?md(x.d)+"~ ":"~"+md(addDays(segs[1].d,-1))+" "}${man1(x.v)}`).join(", "):man1(segs[0].v)}) 안 · <span class="cdk w"></span>조금 넘음 · <span class="cdk b"></span>많이 넘음 · <span style="color:var(--mint);font-weight:700">+초록</span>은 들어온 돈 · <span class="back-t">💵빨강</span>은 돌려받을 돈 (받으면 ✓) · 📌는 고정비 나가는 날`;
+  $("calLegend").innerHTML=`<span class="cdk g"></span>하루 한도(${segs.length>1?segs.map((x,i)=>`${i?md(x.d)+"~ ":"~"+md(addDays(segs[1].d,-1))+" "}${man1(x.v)}`).join(", "):man1(segs[0].v)}) 안 · <span class="cdk w"></span>조금 넘음 · <span class="cdk b"></span>많이 넘음 · <span style="color:var(--mint);font-weight:700">+초록</span>은 들어온 돈 · 📌는 고정비 나가는 날`;
   $("calSum").textContent=won(tot);$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
 }
 
