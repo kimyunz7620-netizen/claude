@@ -1517,7 +1517,11 @@ function budgetForGoals(goals){
   out[0].max=alone[0];
   if(out[1]){out[1].max=alone[0]==null?null:s2(alone[0]);
     if(out[1].max==null&&flat!=null){out[0].max=flat;out[1].max=s2(flat)}
-    if(out[0].max!=null&&out[1].max!=null&&Math.abs(out[1].max-out[0].max)<10000){const m=Math.min(out[0].max,out[1].max);out[0].max=m;out[1].max=m}}
+    if(out[0].max!=null&&out[1].max!=null&&Math.abs(out[1].max-out[0].max)<10000){const m=Math.min(out[0].max,out[1].max);out[0].max=m;out[1].max=m}
+    /* keep spending steady: after goal 1 the 생활비 grows by about 5% at most; what's left over is saved, so goal 2 can be set higher (recNet) */
+    const s1=out[0].max,s=out[1];if(s1!=null&&s.max!=null){const bump=Math.max(10000,Math.round(s1*0.05/1000)*1000);
+      if(s.max>s1+bump){s.room=s.max;s.max=s1+bump;const p=simulate(0,[{from:"0000-00",budget:s1},{from:s.from,budget:s.max}]).path.find(p=>p.ym===s.ym);
+        const rec=p?Math.floor(p.net/100000)*100000:null;if(rec!=null&&rec>=s.target+100000)s.recNet=rec}}}
   const res={stages:out,base};GOALC={sig,res};return res;
 }
 function renderGoalFit(){
@@ -1540,23 +1544,24 @@ function goalOut(){
   const rows=r.stages.map((g,i)=>{const per=i?`${ymKo(g.from)} ~ ${ymKo(g.ym)}`:`지금 ~ ${ymKo(g.ym)}`;
     return `<div class="note ${g.max==null?"bad":""}"><div class="row"><strong>${i+1}차 · ${ymKo(g.ym)}에 순자산 ${man(g.target)}</strong></div>${(()=>{const dep=ST().deposit||0;return dep&&g.target>dep?`<div class="tiny muted">빚 0원에 보증금 ${man(dep)} + 통장 ${man(g.target-dep)}이면 돼요</div>`:""})()}
       <div class="small">${g.max==null?`생활비를 0원으로 줄여도 어려워요. 시점을 늦추거나 금액을 줄여 보세요.`:`<b>${per} 생활비 월 ${man1(g.max)}</b>${!i?` <span class="${g.max>=B?"good-t":"bad-t"}">(${near(g.max,B)?`지금 예산 ${man1(B)}으로 도착`:`지금 ${man1(B)}${g.max>B?`보다 +${man1(g.max-B)}`:`보다 −${man1(B-g.max)}`}`})</span>`:""}`}</div>
-      ${i&&g.max!=null&&g.max>r.stages[0].max?`<div class="tiny muted">1차를 지키면 그 뒤엔 월 ${man1(g.max-r.stages[0].max)} 더 써도 돼요</div>`:i&&g.max!=null&&g.max<r.stages[0].max?`<div class="tiny muted">1차 뒤엔 월 ${man1(r.stages[0].max-g.max)} 줄여야 2차에 도착해요</div>`:""}${!i&&r.stages[1]&&g.max!=null&&g.alone>g.max?`<div class="tiny muted">1차만 보면 월 ${man1(g.alone)}까지 되지만, 2차 목표 때문에 ${man1(g.max)}으로 잡았어요</div>`:""}
+      ${i&&g.recNet?`<div class="small good-t">💡 추천: 생활비는 월 +${man1(g.max-r.stages[0].max)}만 늘리고 (최대 +${man1(g.room-r.stages[0].max)}까지 되지만 소비가 널뛰지 않게), 남는 돈은 저축 → ${ymKo(g.ym)} 순자산 <b>${man(g.recNet)}</b> 목표</div>`:i&&g.max!=null&&g.max>r.stages[0].max?`<div class="tiny muted">1차를 지키면 그 뒤엔 월 ${man1(g.max-r.stages[0].max)} 더 써도 돼요</div>`:i&&g.max!=null&&g.max<r.stages[0].max?`<div class="tiny muted">1차 뒤엔 월 ${man1(r.stages[0].max-g.max)} 줄여야 2차에 도착해요</div>`:""}${!i&&r.stages[1]&&g.max!=null&&g.alone>g.max?`<div class="tiny muted">1차만 보면 월 ${man1(g.alone)}까지 되지만, 2차 목표 때문에 ${man1(g.max)}으로 잡았어요</div>`:""}
       ${!i&&g.cur!=null?`<div class="tiny muted">지금 계획대로면 ${ymKo(g.ym)}에 ${man(g.cur)} (${g.cur>=g.target?"+":"−"}${man(Math.abs(g.cur-g.target))})${g.reach?` · 도착 ${ymKo(g.reach)}`:""}</div>`:""}</div>`}).join("");
   const plan=ST().budgetPlan||[],same=JSON.stringify(goals)===JSON.stringify(GOALS())&&ok&&near(r.stages[0].max,B)&&sum(ALLCATS().filter(c=>!c.hidden&&!c.fund),c=>c.amount||0)===B&&(r.stages[1]&&r.stages[1].max!==r.stages[0].max?plan.length===1&&plan[0].from===r.stages[1].from&&near(r.stages[1].max,plan[0].budget):!plan.length);
   o.innerHTML=`<p class="tiny muted">순자산 = 보증금 + 통장 + 적금 낸 돈 − 빚 (정부기여금은 만기 때 더해요)이에요. 아래는 기간마다 쓸 수 있는 최대 생활비이고, 지금 진행 중인 ${ymKo(first)} 결제 주기는 그대로 둬요.</p>`+rows+
 
-    (ok&&!same?`<div class="btns"><button type="button" class="btn" data-fitgoals="1">이 단계대로 예산 맞추기</button></div><span class="tiny muted">${r.stages.length>1&&r.stages[1].max!==r.stages[0].max?`지금은 월 ${man1(r.stages[0].max)}, ${ymKo(r.stages[1].from)}부터 월 ${man1(r.stages[1].max)}으로 자동으로 바뀌어요. `:""}카테고리와 주간 한도도 같은 비율로 맞춰요.</span>`:ok?'<p class="small good-t">✅ 지금 예산이 이 목표에 맞춰져 있어요.</p>':"");
+    (ok&&!same?`<div class="btns"><button type="button" class="btn" data-fitgoals="1">이 단계대로 예산 맞추기</button></div><span class="tiny muted">${r.stages.length>1&&r.stages[1].max!==r.stages[0].max?`지금은 월 ${man1(r.stages[0].max)}, ${ymKo(r.stages[1].from)}부터 월 ${man1(r.stages[1].max)}으로 자동으로 바뀌어요. `:""}${r.stages[1]&&r.stages[1].recNet?`2차 목표도 ${man(r.stages[1].recNet)}으로 올려요. `:""}카테고리와 주간 한도도 같은 비율로 맞춰요.</span>`:ok?'<p class="small good-t">✅ 지금 예산이 이 목표에 맞춰져 있어요.</p>':"");
 }
 /* a month (card cycle) of 생활비 → the week limit: 7 days of an average 30.4-day month, to the nearest 1천 원; the day limit is that ÷ 7 */
 const weekOf=m=>Math.round(m*7/30.4/1000)*1000;
 async function fitGoals(){
-  const st=ST(),goals=gfGoals().sort((a,b)=>a.ym<b.ym?-1:1),r=budgetForGoals(goals);if(!r||!r.stages.every(g=>g.max!=null))return;
+  const st=ST();let goals=gfGoals().sort((a,b)=>a.ym<b.ym?-1:1);const r=budgetForGoals(goals);if(!r||!r.stages.every(g=>g.max!=null))return;
   const B=st.cycleBudget||0,B1=r.stages[0].max,cs=sum(ALLCATS().filter(c=>!c.hidden&&!c.fund),c=>c.amount||0),sc=scaleCats(B1);
   const cats=ALLCATS().map(c=>c.hidden||c.fund?c:{...c,amount:sc[c.id]});
+  if(r.stages[1]&&r.stages[1].recNet)goals=goals.map((g,i)=>i===1?{...g,net:r.stages[1].recNet}:g);
   const week=weekOf(B1),s2=r.stages[1]&&r.stages[1].max!==B1?r.stages[1]:null,last=goals[goals.length-1];
   const budgetPlan=s2?[{from:s2.from,budget:s2.max,week:weekOf(s2.max)}]:[];
   try{if(B1!==cs)await put("config/budget",{...S.budget,cats,hist:histWith()});await put("config/settings",{...st,cycleBudget:B1,weekBudget:week,goals,targetGain:last.net-goalBase(),targetYm:last.ym,budgetPlan});GF=null;
-    toast(`🎯 생활비 월 ${man1(B1)}${s2?` · ${ymKo(s2.from)}부터 ${man1(s2.max)}`:""}으로 맞췄어요`)}catch(_){}
+    toast(`🎯 생활비 월 ${man1(B1)}${s2?` · ${ymKo(s2.from)}부터 ${man1(s2.max)}`:""}으로 맞췄어요${r.stages[1]&&r.stages[1].recNet?` · 2차 목표 ${man(r.stages[1].recNet)}`:""}`)}catch(_){}
 }
 /* what one month's red bar is made of */
 function debtTip(p){const q=p.parts||{},bits=[];if(q.inst)bits.push(`할부 청구 ${man1(q.inst)}`);const pr=q.pre||[];if(pr.length>2){const big=pr.slice().sort((a,b)=>b.a-a.a)[0];bits.push(`할부 ${pr.length}건 선결제 ${man1(sum(pr,x=>x.a))} (${big.n} 외)`)}else pr.forEach(x=>bits.push(`${x.n} 선결제 ${man1(x.a)}`));(q.lp||[]).forEach(x=>bits.push(`${x.n} ${man1(x.a)}`));if(q.hold>5000)bits.push(`다음 선결제용 모아두기 ${man1(q.hold)}`);
