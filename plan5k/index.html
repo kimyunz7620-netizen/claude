@@ -449,6 +449,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
             <label class="field" style="grid-column:1/-1"><span>날짜</span><input type="date" id="enDate"></label>
           </div>
           <label class="check"><input type="checkbox" id="enExcl"><span class="small">생활비 예산에서 빼기 <span class="muted">(계모임·다른 사람 몫 등)</span></span></label>
+          <label class="check" id="enBackBox" hidden><input type="checkbox" id="enBack"><span class="small">💵 나중에 돌려받아요 <span class="muted">(곗돈 대신 결제 → 현금으로 받음)</span></span></label>
         </div>
       </details>
       <div class="btns">
@@ -894,7 +895,7 @@ function simulateRun(extra,plan){
   for(let i=0;i<120;i++){
     const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym)-freeOwnAt(ym),liv=budgetIn(ym,plan)+extra-cyclePledge(cycleOf(ym));
     const ab=Object.keys(closed).length?null:appBill(ym);
-    const inc=(ab!=null?incomeAt(ym)-fixedCash(ym)-ab+fundCardIn(ym)-buf:incomeAt(ym)-fixedTotal(ym)-liv-inst-buf)+intBack+extraAt(ym)-fundGapAt(ym);
+    const inc=(ab!=null?incomeAt(ym)-fixedCash(ym)-ab+fundCardIn(ym)-buf:incomeAt(ym)-fixedTotal(ym)-liv-inst-buf)+intBack+extraAt(ym)+(ab!=null?backIn(ym):0)-fundGapAt(ym);
     pot+=inc;let paid=0;const pre=[],lp=[];
     for(const l of loans){if(!l.d.due||l.bal<=0.5||pot<=0)continue;const a=Math.min(pot,dueShare(l.d,l.bal,ym),l.bal);l.bal-=a;pot-=a;paid+=a;lp.push({n:l.d.name,a});if(l.bal<=0.5){l.done=ym;intBack+=l.int}}
     for(const l of loans)if(l.d.due&&ym===lastPayBefore(l.d))l.short=Math.max(0,Math.round(l.bal));
@@ -964,11 +965,11 @@ function renderPayTx(M,pl,phase){
 /* ---------- payday plan ---------- */
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
-  const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),extra=extraAt(M);
+  const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),back=backIn(M),extra=extraAt(M)+back;
   const autoRes=sum(entriesIn(c,e=>e.method==="cash"),e=>e.amount),manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
   const fixed=fixedCash(M),inc=incomeAt(M),gift=fundGapAt(M),giftCard=ab!=null?fundCardIn(M):0,pp=st.prepayPot,potIn=pp&&ymAdd(pp.ym,1)===M&&pp.amount>0?pp.amount:0,avail=inc+extra+potIn-card+giftCard-fixed-gift-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
-  return{M,inc,extra,potIn,gift,giftCard,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
+  return{M,inc,extra,back,potIn,gift,giftCard,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
 }
 
 /* ---------- bank balances (bank names only, never account numbers) ---------- */
@@ -1036,6 +1037,8 @@ const cyclePledge=c=>sum(Object.keys(S.weekGoals).filter(ws=>ws>=c.start&&ws<=c.
 /* side income joins the next payday's plan: with 즉시결제 that's the 21st, otherwise the card day */
 const planYmOf=d=>dom(d)<(ST().payEarly?PAY():CARD()+1)?ymOf(d):ymAdd(ymOf(d),1);
 const extraAt=ym=>sum(S.wins.filter(w=>w.kind==="sell"&&planYmOf(w.date)===ym),w=>w.amount);
+/* money I paid on my card for others (곗돈 등) and get back in cash: it offsets that charge in the same card bill */
+const backIn=ym=>sum(S.entries.filter(e=>e.back&&e.excl&&e.method==="lotte"&&e.amount>0&&payYmOf(e.date)===ym),e=>e.amount);
 function cycleSummary(){
   const c=cycleOf(payYmOf(TODAY)),B=cycleBudgetFor(payYmOf(TODAY))-cyclePledge(c),spent=sum(entriesIn(c),e=>e.amount);
   const total=dayDiff(c.start,c.end)+1,elapsed=dayDiff(c.start,TODAY)+1,left=total-elapsed+1;
@@ -1054,7 +1057,7 @@ function paintBar(el,spent,budget,pace){
 const refName=e=>e.cancelItem?`${(ITEMS().find(x=>x.id===e.cancelItem)||{name:"할부"}).name} 할부`:ALLCATS().some(c=>c.id===e.cat)?catName(e.cat):(e.memo||"예전 결제");
 function entryRow(e){const[em,col]=look(e.cat),rf=e.amount<0,cx=rf?0:sum(S.entries.filter(x=>x.cancelOf===e.id),x=>-x.amount);
   if(rf)return `<div class="li" style="--c:${col}"><span class="av">↩️</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(refName(e))} 결제 취소${e.memo&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.pending?"⏳ 취소 예정 · 카드 앱에 뜨면 체크":"✅ 카드 취소 완료"}${e.cancelItem?` · ${ymKo(e.fromYm)} 청구부터 없음`:e.excl?" · 예전 결제라 생활비엔 안 들어가요":""}</div></button><div class="a good-t">${e.amount?`−${num(-e.amount)}`:"취소"}</div></div>`;
-  return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":(e.cardItem?`💳 할부 ${e.months}개월${e.free?" 무이자":""} · 카드 할부 목록에서 갚는 중`:`💳 할부 ${e.months}개월${e.free?" 무이자":" 유이자 ⚠️"} · 생활비엔 월 ${num(Math.floor(e.amount/e.months))}씩`)}${e.excl?" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
+  return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":(e.cardItem?`💳 할부 ${e.months}개월${e.free?" 무이자":""} · 카드 할부 목록에서 갚는 중`:`💳 할부 ${e.months}개월${e.free?" 무이자":" 유이자 ⚠️"} · 생활비엔 월 ${num(Math.floor(e.amount/e.months))}씩`)}${e.excl?e.back?S.tasks["back-"+e.id]?" · 💵 돌려받음":" · 💵 돌려받을 돈":" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
 function renderToday(){
   const allow=todayAllowance(),todays=LIV().filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=won(Math.max(0,left));
@@ -1137,6 +1140,8 @@ function questItems(){
   const it=[],d=dom(TODAY),M=ymOf(TODAY),day=S.days[TODAY]||{},todays=S.entries.filter(e=>e.date===TODAY);
   const unc=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).length;
   {const fxt=fixedOn(TODAY);if(fxt.length){const k="fx-"+TODAY;it.push({e:"📌",task:k,done:!!S.tasks[k],t:`오늘 나가는 고정비 ${man1(sum(fxt,x=>x.amount))}`,s:fxt.map(x=>`${x.name} ${num(x.amount)} ${x.card?"카드":x.acct||"통장"}`).join(" · ")+" · 잘 빠졌는지 확인"})}}
+  S.entries.filter(e=>e.back&&e.excl&&e.amount>0&&e.date>=addDays(TODAY,-45)).forEach(e=>{const k="back-"+e.id;if(S.tasks[k]&&e.date<addDays(TODAY,-1))return;
+    it.push({e:"💵",task:k,done:!!S.tasks[k],t:`돌려받을 돈 ${man1(e.amount)}${e.memo?` · ${e.memo}`:""}`,s:`${md(e.date)} 내 카드로 대신 결제 · 받으면 ${CARDACC()}에 넣어 카드값에 보태요 (생활비로 쓰지 않기)`})});
   const pnd=S.entries.filter(e=>e.pending&&e.amount<=0);if(pnd.length)it.push({e:"↩️",done:false,t:`결제 취소 예정 ${pnd.length}건`,s:"카드 앱에 취소가 떴는지 확인",btn:["보기","go:records"]});
   if(unc)it.push({e:"🧩",done:false,urgent:true,t:`분류가 필요한 지출 ${unc}건`,s:"카드에만 있던 지출이에요",btn:["정리","go:records"]});
   const wr=weekRange(TODAY),isSun=parse(TODAY).getDay()===0,prevSun=addDays(wr.start,-1),last=S.weekly.filter(w=>!w.seed).map(w=>w.date).sort().pop();
@@ -1345,7 +1350,7 @@ function renderMonth(){
     :`<div class="row"><h2>${early?"카드값 낸 뒤":"결제일 이후"}: 선결제 실행</h2><span class="chip good">${ymKo(M)}</span></div><p class="small muted">카드 앱에서 아래 건을 '건별 선결제'하고, 할 때마다 '기록'을 눌러 주세요.</p>`;
   const src=pl.cardSrc==="app"?(early&&BB(M)?"즉시결제 예상":"카드 앱 입력값"):pl.cardSrc==="est-open"?"추정 · 남은 생활비 포함":"가계부 추정";
   const incAct=!!(ST().incomeActual&&ST().incomeActual[M]!=null);
-  const flow=`<div class="flow"><div class="fl"><span>💵 실수령 <span class="tiny muted">${incAct?"받은 금액":`예상${bonusAt(M)?` · ${esc(BONUS().filter(x=>x.ym===M).map(x=>x.memo||"보너스").join("·"))} +${man(bonusAt(M))}`:""}${ST().raiseFromYm&&M>=ST().raiseFromYm?(M===ST().raiseFromYm&&backPay()?` · 인상+소급 ${man(backPay())} 반영`:" · 인상 반영"):""} · 받으면 고쳐 주세요`}</span>${incAct?` <button type="button" class="link tiny" data-increset="${M}">예상으로</button>`:""}</span><input type="text" inputmode="numeric" class="incin" data-ym="${M}" value="${num(pl.inc)}" style="width:7.5rem;height:38px;text-align:right;font-weight:700" aria-label="${ymKo(M)} 실수령액"></div>${pl.extra?`<div class="fl"><span>💰 부수입 <span class="tiny muted">중고 판매 등</span></span><span class="num">+${num(pl.extra)}</span></div>`:""}${pl.potIn?`<div class="fl"><span>🐷 하나은행에 모아 둔 선결제용 <span class="tiny muted">${Number(ST().prepayPot.ym.slice(5))}월 월급날부터</span></span><span class="num">+${num(pl.potIn)}</span></div>`:""}<div class="fl"><span>💳 카드값 (${md(early?ymDay(M,PAY()):ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div>${pl.giftCard?`<div class="fl"><span>↩️ 카드값 중 경조사 몫 <span class="tiny muted">경조사 통장에서 옮겨 내요</span></span><span class="num">+${num(pl.giftCard)}</span></div>`:""}${pl.gift?`<div class="fl"><span>🎁 경조사 통장 부족분 <span class="tiny muted">${esc(fundTop(M).map(x=>`${md(x.date)} ${x.memo||"경조사"}${x.card?"(카드)":""}`).join(" · "))}</span></span><span class="num">−${num(pl.gift)}</span></div>`:""}<details class="more" id="fxBox" ${fxOpen?"open":""}><summary class="fl" style="display:flex;justify-content:space-between;color:var(--ink);font-weight:400"><span>🏠 고정비 ▾ <span class="tiny muted">눌러서 이번 달만 고치기</span></span><span class="num" style="font-weight:800">−${num(pl.fixed)}</span></summary><div class="list small">${fixedAt(M).slice().sort((a,b)=>(a.day||99)-(b.day||99)).map(x=>`<div class="li"><span class="av">${x.card?"💳":"🏦"}</span><div><div class="t">${x.day?`<span class="muted">${x.day}일</span> `:""}${esc(x.name)}${x.ov?' <span class="chip warn">이번 달 조정</span>':""}</div><div class="s">${esc(x.note)}${x.card?" · 카드값에 포함돼 여기선 안 빠져요":""}</div></div><div style="text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end"><input type="text" inputmode="numeric" class="fxin" data-fx="${esc(x.id)}" data-ym="${M}" value="${num(x.amount)}" style="width:7.5rem;height:38px;text-align:right" aria-label="${esc(x.name)} ${ymKo(M)} 금액">${x.ov?`<button type="button" class="btn ghost" style="padding:4px 10px;font-size:.76rem" data-fxreset="${esc(x.id)}" data-ym="${M}">원래대로</button>`:""}</div></div>`).join("")}</div><p class="tiny muted" style="border-top:2px solid var(--line);padding-top:10px">✏️ 여기서 고친 금액은 ${ymKo(M)}에만 적용돼요. 매달 바뀌는 금액은 설정에서 고쳐요.</p></details>
+  const flow=`<div class="flow"><div class="fl"><span>💵 실수령 <span class="tiny muted">${incAct?"받은 금액":`예상${bonusAt(M)?` · ${esc(BONUS().filter(x=>x.ym===M).map(x=>x.memo||"보너스").join("·"))} +${man(bonusAt(M))}`:""}${ST().raiseFromYm&&M>=ST().raiseFromYm?(M===ST().raiseFromYm&&backPay()?` · 인상+소급 ${man(backPay())} 반영`:" · 인상 반영"):""} · 받으면 고쳐 주세요`}</span>${incAct?` <button type="button" class="link tiny" data-increset="${M}">예상으로</button>`:""}</span><input type="text" inputmode="numeric" class="incin" data-ym="${M}" value="${num(pl.inc)}" style="width:7.5rem;height:38px;text-align:right;font-weight:700" aria-label="${ymKo(M)} 실수령액"></div>${pl.extra-pl.back?`<div class="fl"><span>💰 부수입 <span class="tiny muted">중고 판매 등</span></span><span class="num">+${num(pl.extra-pl.back)}</span></div>`:""}${pl.back?`<div class="fl"><span>💵 돌려받는 돈 <span class="tiny muted">곗돈 대신 결제분 · 카드값에 보태요</span></span><span class="num">+${num(pl.back)}</span></div>`:""}${pl.potIn?`<div class="fl"><span>🐷 하나은행에 모아 둔 선결제용 <span class="tiny muted">${Number(ST().prepayPot.ym.slice(5))}월 월급날부터</span></span><span class="num">+${num(pl.potIn)}</span></div>`:""}<div class="fl"><span>💳 카드값 (${md(early?ymDay(M,PAY()):ymDay(M,CARD()))}) <span class="tiny muted">${src}</span></span><span class="num">−${num(pl.card)}</span></div>${pl.giftCard?`<div class="fl"><span>↩️ 카드값 중 경조사 몫 <span class="tiny muted">경조사 통장에서 옮겨 내요</span></span><span class="num">+${num(pl.giftCard)}</span></div>`:""}${pl.gift?`<div class="fl"><span>🎁 경조사 통장 부족분 <span class="tiny muted">${esc(fundTop(M).map(x=>`${md(x.date)} ${x.memo||"경조사"}${x.card?"(카드)":""}`).join(" · "))}</span></span><span class="num">−${num(pl.gift)}</span></div>`:""}<details class="more" id="fxBox" ${fxOpen?"open":""}><summary class="fl" style="display:flex;justify-content:space-between;color:var(--ink);font-weight:400"><span>🏠 고정비 ▾ <span class="tiny muted">눌러서 이번 달만 고치기</span></span><span class="num" style="font-weight:800">−${num(pl.fixed)}</span></summary><div class="list small">${fixedAt(M).slice().sort((a,b)=>(a.day||99)-(b.day||99)).map(x=>`<div class="li"><span class="av">${x.card?"💳":"🏦"}</span><div><div class="t">${x.day?`<span class="muted">${x.day}일</span> `:""}${esc(x.name)}${x.ov?' <span class="chip warn">이번 달 조정</span>':""}</div><div class="s">${esc(x.note)}${x.card?" · 카드값에 포함돼 여기선 안 빠져요":""}</div></div><div style="text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end"><input type="text" inputmode="numeric" class="fxin" data-fx="${esc(x.id)}" data-ym="${M}" value="${num(x.amount)}" style="width:7.5rem;height:38px;text-align:right" aria-label="${esc(x.name)} ${ymKo(M)} 금액">${x.ov?`<button type="button" class="btn ghost" style="padding:4px 10px;font-size:.76rem" data-fxreset="${esc(x.id)}" data-ym="${M}">원래대로</button>`:""}</div></div>`).join("")}</div><p class="tiny muted" style="border-top:2px solid var(--line);padding-top:10px">✏️ 여기서 고친 금액은 ${ymKo(M)}에만 적용돼요. 매달 바뀌는 금액은 설정에서 고쳐요.</p></details>
     ${pl.cashRes?`<div class="fl"><span>🏦 케뱅에 남길 체크카드 생활비 <span class="tiny muted">${pl.resSrc}</span></span><span class="num">−${num(pl.cashRes)}</span></div>`:""}${ST().buffer?`<div class="fl"><span>🛟 버퍼</span><span class="num">−${num(ST().buffer)}</span></div>`:""}
     <div class="fl total"><span>⚔️ 선결제·상환 가능</span><span class="${pl.avail<0?"bad-t":"good-t"}">${won(pl.avail)}</span></div></div>`;
   let body="";
@@ -1714,6 +1719,7 @@ $("bdNext").addEventListener("click",()=>{bdKey=ymAdd(bdKey,1);renderWeek()});
 document.addEventListener("input",e=>{const el=e.target;if(el.matches('input[inputmode="numeric"][type="text"]')&&!el.readOnly)el.value=el.value.trim()===""?"":num(parseNum(el.value));if(el.id==="pfDate")pfAuto()});
 $("pfTarget").addEventListener("change",pfAuto);
 $("enDate").addEventListener("change",e=>{selDate=e.target.value||TODAY;calYm=ymOf(selDate);if(editingId)cancelEdit();renderToday()});
+$("enExcl").addEventListener("change",e=>{$("enBackBox").hidden=!e.target.checked;if(!e.target.checked)$("enBack").checked=false});
 $("wkDate").addEventListener("change",renderWeek);
 let refundOf=null;
 /* search every record by memo, category or amount (digits match the amount, commas ignored) */
@@ -1726,13 +1732,13 @@ function startEdit(en){
   if(view!=="today")go("today");
   refundOf=en.amount<0?(en.cancelOf||"?"):null;
   editingId=en.id;selDate=en.date;selCat=en.cat;selMethod=en.method;
-  $("enAmount").value=num(Math.abs(en.amount));$("enMemo").value=en.memo||"";$("enPending").checked=!!en.pending;$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;$("enExcl").checked=!!en.excl;$("enFund").checked=!!en.fromFund;$("enFund").dataset.cat=en.cat+en.date;
+  $("enAmount").value=num(Math.abs(en.amount));$("enMemo").value=en.memo||"";$("enPending").checked=!!en.pending;$("enMonths").value=en.months||3;$("enFree").checked=!!en.free;$("enExcl").checked=!!en.excl;$("enBack").checked=!!en.back;$("enBackBox").hidden=!en.excl;$("enFund").checked=!!en.fromFund;$("enFund").dataset.cat=en.cat+en.date;
   document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===selMethod));$("instBox").hidden=selMethod!=="inst";
   $("entryTitle").textContent=refundOf?"↩️ 결제 취소 고치기":"✏️ 기록 고치기";$("enMore").open=true;$("enSave").textContent="수정 저장";$("enCancel").hidden=false;$("enDel").hidden=false;
   $("enPendBox").hidden=!refundOf;$("enRefund").hidden=!!refundOf;$("enRefund").textContent=en.method==="inst"?"↩️ 할부 결제 취소":"↩️ 결제 취소";
   renderToday();openSheet();
 }
-function cancelEdit(){editingId=null;refundOf=null;$("enFund").dataset.cat="";$("enPendBox").hidden=true;$("enRefund").hidden=true;selCat=null;selMethod="lotte";document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m==="lotte"));$("instBox").hidden=true;$("enMore").open=false;$("enFree").checked=false;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
+function cancelEdit(){editingId=null;$("enBack").checked=false;$("enBackBox").hidden=true;refundOf=null;$("enFund").dataset.cat="";$("enPendBox").hidden=true;$("enRefund").hidden=true;selCat=null;selMethod="lotte";document.querySelectorAll("#enMethod button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m==="lotte"));$("instBox").hidden=true;$("enMore").open=false;$("enFree").checked=false;$("entryTitle").textContent="✏️ 쓴 돈 기록";$("enSave").textContent="기록하기";$("enCancel").hidden=true;$("enDel").hidden=true;$("enAmount").value="";$("enMemo").value="";$("enExcl").checked=false}
 $("enCancel").addEventListener("click",()=>{cancelEdit();closeSheet();renderToday()});
 document.addEventListener("click",e=>{if(e.target.classList&&e.target.classList.contains("sheet-bg")){if(editingId||refundOf)cancelEdit();closeSheet();renderToday()}});
 function openSheet(){$("sheet").hidden=false;document.body.classList.add("sheet-on");setTimeout(()=>{if(!editingId&&!parseNum($("enAmount").value))$("enAmount").focus()},60)}
@@ -1773,7 +1779,7 @@ $("entryForm").addEventListener("submit",async e=>{
   if(refundOf){if(refundOf!=="?")doc.cancelOf=refundOf;if($("enPending").checked)doc.pending=true;else{const p0=editingId&&S.entries.find(x=>x.id===editingId),ca=p0&&(p0.confirmedAt||(p0.pending?new Date().toISOString():null));if(ca)doc.confirmedAt=ca}const o=S.entries.find(x=>x.id===refundOf);if(o&&o.excl)$("enExcl").checked=true}
   if(prev&&prev.cardItem)doc.cardItem=prev.cardItem;
   if(prev&&prev.cancelItem){doc.cancelItem=prev.cancelItem;doc.fromYm=prev.fromYm}
-  if($("enExcl").checked)doc.excl=true;if(FUNDCAT(doc.cat)&&$("enFund").checked)doc.fromFund=true;
+  if($("enExcl").checked){doc.excl=true;if($("enBack").checked&&!refundOf&&doc.amount>0)doc.back=true}if(FUNDCAT(doc.cat)&&$("enFund").checked)doc.fromFund=true;
   if(selMethod==="inst"){doc.months=Math.max(2,Math.min(36,Number($("enMonths").value)||3));doc.free=$("enFree").checked}
   $("enSave").disabled=true;
   try{await put("entries/"+id,doc);
