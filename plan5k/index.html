@@ -331,6 +331,8 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 .cd.g{background:var(--mint-soft)} .cd.w{background:var(--sun-soft)} .cd.b{background:var(--coral-soft)}
 .cdk{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:3px}.cdk.g{background:var(--mint-soft)}.cdk.w{background:var(--sun-soft)}.cdk.b{background:var(--coral-soft)}
 .cd .i{font-size:.6rem;font-weight:700;color:var(--mint);white-space:nowrap}
+.cd .bk{font-size:.6rem;font-weight:800;color:var(--coral);white-space:nowrap}.cd .bk.got{color:var(--mint);font-weight:700}
+.back-t{color:var(--coral);font-weight:700}.back-t.got{color:var(--mint)}
 .cd.today .n{color:var(--grape);font-weight:800}
 .cd.sel{border-color:var(--grape)}
 .cd.fut{opacity:.35;cursor:default}
@@ -1057,7 +1059,7 @@ function paintBar(el,spent,budget,pace){
 const refName=e=>e.cancelItem?`${(ITEMS().find(x=>x.id===e.cancelItem)||{name:"할부"}).name} 할부`:ALLCATS().some(c=>c.id===e.cat)?catName(e.cat):(e.memo||"예전 결제");
 function entryRow(e){const[em,col]=look(e.cat),rf=e.amount<0,cx=rf?0:sum(S.entries.filter(x=>x.cancelOf===e.id),x=>-x.amount);
   if(rf)return `<div class="li" style="--c:${col}"><span class="av">↩️</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(refName(e))} 결제 취소${e.memo&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.pending?"⏳ 취소 예정 · 카드 앱에 뜨면 체크":"✅ 카드 취소 완료"}${e.cancelItem?` · ${ymKo(e.fromYm)} 청구부터 없음`:e.excl?" · 예전 결제라 생활비엔 안 들어가요":""}</div></button><div class="a good-t">${e.amount?`−${num(-e.amount)}`:"취소"}</div></div>`;
-  return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":(e.cardItem?`💳 할부 ${e.months}개월${e.free?" 무이자":""} · 카드 할부 목록에서 갚는 중`:`💳 할부 ${e.months}개월${e.free?" 무이자":" 유이자 ⚠️"} · 생활비엔 월 ${num(Math.floor(e.amount/e.months))}씩`)}${e.excl?e.back?S.tasks["back-"+e.id]?" · 💵 돌려받음":" · 💵 돌려받을 돈":" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a">${num(e.amount)}</div></div>`}
+  return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":(e.cardItem?`💳 할부 ${e.months}개월${e.free?" 무이자":""} · 카드 할부 목록에서 갚는 중`:`💳 할부 ${e.months}개월${e.free?" 무이자":" 유이자 ⚠️"} · 생활비엔 월 ${num(Math.floor(e.amount/e.months))}씩`)}${e.excl?e.back?S.tasks["back-"+e.id]?' · <span class="back-t got">💵 돌려받음 ✓</span>':' · <span class="back-t">💵 돌려받을 돈 · 아직 안 받음</span>':" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a${e.back&&e.excl&&!S.tasks["back-"+e.id]?" back-t":""}">${num(e.amount)}</div></div>`}
 function renderToday(){
   const allow=todayAllowance(),todays=LIV().filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=won(Math.max(0,left));
@@ -1128,10 +1130,11 @@ function renderCal(){
     const inc=sum(S.wins.filter(w=>w.kind==="sell"&&w.date===d),w=>w.amount)+(dom(d)===PAY()&&!fut?incomeAt(ymOf(d)):0);
     /* 경조사 paid from its own account stays out of the 생활비 colour but still shows on the day */
     const gs=sum(S.entries.filter(e=>e.date===d&&!e.excl&&fundOut(e)),e=>e.amount),gtxt=gs?`🎁${gs>=10000?manC(gs):num(gs)}`:"";
+    const bk=S.entries.filter(e=>e.date===d&&e.back&&e.excl&&e.amount>0),bs=sum(bk,e=>e.amount),bOpen=bk.some(e=>!S.tasks["back-"+e.id]);
     const v=fut?"":s>0?(s>=10000?manC(s):num(s)):gs?gtxt:ns?"🥚":rec?"0":"",fxs=sum(fixedOn(d),x=>x.amount),ftxt=fxs?`📌${fxs>=10000?manC(fxs):num(fxs)}`:s>0&&gs?gtxt:"";
-    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
+    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${bs?`<span class="bk ${bOpen?"":"got"}">💵${bs>=10000?manC(bs):num(bs)}${bOpen?"":"✓"}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
   $("cal").innerHTML=html;
-  $("calLegend").innerHTML=`<span class="cdk g"></span>하루 한도(${segs.length>1?segs.map((x,i)=>`${i?md(x.d)+"~ ":"~"+md(addDays(segs[1].d,-1))+" "}${man1(x.v)}`).join(", "):man1(segs[0].v)}) 안 · <span class="cdk w"></span>조금 넘음 · <span class="cdk b"></span>많이 넘음 · <span style="color:var(--mint);font-weight:700">+초록</span>은 들어온 돈 · 📌는 고정비 나가는 날`;
+  $("calLegend").innerHTML=`<span class="cdk g"></span>하루 한도(${segs.length>1?segs.map((x,i)=>`${i?md(x.d)+"~ ":"~"+md(addDays(segs[1].d,-1))+" "}${man1(x.v)}`).join(", "):man1(segs[0].v)}) 안 · <span class="cdk w"></span>조금 넘음 · <span class="cdk b"></span>많이 넘음 · <span style="color:var(--mint);font-weight:700">+초록</span>은 들어온 돈 · <span class="back-t">💵빨강</span>은 돌려받을 돈 (받으면 ✓) · 📌는 고정비 나가는 날`;
   $("calSum").textContent=won(tot);$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
 }
 
