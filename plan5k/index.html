@@ -1010,7 +1010,7 @@ function txSub(t){if(t.length<=60)return `<div class="txs">${esc(t)}</div>`;cons
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
   const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),back=backIn(M),extra=extraAt(M)+back;
-  const autoRes=sum(entriesIn(c,e=>e.method==="cash"),e=>e.amount),manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
+  const autoRes=sum(entriesIn(c,e=>e.method==="cash"&&!imported(e)),e=>e.amount) /* only what was spent from 케뱅 since the app started; old-tracker rows were settled before */,manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
   const fixed=fixedCash(M),inc=incomeAt(M),gift=fundGapAt(M),giftCard=ab!=null?fundCardIn(M):0,pp=st.prepayPot,potIn=pp&&ymAdd(pp.ym,1)===M&&pp.amount>0?pp.amount:0,avail=inc+extra+potIn-card+giftCard-fixed-gift-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
   return{M,inc,extra,back,potIn,gift,giftCard,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
