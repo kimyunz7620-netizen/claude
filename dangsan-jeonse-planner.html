@@ -496,6 +496,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
             <li>네이버 지도 앱에서 <span class="kw">당산동 아파트</span>를 검색해요.</li>
             <li>부동산(매물) 보기로 바꾸고 거래 방식 <b>전세</b>, 유형 <b>아파트</b>를 골라요.</li>
             <li>면적은 <b>최소와 최대를 모두</b> 넣어요. 기본은 전용 40~60㎡(약 12~18평)이고, 역산 탭에서 바꿀 수 있어요. 네이버 화면의 면적이 전용인지 공급인지 꼭 확인하세요.</li>
+            <li>네이버의 평형 표기(예: 25평형)는 보통 공급면적 기준이라 전용(㎡)보다 큰 숫자예요. 단지 카드에 <b>전용 ㎡와 공급 평형을 둘 다</b> 적어 두면 평수를 헷갈리지 않아요.</li>
             <li>보증금(가격)도 <b>최소와 최대</b>를 넣어요. 최대는 역산 결과의 상한, 최소는 하한의 70% 정도로 두면 너무 싼 매물(상태·권리 위험)을 한 번 거를 수 있어요.</li>
             <li>단지를 눌러 <b>낮은 가격순</b>으로 정렬하고, 같은 평형의 최저 전세 호가와 매물 개수를 봐요.</li>
           </ol>
@@ -1167,11 +1168,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '<select data-k="status" aria-label="진행 상태">' + STATUS.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select>' +
       '<button type="button" class="ghost" data-del>삭제</button></div>' +
       '<div class="cx-grid">' +
-      '<label class="f"><span class="lbl">전용면적</span><span class="in"><input data-k="area" type="number" inputmode="decimal" min="0" step="0.01"><em>㎡</em></span></label>' +
+      '<label class="f"><span class="lbl">전용면적</span><span class="in"><input data-k="area" type="number" inputmode="decimal" min="0" step="0.01"><em>㎡</em></span><span class="hint" data-ha></span></label>' +
       '<label class="f"><span class="lbl">전세 매물 수</span><span class="in"><input data-pk="cnt" type="number" inputmode="numeric" min="0" step="1"><em>개</em></span></label>' +
       '<label class="f"><span class="lbl">최저 전세 호가 (만원)</span><input data-pk="jeonse" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hj></span></label>' +
       '<label class="f"><span class="lbl">매매가 (만원)</span><input data-pk="sale" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hs></span></label>' +
-      '<label class="f wide"><span class="lbl">희망 전세가 (만원) · 이 가격 이하로 내려오면 알려 드려요</span><input data-k="want" type="number" inputmode="decimal" min="0" step="500"></label>' +
+      '<label class="f"><span class="lbl">희망 전세가 (만원)</span><input data-k="want" type="number" inputmode="decimal" min="0" step="500"></label>' +
+      '<label class="f"><span class="lbl">공급 평형 (네이버 표기)</span><span class="in"><input data-k="py" type="number" inputmode="decimal" min="0" step="1"><em>평</em></span></label>' +
       '</div><div class="cx-last" data-last></div><div class="spark" data-spark></div><div class="chips" data-chips></div><div class="mini" data-mini></div>' +
       '<details class="visit"><summary>임장 체크 <span class="chip plain" data-vc>0/' + VISIT.length + '</span></summary><div class="vlist">' +
       VISIT.map(function (v, i) { return '<label class="vi"><input type="checkbox" data-vk="' + i + '"><span>' + v + '</span></label>'; }).join('') + '</div></details>' +
@@ -1202,6 +1204,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var vis = d.visit || {}, vc = 0; for (var q = 0; q < VISIT.length; q++) if (vis[q]) vc++;
     card.querySelector('[data-vc]').textContent = vc + '/' + VISIT.length;
     if (vc > 0) chips.push(['임장 ' + vc + '/' + VISIT.length, 'grape']);
+    var ar = Number(d.area) || 0, py = Number(d.py) || 0;
+    card.querySelector('[data-ha]').textContent = ar ? '약 ' + pyeong(ar) + '평 (전용)' : '';
+    if (ar) chips.push(['전용 ' + ar + '㎡ · ' + pyeong(ar) + '평', 'plain']);
+    if (ar && sj) chips.push(['전용 평당 전세 ' + Math.round(sj / (ar / 3.3058)).toLocaleString('ko-KR') + '만', 'plain']);
+    if (py && sj) chips.push(['공급 ' + py + '평 · 평당 ' + Math.round(sj / py).toLocaleString('ko-KR') + '만', 'plain']);
     var box = card.querySelector('[data-chips]'); box.textContent = ''; chips.forEach(function (x) { box.appendChild(el('span', 'chip ' + x[1], x[0])); });
     spark(card.querySelector('[data-spark]'), ser.slice(-16).map(function (x) { return x.j; }));
     var mini = card.querySelector('[data-mini]'); mini.textContent = '';
@@ -1383,6 +1390,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     r.scored.forEach(function (sc, i) {
       var row = el('div', 'rk'); row.appendChild(el('div', 'rk-n', String(i + 1)));
       var mid = el('div'); mid.appendChild(el('b', null, sc.name));
+      var dd0 = cxData.get(sc.id) || {};
+      mid.appendChild(el('small', null, sc.area ? '전용 ' + sc.area + '㎡ (' + pyeong(sc.area) + '평)' + (Number(dd0.py) ? ' · 공급 ' + dd0.py + '평' : '') : '면적을 입력하면 평수가 보여요'));
       mid.appendChild(el('small', null, '전세 ' + fmt(sc.lp.j) + ' (' + dotD(sc.lp.d) + ') · 대출 ' + fmt(sc.best.L) + ' · 필수 저축액 ' + fmt(sc.need)));
       mid.appendChild(el('small', null, '월 이자 ' + fmt(sc.interest) + ' · ' + sc.best.p.n + (core.canTotal > 0 ? ' · 저축 ' + (core.canTotal >= sc.need ? '여유 ' : '부족 ') + fmt(Math.abs(core.canTotal - sc.need)) : '')));
       var ch = el('div', 'chips');
@@ -1407,7 +1416,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       합산연소득: c.income, 둘이모을수있는금액: c.canTotal,
       단지: r.scored.map(function (sc, i) {
         var ser = seriesOf(sc.id), tr = sc.tr;
-        return { 순위: i + 1, 이름: sc.name, 전용면적: sc.area || null, 상태: sc.status || '후보', 최근전세: sc.lp.j, 최근매매: sc.lp.s || null,
+        return { 순위: i + 1, 이름: sc.name, 전용면적: sc.area || null, 전용평수: sc.area ? pyeong(sc.area) : null, 공급평형: Number((cxData.get(sc.id) || {}).py) || null, 상태: sc.status || '후보', 최근전세: sc.lp.j, 최근매매: sc.lp.s || null,
           전세가율: sc.ratio == null ? null : Math.round(sc.ratio), 기록횟수: ser.length, 첫기록일: ser.length ? ser[0].d : null, 마지막기록일: ser.length ? ser[ser.length - 1].d : null,
           전세월변화율: tr ? Math.round(tr.pctMonth * 10) / 10 : null, 매물수변화: tr ? tr.cnt : null,
           점수: sc.total, 대출: Math.round(sc.best.L), 필수저축액: Math.round(sc.need), 저축여유부족: c.canTotal > 0 ? Math.round(c.canTotal - sc.need) : null, 월이자: Math.round(sc.interest),
