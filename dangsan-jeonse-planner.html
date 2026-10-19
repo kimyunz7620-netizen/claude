@@ -1,0 +1,520 @@
+<title>당산 신혼집 플래너</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap">
+<style>
+/* Layout: 한 장짜리 작업 문서. 위에 핵심 숫자 띠, 아래로 자금 → 단지 → 체크리스트. 입력은 모두 db에 실시간 저장. */
+:root {
+  --bg: #f2f6f7;
+  --surface: #ffffff;
+  --ink: #16262d;
+  --muted: #586a72;
+  --line: #d6e0e4;
+  --accent: #0b6b78;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcf0f2;
+  --ok: #1b7448;
+  --ok-soft: #dcf1e6;
+  --warn: #8f5600;
+  --warn-soft: #fbecce;
+  --bad: #b02a22;
+  --bad-soft: #fadedb;
+  --font-body: "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-display: "Noto Serif KR", "Batang", "AppleMyungjo", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e191e; --surface: #15252c; --ink: #e5eef1; --muted: #9db1b9; --line: #263941;
+    --accent: #5cc5d2; --accent-ink: #052a30; --accent-soft: #183b42;
+    --ok: #62d19b; --ok-soft: #173a2a; --warn: #ebb552; --warn-soft: #3d2f12; --bad: #ff8d83; --bad-soft: #43201d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e191e; --surface: #15252c; --ink: #e5eef1; --muted: #9db1b9; --line: #263941;
+  --accent: #5cc5d2; --accent-ink: #052a30; --accent-soft: #183b42;
+  --ok: #62d19b; --ok-soft: #173a2a; --warn: #ebb552; --warn-soft: #3d2f12; --bad: #ff8d83; --bad-soft: #43201d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.3; }
+h1 { font-size: 30px; font-weight: 700; }
+h2 { font-size: 21px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+.lede { color: var(--muted); margin-top: 8px; max-width: 62ch; }
+.statusline { display: flex; gap: 12px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); display: inline-block; margin-right: 6px; }
+.dot.busy { background: var(--warn); }
+.dot.err { background: var(--bad); }
+.banner { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-size: 14px; }
+
+/* summary band */
+.band { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.band > div { padding: 18px 20px; border-right: 1px solid var(--line); min-width: 0; }
+.band > div:last-child { border-right: 0; }
+.band .k { font-size: 13px; color: var(--muted); }
+.band .v { font-family: var(--font-display); font-size: 26px; font-weight: 700; line-height: 1.3; margin-top: 2px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.band .s { font-size: 12.5px; color: var(--muted); }
+.band .v.ok { color: var(--ok); } .band .v.bad { color: var(--bad); }
+@media (max-width: 520px) { .band > div { border-right: 0; border-bottom: 1px solid var(--line); } .band > div:last-child { border-bottom: 0; } }
+
+section > h2 { margin-bottom: 4px; }
+.sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; max-width: 70ch; }
+
+/* money */
+.money { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .money { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; min-width: 0; }
+.group + .group { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.group h3 { font-family: var(--font-body); font-size: 13px; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 14px; }
+.f { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 13px; color: var(--muted); }
+.f .lbl b { color: var(--ink); font-weight: 700; }
+.in { display: flex; align-items: center; gap: 6px; }
+.in em { font-style: normal; font-size: 13px; color: var(--muted); white-space: nowrap; }
+input, select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; width: 100%; font-variant-numeric: tabular-nums; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+input:disabled, select:disabled { opacity: .65; }
+.hint { min-height: 1.3em; font-size: 12.5px; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+dl.calc { margin: 0; display: flex; flex-direction: column; }
+dl.calc > div { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+dl.calc > div:last-child { border-bottom: 0; }
+dl.calc dt { color: var(--muted); font-size: 14px; }
+dl.calc dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+dl.calc .total { border-bottom: 1px solid var(--ink); }
+dl.calc .total dd { font-size: 17px; }
+.ok { color: var(--ok); } .bad { color: var(--bad); }
+.note { margin-top: 14px; font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+/* complexes */
+.addrow { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.addrow input { flex: 1 1 220px; }
+button { font: inherit; cursor: pointer; border-radius: 8px; padding: 8px 16px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.ghost { background: transparent; color: var(--muted); border-color: var(--line); font-weight: 500; padding: 6px 12px; font-size: 13px; }
+button.ghost.confirm { color: var(--bad); border-color: var(--bad); font-weight: 700; }
+.cxlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.cx { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cx.out { opacity: .6; }
+.cx-head { display: flex; gap: 8px; align-items: center; }
+.cx-head .cx-name { font-weight: 700; font-size: 16px; background: transparent; border-color: transparent; padding-inline: 4px; }
+.cx-head .cx-name:hover, .cx-head .cx-name:focus { border-color: var(--line); background: var(--bg); }
+.cx-head select { width: auto; flex: none; }
+.cx-grid { display: grid; grid-template-columns: 1fr 1.4fr 1.4fr; gap: 10px; }
+@media (max-width: 380px) { .cx-grid { grid-template-columns: 1fr 1fr; } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 26px; }
+.chip { font-size: 12.5px; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; font-variant-numeric: tabular-nums; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.empty { border: 1px dashed var(--line); border-radius: 12px; padding: 24px; color: var(--muted); text-align: center; grid-column: 1 / -1; }
+
+/* checklist */
+.cl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.cl .panel h3 { font-family: var(--font-body); font-size: 15px; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.cl .panel h3 span { color: var(--muted); font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; }
+.ck { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.ck:first-of-type { border-top: 0; }
+.ck input { width: 18px; height: 18px; margin-top: 3px; flex: none; accent-color: var(--accent); }
+.ck b { display: block; font-weight: 500; }
+.ck small { color: var(--muted); font-size: 12.5px; line-height: 1.45; display: block; }
+.ck input:checked + span b { color: var(--muted); text-decoration: line-through; }
+footer { font-size: 12.5px; color: var(--muted); max-width: 70ch; }
+@media (prefers-reduced-motion: no-preference) { .dot { transition: background .2s; } }
+</style>
+
+<main>
+  <header>
+    <p class="eyebrow">영등포구 당산동 · 전세 · <span id="targetLabel">2028년 7월 입주 목표</span></p>
+    <h1>당산 신혼집 플래너</h1>
+    <p class="lede">둘 다 같은 주소로 열어 숫자를 입력하면 서로 바로 보여요. 금액은 모두 만원 단위입니다.</p>
+    <div class="statusline"><span><i class="dot" id="dot"></i><span id="saveState">연결 중</span></span></div>
+    <div class="banner" id="banner" hidden></div>
+  </header>
+
+  <section class="band" aria-label="핵심 숫자">
+    <div><div class="k">목표 보증금</div><div class="v" id="sDeposit">–</div><div class="s" id="sDepositSub">자금 계획에서 입력</div></div>
+    <div><div class="k">필요한 자기자금</div><div class="v" id="sNeed">–</div><div class="s">보증금 − 대출 + 부대비용</div></div>
+    <div><div class="k" id="sGapLabel">입주 시점 여유·부족</div><div class="v" id="sGap">–</div><div class="s" id="sGapSub">예상 자기자금 기준</div></div>
+    <div><div class="k">월 대출이자</div><div class="v" id="sInterest">–</div><div class="s" id="sInterestSub">대출 × 금리 ÷ 12</div></div>
+  </section>
+
+  <section id="money">
+    <h2>자금 계획</h2>
+    <p class="sub">보증금을 정하고 대출을 얼마나 받을지 넣으면, 입주 시점까지 모아야 할 돈이 계산됩니다. 비워 둔 칸은 0으로 봅니다.</p>
+    <div class="money">
+      <div class="panel">
+        <div class="group">
+          <h3>이름 (표시용)</h3>
+          <div class="fields">
+            <label class="f"><span class="lbl">첫 번째 사람</span><input id="f-nameA" data-f="nameA" data-t="text" placeholder="A" maxlength="12"></label>
+            <label class="f"><span class="lbl">두 번째 사람</span><input id="f-nameB" data-f="nameB" data-t="text" placeholder="B" maxlength="12"></label>
+          </div>
+        </div>
+        <div class="group">
+          <h3>소득과 모아 둔 돈</h3>
+          <div class="fields">
+            <label class="f"><span class="lbl">연소득 · <b data-nm="A">A</b></span><span class="in"><input id="f-incomeA" data-f="incomeA" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="incomeA"></span></label>
+            <label class="f"><span class="lbl">연소득 · <b data-nm="B">B</b></span><span class="in"><input id="f-incomeB" data-f="incomeB" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="incomeB"></span></label>
+            <label class="f"><span class="lbl">현재 자기자금 · <b data-nm="A">A</b></span><span class="in"><input id="f-savingsA" data-f="savingsA" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="savingsA"></span></label>
+            <label class="f"><span class="lbl">현재 자기자금 · <b data-nm="B">B</b></span><span class="in"><input id="f-savingsB" data-f="savingsB" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="savingsB"></span></label>
+            <label class="f"><span class="lbl">양가 지원 (예정)</span><span class="in"><input id="f-support" data-f="support" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="support"></span></label>
+          </div>
+        </div>
+        <div class="group">
+          <h3>입주까지</h3>
+          <div class="fields">
+            <label class="f"><span class="lbl">입주 목표 시기</span><input id="f-targetDate" data-f="targetDate" data-t="text" type="month" value="2028-07"></label>
+            <label class="f"><span class="lbl">둘이 합쳐 월 저축</span><span class="in"><input id="f-monthlySave" data-f="monthlySave" type="number" inputmode="decimal" min="0" step="10"><em>만원</em></span><span class="hint" data-h="monthlySave"></span></label>
+            <label class="f"><span class="lbl">이사·중개·가전 등 부대비용</span><span class="in"><input id="f-costs" data-f="costs" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="costs"></span></label>
+          </div>
+        </div>
+        <div class="group">
+          <h3>보증금과 대출</h3>
+          <div class="fields">
+            <label class="f"><span class="lbl">목표 보증금</span><span class="in"><input id="f-deposit" data-f="deposit" type="number" inputmode="decimal" min="0" step="500"><em>만원</em></span><span class="hint" data-h="deposit"></span></label>
+            <label class="f"><span class="lbl">대출 예정액</span><span class="in"><input id="f-loan" data-f="loan" type="number" inputmode="decimal" min="0" step="500"><em>만원</em></span><span class="hint" data-h="loan"></span></label>
+            <label class="f"><span class="lbl">대출 금리 (연)</span><span class="in"><input id="f-rate" data-f="rate" type="number" inputmode="decimal" min="0" step="0.1" placeholder="3.0"><em>%</em></span><span class="hint">비우면 3.0%로 계산</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <dl class="calc">
+          <div><dt>현재 자기자금 합계</dt><dd id="cOwn">–</dd></div>
+          <div><dt>입주까지 <span id="cMonths">0</span>개월 동안 저축</dt><dd id="cSaved">–</dd></div>
+          <div class="total"><dt>입주 시점 예상 자기자금</dt><dd id="cProj">–</dd></div>
+          <div><dt>필요한 자기자금</dt><dd id="cNeed">–</dd></div>
+          <div class="total"><dt id="cGapLabel">여유·부족</dt><dd id="cGap">–</dd></div>
+          <div><dt>대출 비율 (대출 ÷ 보증금)</dt><dd id="cRatio">–</dd></div>
+          <div><dt>월 이자</dt><dd id="cInterest">–</dd></div>
+          <div><dt>버팀목 한도 참고</dt><dd id="cCap">–</dd></div>
+          <div><dt>부부 합산 소득</dt><dd id="cIncome">–</dd></div>
+        </dl>
+        <p class="note">버팀목 한도는 수도권 최대 3억 원과 보증금 80% 중 낮은 값입니다. 자격은 블로그 자료 기준으로 혼인 7년 이내, 합산 연소득 7,500만 원 이하, 순자산 3.45억 원 이하로 알려져 있으며, 신청 시점의 기준은 주택도시기금에서 꼭 확인하세요. 시중은행 전세대출은 소득과 DSR에 따라 달라집니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="complexes">
+    <h2>후보 단지 비교</h2>
+    <p class="sub">보고 싶은 단지를 추가하고, 알아낸 가격과 메모를 채워 가세요. 전세가율은 전세가 ÷ 매매가이고, 높을수록 보증금 위험이 큽니다.</p>
+    <form class="addrow" id="addForm">
+      <input id="addName" placeholder="단지명 (예: 래미안당산1차)" maxlength="40" autocomplete="off">
+      <button type="submit" id="addBtn">단지 추가</button>
+    </form>
+    <div class="cxlist" id="cxlist"><div class="empty">아직 후보 단지가 없어요. 위에 단지명을 적고 추가하면 가격과 메모를 적을 카드가 생깁니다.</div></div>
+  </section>
+
+  <section id="checklist">
+    <h2>계약 안전 체크리스트</h2>
+    <p class="sub">계약 전부터 잔금일까지 확인할 항목입니다. 체크 상태도 둘이 같이 봅니다.</p>
+    <div class="cl" id="cl"></div>
+  </section>
+
+  <footer>대출·세금·보증보험 조건은 자주 바뀝니다. 이 페이지의 기준 수치는 참고용이고, 계약 직전에 주택도시기금, 은행, HUG·HF·SGI 안내와 국토교통부 실거래가 공개시스템에서 다시 확인하세요.</footer>
+</main>
+
+<script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var db = null, canWrite = true;
+  var plan = {}, cxData = new Map(), checks = {};
+  var DEFAULTS = { rate: 3, targetDate: '2028-07', nameA: 'A', nameB: 'B' };
+  var STATUS = ['후보', '임장 예정', '다녀옴', '탈락'];
+
+  var GROUPS = [
+    { t: '계약 전 확인', items: [
+      ['reg', '등기부등본 확인', '근저당, 가압류, 가등기가 있는지 보고, 소유자가 계약 상대와 같은지 맞춰요.'],
+      ['ratio', '선순위 대출 + 보증금이 시세의 70% 안쪽', '넘으면 경매 시 보증금을 못 받을 위험이 커져요.'],
+      ['insure', '전세보증보험 가입 가능 확인', 'HUG·HF·SGI 중 가입 가능한 집인지 계약 전에 문의해요.'],
+      ['tax', '집주인 납세 증명', '국세·지방세 완납증명서를 요청해요.'],
+      ['bld', '건축물대장 확인', '위반건축물 표시가 있으면 보증보험 가입이 막힐 수 있어요.'],
+      ['price', '최근 실거래·전세가 비교', '같은 단지 같은 평형의 최근 전세 거래를 3건 이상 봐요.']
+    ]},
+    { t: '계약할 때', items: [
+      ['id', '집주인 본인 확인', '신분증을 확인하고, 대리인이면 위임장과 인감증명서를 받아요.'],
+      ['acct', '입금 계좌가 집주인 명의', '계약금은 집주인 명의 계좌로만 보내요.'],
+      ['clause', '특약 넣기', '잔금일까지 새 근저당 설정 금지, 보증보험 가입에 협조한다는 내용을 넣어요.'],
+      ['loanok', '전세대출 승인 가능 여부 확인', '계약서를 쓰기 전에 은행에 임대인 동의와 한도를 문의해요.']
+    ]},
+    { t: '잔금일', items: [
+      ['reg2', '잔금 직전 등기부 다시 확인', '계약일과 잔금일 사이에 바뀐 권리가 없는지 봐요.'],
+      ['move', '전입신고 + 확정일자', '입주 당일 같은 날 처리해요. 대항력과 우선변제권이 생겨요.'],
+      ['insure2', '보증보험 가입', '잔금일 이후 기한 안에 가입해야 해요. 기한은 보증기관에서 확인해요.'],
+      ['keys', '관리비·공과금 정산, 시설물 상태 사진', '입주 전 하자를 사진으로 남겨 두세요.']
+    ]}
+  ];
+
+  /* ---------- helpers ---------- */
+  function fmt(v) {
+    if (v == null || !isFinite(v)) return '–';
+    var neg = v < 0, a = Math.round(Math.abs(v)), eok = Math.floor(a / 10000), rest = a % 10000, s = '';
+    if (eok) s += eok + '억';
+    if (rest) s += (s ? ' ' : '') + rest.toLocaleString('ko-KR') + '만';
+    if (!s) s = '0';
+    return (neg ? '−' : '') + s + '원';
+  }
+  function num(k) { var v = Number(plan[k]); return isFinite(v) && plan[k] !== '' && plan[k] != null ? v : 0; }
+  function has(k) { return plan[k] != null && plan[k] !== '' && isFinite(Number(plan[k])) && Number(plan[k]) > 0; }
+  function setState(kind, text) {
+    $('#dot').className = 'dot' + (kind === 'busy' ? ' busy' : kind === 'err' ? ' err' : '');
+    $('#saveState').textContent = text;
+  }
+  var queues = new Map();
+  function write(path, fn) {
+    var prev = queues.get(path) || Promise.resolve();
+    var next = prev.then(function () { setState('busy', '저장 중'); return fn(); })
+      .then(function () { setState('ok', '저장됨'); })
+      .catch(function (e) { setState('err', '저장 실패'); showBanner(e && e.code === 'invalid_argument' ? '저장할 권한이 없는 것 같아요. 공유 설정에서 상대방을 "기여자" 이상으로 초대해 주세요.' : '저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.'); });
+    queues.set(path, next);
+    return next;
+  }
+  function showBanner(t) { var b = $('#banner'); b.textContent = t; b.hidden = !t; }
+  var timers = new Map();
+  function debounce(key, ms, fn) { clearTimeout(timers.get(key)); timers.set(key, setTimeout(fn, ms)); }
+
+  /* ---------- plan ---------- */
+  function months() {
+    var t = String(plan.targetDate || DEFAULTS.targetDate).split('-'), y = +t[0], m = +t[1];
+    if (!y || !m) return 0;
+    var now = new Date();
+    return Math.max(0, (y - now.getFullYear()) * 12 + (m - 1 - now.getMonth()));
+  }
+  function renderPlan() {
+    document.querySelectorAll('[data-f]').forEach(function (el) {
+      if (el === document.activeElement) return;
+      var k = el.dataset.f, v = plan[k];
+      var show = v == null ? '' : String(v);
+      if (k === 'targetDate' && !show) show = DEFAULTS.targetDate;
+      if (el.value !== show) el.value = show;
+    });
+    var nA = plan.nameA || DEFAULTS.nameA, nB = plan.nameB || DEFAULTS.nameB;
+    document.querySelectorAll('[data-nm]').forEach(function (e) { e.textContent = e.dataset.nm === 'A' ? nA : nB; });
+    document.querySelectorAll('[data-h]').forEach(function (e) { var k = e.dataset.h; e.textContent = has(k) ? fmt(num(k)) : ''; });
+
+    var own = num('savingsA') + num('savingsB') + num('support');
+    var mo = months(), saved = num('monthlySave') * mo, proj = own + saved;
+    var dep = num('deposit'), loan = num('loan'), costs = num('costs');
+    var need = dep - loan + costs, gap = proj - need;
+    var rate = plan.rate == null || plan.rate === '' ? DEFAULTS.rate : Number(plan.rate);
+    var interest = loan * rate / 100 / 12;
+    var income = num('incomeA') + num('incomeB');
+    var hasDep = dep > 0;
+
+    var t = String(plan.targetDate || DEFAULTS.targetDate).split('-');
+    $('#targetLabel').textContent = t[0] + '년 ' + (+t[1]) + '월 입주 목표';
+    $('#cMonths').textContent = mo;
+    $('#cOwn').textContent = fmt(own);
+    $('#cSaved').textContent = '+ ' + fmt(saved);
+    $('#cProj').textContent = fmt(proj);
+    $('#cNeed').textContent = hasDep ? fmt(need) : '–';
+    $('#cRatio').textContent = hasDep ? (loan / dep * 100).toFixed(1) + '%' : '–';
+    $('#cInterest').textContent = loan > 0 ? '월 ' + fmt(interest) : '–';
+    $('#cCap').textContent = hasDep ? fmt(Math.min(30000, dep * 0.8)) : '–';
+    $('#cIncome').textContent = income > 0 ? fmt(income) + (income <= 7500 ? ' (기준 이내)' : ' (기준 초과)') : '–';
+    $('#cIncome').className = income > 7500 ? 'bad' : '';
+    var label = !hasDep ? '여유·부족' : gap >= 0 ? '여유' : '부족';
+    $('#cGapLabel').textContent = label;
+    $('#cGap').textContent = hasDep ? fmt(gap) : '–';
+    $('#cGap').className = hasDep ? (gap >= 0 ? 'ok' : 'bad') : '';
+
+    $('#sDeposit').textContent = hasDep ? fmt(dep) : '–';
+    $('#sDepositSub').textContent = hasDep ? '대출 ' + fmt(loan) + ' 포함' : '자금 계획에서 입력';
+    $('#sNeed').textContent = hasDep ? fmt(need) : '–';
+    $('#sGapLabel').textContent = hasDep ? '입주 시점 ' + label : '입주 시점 여유·부족';
+    $('#sGap').textContent = hasDep ? fmt(gap) : '–';
+    $('#sGap').className = 'v' + (hasDep ? (gap >= 0 ? ' ok' : ' bad') : '');
+    $('#sGapSub').textContent = '예상 자기자금 ' + fmt(proj);
+    $('#sInterest').textContent = loan > 0 ? fmt(interest) : '–';
+    $('#sInterestSub').textContent = loan > 0 ? '연 ' + rate + '% 기준' : '대출 × 금리 ÷ 12';
+    document.querySelectorAll('.cx').forEach(function (c) { refreshCard(c); });
+  }
+  function onPlanInput(e) {
+    var el = e.target.closest('[data-f]');
+    if (!el) return;
+    var k = el.dataset.f, v;
+    if (el.dataset.t === 'text') v = el.value.trim();
+    else v = el.value === '' ? null : Number(el.value);
+    if (v !== null && typeof v === 'number' && !isFinite(v)) return;
+    plan = Object.assign({}, plan); plan[k] = v;
+    renderPlan();
+    if (!db) return;
+    debounce('plan:' + k, 500, function () {
+      var patch = {}; patch[k] = v;
+      write('plan/main', function () {
+        var ref = db.doc('plan/main');
+        return ref.update(patch).catch(function (err) {
+          if (err && err.code === 'invalid_argument') { var full = {}; full[k] = v; return ref.set(full); }
+          throw err;
+        });
+      });
+    });
+  }
+
+  /* ---------- complexes ---------- */
+  function cardHTML() {
+    return '<div class="cx-head"><input class="cx-name" data-k="name" placeholder="단지명" aria-label="단지명">' +
+      '<select data-k="status" aria-label="진행 상태">' + STATUS.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select>' +
+      '<button type="button" class="ghost" data-del>삭제</button></div>' +
+      '<div class="cx-grid">' +
+      '<label class="f"><span class="lbl">전용면적</span><span class="in"><input data-k="area" type="number" inputmode="decimal" min="0" step="0.01"><em>㎡</em></span></label>' +
+      '<label class="f"><span class="lbl">전세가 (만원)</span><input data-k="jeonse" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hj></span></label>' +
+      '<label class="f"><span class="lbl">매매가 (만원)</span><input data-k="sale" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hs></span></label>' +
+      '</div><div class="chips" data-chips></div>' +
+      '<input data-k="memo" placeholder="메모 (층·향·소음·보증보험 가능 여부 등)" aria-label="메모" maxlength="300">';
+  }
+  function refreshCard(card) {
+    var d = cxData.get(card.dataset.id) || {};
+    card.classList.toggle('out', d.status === '탈락');
+    var j = Number(d.jeonse) || 0, s = Number(d.sale) || 0, dep = num('deposit');
+    card.querySelector('[data-hj]').textContent = j ? fmt(j) : '';
+    card.querySelector('[data-hs]').textContent = s ? fmt(s) : '';
+    var chips = [];
+    if (j && s) {
+      var r = j / s * 100;
+      chips.push([ '전세가율 ' + r.toFixed(0) + '%', r >= 80 ? 'bad' : r >= 70 ? 'warn' : 'ok' ]);
+    }
+    if (j && dep) {
+      var diff = j - dep;
+      chips.push([ diff > 0 ? '목표보다 ' + fmt(diff) + ' 높음' : '목표 보증금 이내', diff > 0 ? 'warn' : 'ok' ]);
+    }
+    if (d.area && j) chips.push([ '평당 전세 ' + Math.round(j / (Number(d.area) / 3.3058)).toLocaleString('ko-KR') + '만', '' ]);
+    var box = card.querySelector('[data-chips]');
+    box.innerHTML = '';
+    chips.forEach(function (c) { var sp = document.createElement('span'); sp.className = 'chip ' + c[1]; sp.textContent = c[0]; box.appendChild(sp); });
+  }
+  function fillCard(card, d) {
+    card.querySelectorAll('[data-k]').forEach(function (el) {
+      if (el === document.activeElement) return;
+      var v = d[el.dataset.k], s = v == null ? '' : String(v);
+      if (el.tagName === 'SELECT' && !s) s = STATUS[0];
+      if (el.value !== s) el.value = s;
+    });
+    refreshCard(card);
+  }
+  function renderComplexes(docs) {
+    var list = $('#cxlist'), seen = {};
+    docs.forEach(function (doc) {
+      var id = doc.id, d = doc.data() || {};
+      cxData.set(id, d); seen[id] = 1;
+      var card = list.querySelector('.cx[data-id="' + id + '"]');
+      if (!card) {
+        card = document.createElement('article');
+        card.className = 'cx'; card.dataset.id = id; card.innerHTML = cardHTML();
+        if (!canWrite) card.querySelectorAll('input,select,button').forEach(function (x) { x.disabled = true; });
+        list.appendChild(card);
+      }
+      fillCard(card, d);
+    });
+    list.querySelectorAll('.cx').forEach(function (c) { if (!seen[c.dataset.id]) { c.remove(); cxData.delete(c.dataset.id); } });
+    var empty = list.querySelector('.empty');
+    if (!docs.length && !empty) {
+      list.innerHTML = '<div class="empty">아직 후보 단지가 없어요. 위에 단지명을 적고 추가하면 가격과 메모를 적을 카드가 생깁니다.</div>';
+    } else if (docs.length && empty) empty.remove();
+    // keep DOM order equal to query order
+    docs.forEach(function (doc) { var c = list.querySelector('.cx[data-id="' + doc.id + '"]'); if (c) list.appendChild(c); });
+  }
+  $('#cxlist').addEventListener('input', function (e) {
+    var el = e.target.closest('[data-k]'), card = e.target.closest('.cx');
+    if (!el || !card || !db) return;
+    var id = card.dataset.id, k = el.dataset.k, v;
+    if (el.type === 'number') { v = el.value === '' ? null : Number(el.value); if (v !== null && !isFinite(v)) return; }
+    else v = el.value;
+    var d = Object.assign({}, cxData.get(id) || {}); d[k] = v; cxData.set(id, d);
+    refreshCard(card);
+    debounce('cx:' + id + ':' + k, 500, function () {
+      var patch = {}; patch[k] = v;
+      write('complexes/' + id, function () { return db.doc('complexes/' + id).update(patch); });
+    });
+  });
+  $('#cxlist').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-del]');
+    if (!btn || !db) return;
+    var card = btn.closest('.cx'), id = card.dataset.id;
+    if (btn.classList.contains('confirm')) {
+      write('complexes/' + id, function () { return db.doc('complexes/' + id).delete(); });
+      return;
+    }
+    btn.classList.add('confirm'); btn.textContent = '정말 삭제';
+    setTimeout(function () { btn.classList.remove('confirm'); btn.textContent = '삭제'; }, 3000);
+  });
+  $('#addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var inp = $('#addName'), name = inp.value.trim();
+    if (!name || !db) return;
+    inp.value = '';
+    write('complexes/new', function () {
+      return db.collection('complexes').add({ name: name, status: STATUS[0], area: null, jeonse: null, sale: null, memo: '', createdAt: Date.now() });
+    });
+  });
+
+  /* ---------- checklist ---------- */
+  function buildChecklist() {
+    var root = $('#cl');
+    GROUPS.forEach(function (g, gi) {
+      var p = document.createElement('div'); p.className = 'panel';
+      var h = document.createElement('h3'); h.innerHTML = '<span></span>'; h.insertBefore(document.createTextNode(g.t), h.firstChild); h.lastChild.dataset.prog = gi;
+      p.appendChild(h);
+      g.items.forEach(function (it) {
+        var l = document.createElement('label'); l.className = 'ck';
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.dataset.key = it[0]; cb.id = 'ck-' + it[0];
+        var tx = document.createElement('span'), b = document.createElement('b'), sm = document.createElement('small');
+        b.textContent = it[1]; sm.textContent = it[2]; tx.appendChild(b); tx.appendChild(sm);
+        l.appendChild(cb); l.appendChild(tx); p.appendChild(l);
+      });
+      root.appendChild(p);
+    });
+    root.addEventListener('change', function (e) {
+      var cb = e.target.closest('input[data-key]');
+      if (!cb) return;
+      var key = cb.dataset.key, done = cb.checked;
+      checks[key] = done; renderChecks();
+      if (!db) return;
+      write('checks/' + key, function () { return db.doc('checks/' + key).set({ done: done }); });
+    });
+  }
+  function renderChecks() {
+    document.querySelectorAll('#cl input[data-key]').forEach(function (cb) { cb.checked = !!checks[cb.dataset.key]; });
+    GROUPS.forEach(function (g, gi) {
+      var n = g.items.filter(function (it) { return checks[it[0]]; }).length;
+      $('[data-prog="' + gi + '"]').textContent = n + ' / ' + g.items.length;
+    });
+  }
+
+  /* ---------- start ---------- */
+  document.addEventListener('input', function (e) { if (e.target.closest('[data-f]')) onPlanInput(e); });
+  buildChecklist(); renderChecks(); renderPlan();
+
+  function lockInputs() {
+    canWrite = false;
+    document.querySelectorAll('[data-f],#addName,#addBtn,#cl input').forEach(function (x) { x.disabled = true; });
+  }
+  async function init() {
+    var claude = window.claude;
+    if (!claude || !claude.use) { setState('err', '오프라인 보기'); showBanner('공유 링크로 로그인해서 열어야 함께 입력하고 저장할 수 있어요.'); lockInputs(); return; }
+    try { db = await claude.use('db'); } catch (e) { db = null; }
+    if (!db) { setState('err', '저장 불가'); showBanner('저장 기능에 연결하지 못했어요. 로그인 상태에서 다시 열어 주세요.'); lockInputs(); return; }
+    try {
+      var user = await claude.use('user');
+      var cw = user ? await user.can('data.write') : null;
+      if (cw === false) { lockInputs(); showBanner('보기 전용으로 열렸어요. 입력하려면 공유 설정에서 "기여자" 이상 권한이 필요해요.'); }
+    } catch (e) {}
+    function onErr(e) { setState('err', '연결 끊김'); if (e && e.code === 'revoked') showBanner('접근 권한이 바뀌어 더 이상 불러올 수 없어요.'); }
+    db.doc('plan/main').onSnapshot(function (s) { plan = s.exists ? Object.assign({}, s.data()) : {}; renderPlan(); setState('ok', '저장됨 · 실시간 공유 중'); }, onErr);
+    db.collection('complexes').orderBy('createdAt').onSnapshot(function (s) { renderComplexes(s.docs); }, onErr);
+    db.collection('checks').onSnapshot(function (s) { checks = {}; s.docs.forEach(function (d) { checks[d.id] = !!(d.data() || {}).done; }); renderChecks(); }, onErr);
+  }
+  init();
+})();
+</script>
