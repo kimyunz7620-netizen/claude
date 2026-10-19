@@ -418,6 +418,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <label class="f"><span class="lbl">입주 목표 시기</span><input id="f-targetDate" data-f="targetDate" data-t="text" type="month" value="2028-05" placeholder="YYYY-MM"></label>
           <label class="f"><span class="lbl">혼인신고 예정월</span><input id="f-marriageDate" data-f="marriageDate" data-t="text" type="month" placeholder="YYYY-MM"></label>
           <label class="f"><span class="lbl">출산 계획</span><select id="f-babyPlan" data-f="babyPlan" data-t="text"><option value="">아직 정하지 않음</option><option value="soon">입주 후 2년 안에 계획</option><option value="none">당분간 계획 없음</option></select></label>
+          <label class="f"><span class="lbl">찾는 전용면적 최소</span><span class="in"><input id="f-areaMin" data-f="areaMin" type="number" inputmode="decimal" min="0" step="1" placeholder="40"><em>㎡</em></span><span class="hint" data-hp="areaMin"></span></label>
+          <label class="f"><span class="lbl">찾는 전용면적 최대</span><span class="in"><input id="f-areaMax" data-f="areaMax" type="number" inputmode="decimal" min="0" step="1" placeholder="60"><em>㎡</em></span><span class="hint" data-hp="areaMax"></span></label>
           <label class="f wide"><span class="lbl">월 이자 부담 기준 (자가 전환을 생각해 타이트하게)</span><select id="f-stance" data-f="stance" data-t="text"><option value="tight">타이트 · 월 실수령의 10% 이하</option><option value="normal">보통 · 15% 이하</option><option value="loose">여유 · 20% 이하</option></select></label>
         </div>
         <details class="more">
@@ -493,7 +495,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <ol>
             <li>네이버 지도 앱에서 <span class="kw">당산동 아파트</span>를 검색해요.</li>
             <li>부동산(매물) 보기로 바꾸고 거래 방식 <b>전세</b>, 유형 <b>아파트</b>를 골라요.</li>
-            <li>면적을 전용 60㎡ 안쪽으로, 보증금 상한은 역산 결과에 맞춰요.</li>
+            <li>면적은 <b>최소와 최대를 모두</b> 넣어요. 기본은 전용 40~60㎡(약 12~18평)이고, 역산 탭에서 바꿀 수 있어요. 네이버 화면의 면적이 전용인지 공급인지 꼭 확인하세요.</li>
+            <li>보증금(가격)도 <b>최소와 최대</b>를 넣어요. 최대는 역산 결과의 상한, 최소는 하한의 70% 정도로 두면 너무 싼 매물(상태·권리 위험)을 한 번 거를 수 있어요.</li>
             <li>단지를 눌러 <b>낮은 가격순</b>으로 정렬하고, 같은 평형의 최저 전세 호가와 매물 개수를 봐요.</li>
           </ol>
           <p>이렇게도 검색해 보세요: <span class="kw">당산동 전세 59㎡</span><span class="kw">당산역 소형 아파트 전세</span><span class="kw">당산 래미안 전세</span></p>
@@ -707,7 +710,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       steps: ['역산 탭에서 전세가별 필수 저축액 표 확인', '필수 저축액이 우리가 모을 수 있는 금액 안인지 확인', '“찾고 싶은 전세가”를 현실적인 한 숫자로 정하기', '그 전세가를 기준선으로 삼고, 위쪽 끝은 상한으로만 쓰기'], l: [] },
     { id: 'pick', ph: 'p2', star: 1, who: 'both', t: '후보 단지 뽑는 법 익히기',
       why: '단지 수가 너무 많으면 비교가 안 돼요. 기준으로 먼저 줄여요.',
-      steps: ['네이버 지도에서 당산역 반경 1km 안의 전용 60㎡ 이하 아파트 목록 만들기', '준공 연도로 구축과 신축을 나누기', '단지별 세대수 확인(작은 단지는 매물과 거래가 적어요)', '후보 5곳 이상을 매물 탭에 추가', '인접 지역(문래·양평·합정·영등포) 2곳을 비교용으로 추가'], l: ['naver'] },
+      steps: ['네이버 지도에서 당산역 반경 1km 안의 전용 40~60㎡(역산 탭의 면적 최소·최대) 아파트 목록 만들기', '준공 연도로 구축과 신축을 나누기', '단지별 세대수 확인(작은 단지는 매물과 거래가 적어요)', '후보 5곳 이상을 매물 탭에 추가', '인접 지역(문래·양평·합정·영등포) 2곳을 비교용으로 추가'], l: ['naver'] },
     { id: 'read', ph: 'p2', star: 1, who: 'each', t: '시세 읽는 법 익히기',
       why: '호가는 부르는 값이고 실거래는 계약된 값이에요. 둘 다 볼 수 있어야 같이 이야기가 돼요.',
       steps: ['실거래가 공개시스템에서 단지와 평형을 고르는 법 익히기', '최근 6개월 전세 실거래 3건 이상 확인하기', '전세가율(전세 ÷ 매매)을 계산해서 70%·80% 기준과 비교하기'], l: ['molit', 'naver'] },
@@ -989,6 +992,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     });
     $$('[data-nm]').forEach(function (e) { e.textContent = e.dataset.nm === 'A' ? nameA() : nameB(); });
     $$('[data-h]').forEach(function (e) { var k = e.dataset.h; e.textContent = has(k) ? fmt(num(k)) : ''; });
+    var ar = areaRange(); $$('[data-hp]').forEach(function (e) { var k = e.dataset.hp, m = k === 'areaMin' ? ar[0] : ar[1]; e.textContent = '약 ' + pyeong(m) + '평'; });
     var D0 = num('deposit'); $('[data-brk]').textContent = D0 > 0 ? '중개보수 상한 약 ' + fmt(brokerFee(D0)) + ' (부가세 별도·협의 가능, 확인 필요)' : '';
     updateMeSel();
     renderReverse(); renderRent(); renderHero(); $$('.cx').forEach(refreshCard); refreshRank(); refreshPolicies(); refreshBoard(); refreshMonthly(); refreshHomework();
@@ -1055,6 +1059,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
 
   /* ---------- hero ---------- */
+  function areaRange() {
+    var a = has('areaMin') ? num('areaMin') : 40, b = has('areaMax') ? num('areaMax') : 60;
+    return a <= b ? [a, b] : [b, a];
+  }
+  function pyeong(m) { return Math.round(m / 3.3058); }
   function fl500(v) { return Math.floor(v / 500) * 500; }
   function capacityAt(c, r) {
     var U = Math.max(0, c.canTotal - c.costs), best = null;
@@ -1106,7 +1115,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var i1 = interestOf(lo.p, lo.L), i2 = interestOf(hi.p, hi.L);
     vd.appendChild(document.createTextNode('이 범위에서 대출은 약 ' + (hi.L - lo.L >= 500 ? fmtS(lo.L) + ' ~ ' + fmt(hi.L) : fmt(lo.L)) + ', 월 이자는 약 ' + (Math.abs(i2 - i1) >= 1 ? fmtS(i1) + ' ~ ' + fmt(i2) : fmt(i1)) + '이에요.'));
     if ((plan.babyPlan || '') !== 'soon' && c.income > 0 && c.income <= A('asmIncNewborn')) vd.appendChild(document.createTextNode(' 출산 계획이 있다면 신생아 특례(연 ' + A('asmRateNewborn') + '% 가정, 한도 ' + fmt(A('asmCapNewborn')) + ')로 이자를 크게 줄일 수 있어요. 역산 탭에서 출산 계획을 골라 보세요.'));
-    item('🔎', '전세가 ' + fmtS(dl) + '~' + fmt(dh) + ' 매물 찾기', '네이버 부동산에서 전세·아파트·전용 60㎡ 이하·보증금 ' + fmt(dh) + ' 이하로 필터하세요.', false, ['찾는 법', 'homes'], '#guide');
+    item('🔎', '전세가 ' + fmtS(dl) + '~' + fmt(dh) + ' 매물 찾기', '네이버 부동산 필터 → 거래 전세 · 아파트 · 면적 최소 ' + areaRange()[0] + '㎡ ~ 최대 ' + areaRange()[1] + '㎡(약 ' + pyeong(areaRange()[0]) + '~' + pyeong(areaRange()[1]) + '평) · 보증금 최소 ' + fmtS(Math.max(0, fl500(dl * 0.7))) + ' ~ 최대 ' + fmt(dh), false, ['찾는 법', 'homes'], '#guide');
     var n = cxData.size; item('🏢', '후보 단지 5곳 추가하기', n + ' / 5곳 추가됨', n >= 5, ['추가', 'homes']);
     var lastD = null; cxData.forEach(function (d, id) { seriesOf(id).forEach(function (x) { if (!lastD || x.d > lastD) lastD = x.d; }); });
     var ago = lastD ? dayNum(todayStr()) - dayNum(lastD) : null;
