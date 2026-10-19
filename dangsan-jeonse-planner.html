@@ -63,8 +63,19 @@ select { max-width: 100%; text-overflow: ellipsis; }
 .chip.bad { background: var(--coral-soft); color: var(--coral-ink); } .chip.plain { background: var(--bg); color: var(--muted); } .chip.grape { background: var(--grape-soft); color: var(--grape); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .tablewrap { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 13.5px; }
-th, td { text-align: right; padding: 9px 8px; border-bottom: 1px dashed var(--line); white-space: nowrap; vertical-align: top; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+/* loan & scenario rows */
+.lrow { padding: 10px 0; border-top: 1px dashed var(--line); }
+.lrow:first-child { border-top: 0; }
+.lrow .l1 { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 700; }
+.lrow .l2 { font-size: 13px; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.srow { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-top: 1px dashed var(--line); font-variant-numeric: tabular-nums; }
+.srow:first-child { border-top: 0; }
+.srow.focus { background: var(--accent-soft); border-radius: 12px; padding-inline: 10px; margin-inline: -10px; border-top-color: transparent; }
+.srow .sp { font-weight: 800; font-size: 15px; }
+.srow .sd { font-size: 13px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.srow .sd small { color: var(--muted); font-size: 12px; }
+th, td { text-align: right; padding: 9px 5px; border-bottom: 1px dashed var(--line); white-space: nowrap; vertical-align: top; }
 th:first-child, td:first-child { text-align: left; }
 th { font-size: 12px; color: var(--muted); font-weight: 600; }
 td small { display: block; color: var(--muted); font-size: 11.5px; }
@@ -124,7 +135,9 @@ details.more > summary { color: var(--accent); font-weight: 700; font-size: 13.5
 .addrow input { flex: 1; }
 .cx { display: flex; flex-direction: column; gap: 12px; }
 .cx.out { opacity: .6; }
-.cx-head { display: flex; gap: 8px; align-items: center; }
+.cx-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cx-head .cx-name { flex: 1 1 100%; }
+.cx-grid .wide { grid-column: 1 / -1; }
 .cx-head .cx-name { font-weight: 800; font-size: 17px; background: transparent; border-color: transparent; padding-inline: 4px; height: 38px; }
 .cx-head .cx-name:hover, .cx-head .cx-name:focus { border-color: var(--line); background: var(--bg); }
 .cx-head select { width: auto; flex: none; height: 34px; font-size: 14px; }
@@ -228,6 +241,60 @@ details.more > summary { color: var(--accent); font-weight: 700; font-size: 13.5
 .pol[data-status="해당 없음"] { opacity: .6; }
 .pol .links { margin-top: 0; }
 
+/* homework split */
+.mesel { width: auto; height: 28px; font-size: 12.5px; padding: 0 8px; border-radius: 9px; font-weight: 700; color: var(--accent); }
+.grp { margin-top: 8px; }
+.grp-h { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; font-size: 13px; margin-top: 10px; padding: 6px 10px; background: var(--bg); border-radius: 10px; }
+.grp-h b { font-weight: 800; } .grp-h span { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tk-steps li.st2 { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-top: 1px dashed var(--line); }
+.tk-steps li.st2:first-child { border-top: 0; }
+.st-t { font-size: 14px; }
+.whos { display: flex; gap: 14px; flex-wrap: wrap; }
+label.who { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); padding: 2px 0; cursor: pointer; }
+label.who b { font-weight: 600; }
+label.who.me b { color: var(--accent); font-weight: 800; }
+label.who input:checked + b { text-decoration: line-through; }
+.tk-meta.solo { grid-template-columns: minmax(0, 1fr); }
+.addtask select { width: 84px; height: 38px; font-size: 14px; flex: none; }
+.pbar { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 10px; align-items: center; margin: 8px 0; font-size: 13px; }
+.pbar b { font-weight: 700; }
+.pbar .bar2 { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.pbar .bar2 i { display: block; height: 100%; background: var(--accent); width: 0; border-radius: 999px; }
+.pbar span { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.nudge { font-size: 13.5px; margin: 6px 0 4px; padding: 10px 12px; background: var(--sun-soft); color: var(--sun-ink); border-radius: 12px; font-weight: 600; }
+.nudge.ok { background: var(--mint-soft); color: var(--mint-ink); }
+.nudge:empty { display: none; }
+.lh { margin: 14px 0 0; font-size: 13px; font-weight: 800; }
+.mechoose { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13.5px; margin: 8px 0; }
+/* events, rent, visit */
+.evform { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin-top: 12px; }
+.evform input[type="text"] { grid-column: 1 / -1; }
+.evrow { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px dashed var(--line); }
+.evrow:first-child { border-top: 0; }
+.evrow .dd { font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.evrow.past { opacity: .55; } .evrow.past .dd { color: var(--muted); }
+.evrow small { display: block; color: var(--muted); font-size: 12px; }
+.visit { border-top: 1px dashed var(--line); padding-top: 8px; }
+.visit > summary { font-weight: 700; font-size: 13.5px; display: flex; gap: 8px; align-items: center; }
+.vlist { display: grid; grid-template-columns: 1fr; gap: 2px; margin-top: 6px; }
+label.vi { display: flex; gap: 10px; align-items: center; font-size: 14px; padding: 5px 0; cursor: pointer; }
+label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
+.rent-rows { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; margin-top: 10px; }
+.rent-rows .row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.rent-rows .row span:first-child { color: var(--muted); }
+.rent-rows .row span:last-child { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+
+/* quick table, onboarding, hero copy */
+.qlist { display: flex; flex-direction: column; }
+.qrow { padding: 12px 0; border-top: 1px dashed var(--line); }
+.qrow:first-child { border-top: 0; }
+.qrow > b { display: block; font-weight: 800; margin-bottom: 8px; }
+.qgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.qgrid label { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--muted); min-width: 0; }
+.qin { height: 38px; font-size: 16px; padding: 0 8px; text-align: right; }
+.obbtns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.hero-btn.soft { background: rgba(255,255,255,.18); color: #fff; margin-top: 8px; }
+
 /* tabbar */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
 .tabbar .in2 { max-width: 600px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
@@ -243,6 +310,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   <header class="top">
     <div><div class="date" id="today"></div><h1>땅콩집 플래너</h1></div>
     <div class="top-r">
+      <select id="meSel" class="mesel" aria-label="나는 누구"></select>
       <span><i class="dot" id="dot"></i><span id="saveState">연결 중</span></span>
       <button type="button" class="ghost sm" id="btnBackup">백업</button>
       <button type="button" class="ghost sm" id="btnRestore">복원</button>
@@ -256,6 +324,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     <h2 class="vtitle">오늘</h2>
     <p class="vsub">이번 달 할 일과 우리 현황</p>
     <div class="stack">
+      <div class="card" id="onboard" hidden>
+        <div class="mhead"><h3>처음 시작하기</h3><span class="chip" id="obProg">0 / 4</span></div>
+        <div class="quest" data-ob="me"><span class="qi">🙋</span><div><b>이 기기에서 누구인지 고르기</b><small>그래야 “내가 할 숙제”가 보여요.</small></div><span class="obbtns"><button type="button" class="ghost" data-me="A"></button><button type="button" class="ghost" data-me="B"></button></span></div>
+        <div class="quest" data-ob="inc"><span class="qi">🧮</span><div><b>연소득과 저축 가능 금액 입력</b><small>역산 탭 맨 위에 있어요.</small></div><button type="button" class="ghost" data-tab-go="calc">입력</button></div>
+        <div class="quest" data-ob="dep"><span class="qi">🎯</span><div><b>찾고 싶은 전세가 정하기</b><small>대략이면 돼요. 나중에 바꿀 수 있어요.</small></div><button type="button" class="ghost" data-tab-go="calc">입력</button></div>
+        <div class="quest" data-ob="cx"><span class="qi">🏢</span><div><b>후보 단지 1곳 추가</b><small>매물 탭에서 단지 이름만 넣어도 돼요.</small></div><button type="button" class="ghost" data-tab-go="homes">추가</button></div>
+      </div>
+
       <div class="card hero" id="hero">
         <div class="hero-k" id="hKicker">입주 목표</div>
         <div class="hero-l">입주 때까지 반드시 모아야 할 돈 (필수 저축액)</div>
@@ -270,6 +346,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <div><span>월 대출 이자</span><b id="hInt">–</b></div>
         </div>
         <button type="button" class="hero-btn" data-tab-go="calc">역산 계산기 열기</button>
+        <button type="button" class="hero-btn soft" id="heroCopy">요약 복사해서 보내기</button>
       </div>
 
       <div class="card" id="monthly">
@@ -281,10 +358,27 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </div>
       </div>
 
-      <div class="card">
-        <h3>지금 단계 추천 숙제</h3>
-        <p class="hsub" id="moPhase"></p>
-        <ul class="reclist" id="moRec"></ul>
+      <div class="card" id="homework">
+        <h3>숙제 현황</h3>
+        <p class="hsub" id="hwPhase"></p>
+        <div id="hwBars"></div>
+        <p class="nudge" id="hwNudge"></p>
+        <div class="mechoose" id="meChoose" hidden><span>이 기기에서는 누구로 쓰세요?</span><button type="button" class="ghost" data-me="A"></button><button type="button" class="ghost" data-me="B"></button></div>
+        <h4 class="lh">내가 할 숙제</h4>
+        <ul class="reclist" id="hwMine"></ul>
+        <h4 class="lh">같이 할 숙제</h4>
+        <ul class="reclist" id="hwBoth"></ul>
+      </div>
+
+      <div class="card" id="events">
+        <h3>일정 · D-day</h3>
+        <p class="hsub">청약 접수일, 현재 집 계약 만료일, 상담 예약일 같은 날짜를 넣어 두세요.</p>
+        <div id="evList"></div>
+        <form class="evform" id="evForm">
+          <input id="evTitle" type="text" placeholder="예: 청약 접수일" maxlength="40" aria-label="일정 이름" autocomplete="off">
+          <input id="evDate" type="date" aria-label="날짜">
+          <button type="submit">추가</button>
+        </form>
       </div>
     </div>
   </section>
@@ -324,7 +418,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
             <label class="f"><span class="lbl">두 번째 사람 이름</span><input id="f-nameB" data-f="nameB" data-t="text" placeholder="성빈" maxlength="12"></label>
             <label class="f"><span class="lbl">월 실수령 · <b data-nm="A">A</b></span><span class="in"><input id="f-netA" data-f="netA" type="number" inputmode="decimal" min="0" step="10"><em>만원</em></span><span class="hint" data-h="netA"></span></label>
             <label class="f"><span class="lbl">월 실수령 · <b data-nm="B">B</b></span><span class="in"><input id="f-netB" data-f="netB" type="number" inputmode="decimal" min="0" step="10"><em>만원</em></span><span class="hint" data-h="netB"></span></label>
-            <label class="f"><span class="lbl">이사·중개·가전 등 부대비용</span><span class="in"><input id="f-costs" data-f="costs" type="number" inputmode="decimal" min="0" step="100" placeholder="0"><em>만원</em></span><span class="hint" data-h="costs"></span></label>
+            <label class="f"><span class="lbl">이사·중개·가전 등 부대비용</span><span class="in"><input id="f-costs" data-f="costs" type="number" inputmode="decimal" min="0" step="100" placeholder="0"><em>만원</em></span><span class="hint" data-h="costs"></span><span class="hint" data-brk></span></label>
           </div>
           <p class="note">월 실수령을 비워 두면 연소득의 80% ÷ 12로 추정해요. 이 값으로 월 이자 예산을 계산해요.</p>
         </details>
@@ -333,26 +427,27 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       <div class="card">
         <h3>받을 수 있는 대출 (소득 기준)</h3>
         <p class="hsub">월 이자가 예산 안에 들어오는 최대 대출이에요. 실제로는 전세가의 80%도 넘지 못해요.</p>
-        <div class="tablewrap">
-          <table>
-            <thead><tr><th>대출 종류</th><th>대상</th><th>최대 대출</th><th>월 이자</th></tr></thead>
-            <tbody id="rvLoanBody"></tbody>
-          </table>
-        </div>
+        <div id="rvLoanBody"></div>
         <p class="note" id="rvLoanNote">연소득을 입력하면 계산돼요.</p>
       </div>
 
       <div class="card">
         <h3>전세가별 필요한 저축 목표액</h3>
-        <p class="hsub">대출은 받을 수 있는 만큼 받고, 나머지가 필수 저축액이에요. 둘이 모을 수 있는 금액과 비교해 보세요.</p>
+        <p class="hsub">대출은 받을 수 있는 만큼 받고, 나머지가 필수 저축액이에요. 금액 단위는 원이에요.</p>
         <p class="sentence" id="rvSentence">연소득을 입력하면 결과가 나와요.</p>
-        <div class="tablewrap">
-          <table>
-            <thead><tr><th>전세가</th><th>대출</th><th>필수 저축액</th><th>여유·부족</th><th>월 이자</th></tr></thead>
-            <tbody id="rvScenBody"></tbody>
-          </table>
-        </div>
+        <div id="rvScenBody"></div>
         <p class="note">필수 저축액 = 전세가 − 대출 + 부대비용. 여유·부족은 둘이 모을 수 있는 금액에서 필수 저축액을 뺀 값이에요.</p>
+      </div>
+
+      <div class="card">
+        <h3>월세로 가면?</h3>
+        <p class="hsub">비교하고 싶은 월세 매물이 있으면 넣어 보세요. 전세는 위의 “찾고 싶은 전세가” 기준이에요.</p>
+        <div class="fields">
+          <label class="f"><span class="lbl">월세 보증금</span><span class="in"><input id="f-rentDeposit" data-f="rentDeposit" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="rentDeposit"></span></label>
+          <label class="f"><span class="lbl">월세</span><span class="in"><input id="f-rentMonthly" data-f="rentMonthly" type="number" inputmode="decimal" min="0" step="5"><em>만원</em></span><span class="hint" data-h="rentMonthly"></span></label>
+        </div>
+        <div class="rent-rows" id="rentOut"></div>
+        <p class="note">묶인 돈의 이자는 그 돈을 예금에 넣었다면 받았을 이자예요(가정값 예금금리 기준). 집값 변화나 이사 비용은 넣지 않았어요.</p>
       </div>
 
       <div class="card">
@@ -367,6 +462,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
             <label class="f"><span class="lbl">신생아 특례 대출 한도</span><span class="in"><input id="f-asmCapNewborn" data-f="asmCapNewborn" type="number" inputmode="decimal" min="0" step="500" placeholder="24000"><em>만원</em></span></label>
             <label class="f"><span class="lbl">버팀목 소득 상한(합산)</span><span class="in"><input id="f-asmIncBeotim" data-f="asmIncBeotim" type="number" inputmode="decimal" min="0" step="100" placeholder="7500"><em>만원</em></span></label>
             <label class="f"><span class="lbl">신생아 특례 소득 상한(합산)</span><span class="in"><input id="f-asmIncNewborn" data-f="asmIncNewborn" type="number" inputmode="decimal" min="0" step="100" placeholder="20000"><em>만원</em></span></label>
+            <label class="f"><span class="lbl">예금 금리 (기회비용용)</span><span class="in"><input id="f-asmSave" data-f="asmSave" type="number" inputmode="decimal" min="0" step="0.1" placeholder="3.0"><em>%</em></span></label>
           </div>
           <p class="note">버팀목 금리는 자료의 연 1.5~2.7% 중간쯤, 신생아 특례와 시중은행 금리는 확인하지 못해 임의로 둔 값이에요. 한도는 자료마다 달라 보수적으로 잡았고, 시중은행은 전세가의 80%까지만 빌린다고 보고 DSR은 넣지 않았어요. 신청 직전에 공식 사이트로 확인하세요.</p>
         </details>
@@ -447,6 +543,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </div>
       </div>
 
+      <div class="card" id="quick">
+        <h3>이번 기록 한 번에 입력</h3>
+        <p class="hsub">선택한 날짜의 시세를 단지별로 한 번에 넣어요. 지난 기록과 비슷하면 버튼으로 불러와서 고치세요.</p>
+        <div class="qlist" id="quickBody"></div>
+        <p class="note" id="quickEmpty">후보 단지를 추가하면 여기에 입력 표가 생겨요.</p>
+        <div class="ai-acts"><button type="button" class="ghost" id="quickCopy">지난 기록 불러오기</button></div>
+      </div>
+
       <div class="card" id="rank">
         <h3>종합 순위</h3>
         <p class="hsub">저축 부담 30 · 월 이자 20 · 보증금 안전 25 · 시세 추세 15 · 면적 10점으로 합쳐요. 기록 날짜에 가격이 없으면 가장 최근 기록을 써요.</p>
@@ -509,10 +613,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var db = null, dl = null, sampleFn = null, canWrite = true;
-  var plan = {}, cxData = new Map(), priceMap = {}, taskState = {}, policyState = {}, monthlyState = {};
+  var eventsState = {}, plan = {}, cxData = new Map(), priceMap = {}, taskState = {}, policyState = {}, monthlyState = {};
   var core = null;
   var DEFAULTS = { targetDate: '2028-05', nameA: '윤지', nameB: '성빈', stance: 'tight' };
-  var ASM = { asmRateBeotim: 2.2, asmRateNewborn: 2.0, asmRateBank: 3.8, asmCapBeotim: 30000, asmCapNewborn: 24000, asmIncBeotim: 7500, asmIncNewborn: 20000 };
+  var ASM = { asmRateBeotim: 2.2, asmRateNewborn: 2.0, asmRateBank: 3.8, asmCapBeotim: 30000, asmCapNewborn: 24000, asmIncBeotim: 7500, asmIncNewborn: 20000, asmSave: 3.0 };
   var STANCE = { tight: { r: 0.10, l: '타이트' }, normal: { r: 0.15, l: '보통' }, loose: { r: 0.20, l: '여유' } };
   var SCEN = [30000, 40000, 50000, 60000, 70000];
   var STATUS = ['후보', '임장 예정', '다녀옴', '탈락'];
@@ -545,75 +649,87 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   ];
 
   var TASKS = [
-    { id: 'why', ph: 'p0', star: 1, t: '전세는 “빌린 돈”이라는 구조 이해하기',
+    { id: 'why', ph: 'p0', star: 1, who: 'both', t: '전세는 “빌린 돈”이라는 구조 이해하기',
       why: '전세 보증금은 내 돈 + 대출로 채워요. 내 돈이 많을수록 대출이 줄고 이자도 줄어요. 이 이자는 월세처럼 돌려받지 못하는 비용이에요.',
       steps: ['보증금 = 내 돈 + 대출이라는 식을 서로 설명해 보기', '월세와 비교해 보기: (대출 × 금리 ÷ 12)가 월세와 같은 개념이라는 점 확인', '역산 탭에 연소득을 넣고 첫 결과 같이 보기', '“월 이자는 월 실수령의 10% 이하”라는 타이트 기준을 왜 쓰는지 이야기하기'], l: [] },
-    { id: 'own', ph: 'p0', star: 1, t: '자가로 가는 길 그려 보기',
+    { id: 'own', ph: 'p0', star: 1, who: 'both', t: '자가로 가는 길 그려 보기',
       why: '전세는 중간 단계이고 목적은 자가예요. 전세 이자 때문에 저축이 줄면 자가로 가는 시점이 늦어져요. 그래서 이자는 타이트하게 잡아요.',
       steps: ['자가로 옮기고 싶은 시기와 지역을 대략 적어 보기', '그때 필요한 자기자금 비율을 서로 말해 보기', '전세 2년을 보내는 동안 이자를 내고도 저축을 이어갈 수 있는지 확인', '보증금을 올릴수록 이자 부담이 어떻게 변하는지 역산 탭으로 확인'], l: [] },
-    { id: 'plan', ph: 'p0', star: 1, t: '각자 저축 가능 금액 정하기',
-      why: '역산 탭이 알려 주는 “필수 저축액”을 둘이 모을 수 있는지가 핵심이에요. 각자 입주 때까지 모을 수 있는 금액을 솔직하게 정해 보세요.',
-      steps: ['각자 월 실수령을 확인하기(자세한 입력에 넣으면 이자 예산이 정확해져요)', '고정비와 생활비, 비상금을 빼고 입주 때까지 모을 수 있는 금액을 각자 계산하기', '역산 탭의 저축 가능 금액에 각자 입력하기', '필수 저축액과 비교해서 여유인지 부족인지 확인하기', '부족하면 전세가·시기·이자 기준 중 무엇을 조정할지 이야기하기', '비상금(생활비 3개월치)은 따로 분리하기'], l: [] },
-    { id: 'prod', ph: 'p0', star: 0, t: '모으는 돈을 어디에 둘지 정하기',
-      why: '입주가 2년 안쪽이면 원금이 지켜지는 곳에 두는 게 기본이에요. 청약저축은 별도로 챙겨요.',
-      steps: ['청약종합저축 가입 여부와 가입일, 납입 횟수 확인', '예금·적금·파킹통장의 차이를 정리하고 어디에 둘지 정하기', '나이·소득 조건이 맞는 정부 지원 적금이 있는지 확인', '청약저축 소득공제 대상인지 확인'], l: ['apply', 'hometax', 'gov'] },
-    { id: 'check', ph: 'p0', star: 0, t: '무주택·신용 점검하기',
+    { id: 'plan', ph: 'p0', star: 1, who: 'each', t: '내가 입주 때까지 모을 수 있는 금액 계산하기',
+      why: '저축 가능 금액은 각자의 월급과 지출에 따라 달라서, 각자 따로 계산해서 입력해야 정확해요.',
+      steps: ['내 월 실수령을 확인하기(자세한 입력에 넣으면 이자 예산이 정확해져요)', '고정비·생활비·비상금을 빼고 입주 때까지 모을 수 있는 금액 계산하기', '역산 탭의 “저축 가능 금액”에 내 몫 입력하기'], l: [] },
+    { id: 'plan2', ph: 'p0', star: 1, who: 'both', t: '필수 저축액과 비교해서 조정하기',
+      why: '둘이 모을 수 있는 금액이 필수 저축액보다 적으면 무언가를 조정해야 해요.',
+      steps: ['둘의 저축 가능 금액을 합쳐 필수 저축액과 비교하기', '부족하면 전세가·입주 시기·이자 기준 중 무엇을 조정할지 이야기하기', '비상금(생활비 3개월치)은 따로 분리하기', '조정한 숫자를 우리 목표로 확정하기'], l: [] },
+    { id: 'prod', ph: 'p0', star: 0, who: 'each', t: '내 청약저축과 지원 상품 확인하기',
+      why: '청약저축은 가입 기간과 납입 횟수가 쌓여야 의미가 있어서, 각자 상태를 알고 있어야 해요.',
+      steps: ['내 청약종합저축 가입 여부와 가입일, 납입 횟수 확인', '내 나이·소득 조건에 맞는 정부 지원 적금이 있는지 확인', '청약저축 소득공제 대상인지 확인'], l: ['apply', 'hometax', 'gov'] },
+    { id: 'prod2', ph: 'p0', star: 0, who: 'both', t: '모으는 돈을 어디에 둘지 정하기',
+      why: '입주가 2년 안쪽이면 원금이 지켜지는 곳에 두는 게 기본이에요.',
+      steps: ['예금·적금·파킹통장의 차이를 정리하기', '원금이 지켜지는 곳에 두기로 정하기', '이자가 붙는 계좌를 둘이 같이 볼 수 있게 정하기'], l: [] },
+    { id: 'check', ph: 'p0', star: 0, who: 'each', t: '내 무주택·신용 점검하기',
       why: '무주택 요건과 신용점수는 대출 자격과 금리에 영향을 줘요.',
-      steps: ['둘 다 무주택인지, 가족 명의 부동산이 세대에 걸리는지 확인', '신용점수를 조회해서 기록하기', '카드론·마이너스통장은 줄일 계획 세우기'], l: ['gov'] },
-    { id: 'habit', ph: 'p0', star: 0, t: '매달 기록 습관 만들기',
+      steps: ['내 이름이나 세대원 이름으로 된 주택·분양권이 없는지, 가족 명의 부동산이 세대에 걸리는지 확인', '내 신용점수를 조회해서 기록하기', '카드론·마이너스통장은 줄일 계획 세우기'], l: ['gov'] },
+    { id: 'habit', ph: 'p0', star: 0, who: 'both', t: '매달 기록 습관 만들기',
       why: '꾸준한 기록이 추이를 보는 재료가 돼요.',
       steps: ['시세 기록하는 요일 정하기(주 1회 권장)', '정책·청약 공고 확인하는 날 정하기(예: 매월 첫째 주)', '홈 탭의 이번 달 숙제 3개를 한 번 체크해 보기'], l: [] },
 
-    { id: 'policy', ph: 'p1', star: 1, t: '지원 제도 큰 그림 파악하기',
+    { id: 'policy', ph: 'p1', star: 1, who: 'both', t: '지원 제도 큰 그림 파악하기',
       why: '대출 종류에 따라 금리가 크게 달라서, 같은 보증금도 월 이자가 달라져요.',
       steps: ['숙제 탭의 정책·청약 카드를 하나씩 읽고 상태 표시하기', '버팀목·신생아 특례·시중은행의 차이를 서로 말해 보기', '우리 합산 소득이 어느 기준에 걸리는지 확인', '혼인신고 시점을 언제로 잡으면 어떤 제도에 유리한지 정리', '출산 계획에 따라 달라지는 조건 이야기하기'], l: ['fund'] },
-    { id: 'sim', ph: 'p1', star: 1, t: '대출 모의심사 해 보기',
+    { id: 'sim', ph: 'p1', star: 1, who: 'both', t: '대출 모의심사 해 보기',
       why: '가정값이 아니라 공식 금리와 한도를 알아야 역산 결과가 정확해져요.',
       steps: ['기금e든든에서 버팀목 모의심사 해 보기', '시중은행 전세대출 한도·금리를 조회해 보기(조회가 신용에 영향을 주는지 먼저 확인)', '역산 탭의 가정값을 공식 값으로 바꿔 넣기', '바뀐 결과를 처음 결과와 비교하기'], l: ['fund'] },
-    { id: 'support', ph: 'p1', star: 0, t: '이자 지원과 세제 혜택 확인하기',
+    { id: 'sub', ph: 'p1', star: 0, who: 'each', t: '내 청약 가점과 자격 확인하기',
+      why: '청약은 각자의 통장 상태가 달라서 따로 확인해야 해요.',
+      steps: ['청약홈 가점 계산기로 내 가점 계산하기', '내 청약통장 상태를 서로에게 공유하기'], l: ['apply'] },
+    { id: 'sub2', ph: 'p1', star: 0, who: 'both', t: '청약·공공임대를 선택지에 넣을지 정하기',
+      why: '전세 말고도 선택지가 있어요. 우리 자격을 같이 보고 판단해요.',
+      steps: ['신혼부부 특별공급 자격 요건 같이 확인', 'SH·LH 공고 알림 켜기', '전세와 청약 중 지금 우선순위 정하기'], l: ['apply', 'myhome', 'sh', 'lh'] },
+    { id: 'support', ph: 'p1', star: 0, who: 'both', t: '이자 지원과 세제 혜택 확인하기',
       why: '이자의 일부를 지원받거나 세금을 줄이는 제도가 있어요.',
       steps: ['서울시 신혼부부 임차보증금 이자지원 공고 확인', '혼인세액공제 적용 기간 확인(2028년 혼인이면 연장 여부)', '주택청약종합저축 소득공제 조건 확인'], l: ['seoul', 'hometax'] },
-    { id: 'sub', ph: 'p1', star: 0, t: '청약·공공임대도 선택지에 넣기',
-      why: '전세 말고도 선택지가 있어요. 우리 가점과 자격을 먼저 알아야 판단할 수 있어요.',
-      steps: ['청약홈 가점 계산기로 우리 가점 계산', '신혼부부 특별공급 자격 요건 확인', 'SH·LH 공고 알림 켜기', '전세와 청약 중 지금 우선순위 정하기'], l: ['apply', 'myhome', 'sh', 'lh'] },
-    { id: 'baby', ph: 'p1', star: 0, t: '자녀 계획이 숫자에 미치는 영향 보기',
+    { id: 'baby', ph: 'p1', star: 0, who: 'both', t: '자녀 계획이 숫자에 미치는 영향 보기',
       why: '2년 안에 출산하면 우대 대출 대상이 될 수 있어서, 한도와 이자가 달라져요.',
       steps: ['신생아 특례 조건과 우리 계획 비교', '출산 시점별로 역산 탭을 돌려 보고 결과 비교'], l: ['fund'] },
 
-    { id: 'range', ph: 'p2', star: 1, t: '우리 예산 범위 먼저 확정하기',
+    { id: 'range', ph: 'p2', star: 1, who: 'both', t: '우리 예산 범위 먼저 확정하기',
       why: '집부터 보면 눈만 높아져요. 숫자로 범위를 먼저 정하면 후보를 빨리 거를 수 있어요.',
       steps: ['역산 탭에서 전세가별 필수 저축액 표 확인', '필수 저축액이 우리가 모을 수 있는 금액 안인지 확인', '“찾고 싶은 전세가”를 현실적인 한 숫자로 정하기', '그 전세가를 기준선으로 삼고, 위쪽 끝은 상한으로만 쓰기'], l: [] },
-    { id: 'pick', ph: 'p2', star: 1, t: '후보 단지 뽑는 법 익히기',
+    { id: 'pick', ph: 'p2', star: 1, who: 'both', t: '후보 단지 뽑는 법 익히기',
       why: '단지 수가 너무 많으면 비교가 안 돼요. 기준으로 먼저 줄여요.',
       steps: ['네이버 지도에서 당산역 반경 1km 안의 전용 60㎡ 이하 아파트 목록 만들기', '준공 연도로 구축과 신축을 나누기', '단지별 세대수 확인(작은 단지는 매물과 거래가 적어요)', '후보 5곳 이상을 매물 탭에 추가', '인접 지역(문래·양평·합정·영등포) 2곳을 비교용으로 추가'], l: ['naver'] },
-    { id: 'read', ph: 'p2', star: 1, t: '시세 읽는 법 익히기',
-      why: '호가는 부르는 값이고 실거래는 계약된 값이에요. 둘을 모두 봐야 해요.',
-      steps: ['실거래가 공개시스템에서 단지와 평형을 고르는 법 익히기', '최근 6개월 전세 실거래 3건 이상 확인', '같은 평형의 최저 전세 호가와 실거래의 차이 기록', '전세가율(전세 ÷ 매매)을 계산해서 70%·80% 기준과 비교', '기록 날짜를 고르고 단지 카드에 가격 입력해 저장'], l: ['molit', 'naver'] },
-    { id: 'track', ph: 'p2', star: 1, t: '주 1회 시세 추적하기',
+    { id: 'read', ph: 'p2', star: 1, who: 'each', t: '시세 읽는 법 익히기',
+      why: '호가는 부르는 값이고 실거래는 계약된 값이에요. 둘 다 볼 수 있어야 같이 이야기가 돼요.',
+      steps: ['실거래가 공개시스템에서 단지와 평형을 고르는 법 익히기', '최근 6개월 전세 실거래 3건 이상 확인하기', '전세가율(전세 ÷ 매매)을 계산해서 70%·80% 기준과 비교하기'], l: ['molit', 'naver'] },
+    { id: 'track', ph: 'p2', star: 1, who: 'both', t: '주 1회 시세 추적하기',
       why: '추이를 봐야 지금이 비싼지 싼지 알 수 있어요.',
-      steps: ['매주 같은 요일에 단지별 최저 전세 호가와 매물 수 기록', '4주 쌓이면 카드의 추세 칩 확인', '가격이 내리는데 매물이 늘어나는 단지 찾기(협상 여지)', '종합 순위의 AI 분석을 돌려 보고 같이 이야기하기'], l: ['naver', 'asil', 'hogang'] },
-    { id: 'rank', ph: 'p2', star: 0, t: '종합 순위 읽는 법 익히기',
+      steps: ['매주 같은 요일에 단지별 최저 전세 호가와 매물 수 기록(담당을 정해 두면 좋아요)', '4주 쌓이면 카드의 추세 칩 확인', '가격이 내리는데 매물이 늘어나는 단지 찾기(협상 여지)', '종합 순위의 AI 분석을 돌려 보고 같이 이야기하기'], l: ['naver', 'asil', 'hogang'] },
+    { id: 'rank', ph: 'p2', star: 0, who: 'both', t: '종합 순위 읽는 법 익히기',
       why: '순위는 정답이 아니라 토론 재료예요. 왜 이 순위가 나왔는지를 같이 봐요.',
       steps: ['순위 점수 구성(저축 부담·이자·보증금 안전·추세·면적) 읽기', '1~3위 단지의 약점 칩 확인', '목표 전세가나 가정값을 바꾸면 순위가 어떻게 바뀌는지 실험'], l: [] },
-    { id: 'visit', ph: 'p2', star: 1, t: '임장은 시간대를 바꿔서 두 번',
-      why: '숫자에 안 나오는 것을 눈과 귀로 확인해요.',
-      steps: ['평일 저녁과 주말 낮으로 시간대 정하기', '소음(철도·도로)과 주차 확인', '역까지 걸어서 걸리는 시간 재기', '엘리베이터, 복도, 관리 상태 보기', '메모와 사진을 단지 카드 메모에 남기기', '다녀온 뒤 상태를 “다녀옴”으로 바꾸기'], l: [] },
-    { id: 'agent', ph: 'p2', star: 0, t: '중개사·매물 알림 활용하기',
+    { id: 'visit', ph: 'p2', star: 1, who: 'both', t: '임장은 시간대를 바꿔서 두 번',
+      why: '숫자에 안 나오는 것을 눈과 귀로 확인해요. 단지 카드의 임장 체크를 같이 채워 보세요.',
+      steps: ['평일 저녁과 주말 낮으로 시간대 정하기', '소음(철도·도로)과 주차 확인', '역까지 걸어서 걸리는 시간 재기', '엘리베이터, 복도, 관리 상태 보기', '단지 카드의 임장 체크와 메모 남기기', '다녀온 뒤 상태를 “다녀옴”으로 바꾸기'], l: [] },
+    { id: 'agent', ph: 'p2', star: 0, who: 'both', t: '중개사·매물 알림 활용하기',
       why: '좋은 매물은 금방 나가요. 알림과 중개사 연결을 미리 만들어 둬요.',
       steps: ['포털 매물 알림 설정', '중개사 2~3곳에 원하는 평형과 시기 알려 두기', '“이 집 전세보증보험 가입 되나요?”를 첫 질문으로 정하기'], l: ['naver'] },
 
-    { id: 'short', ph: 'p3', star: 1, t: '후보를 3곳으로 압축하기',
+    { id: 'short', ph: 'p3', star: 1, who: 'both', t: '후보를 3곳으로 압축하기',
       why: '비교할 대상이 적어야 결정이 쉬워요.',
       steps: ['탈락 단지는 상태를 “탈락”으로 바꾸기', '1~3위 단지를 최종 비교하기', '우리 예산 상한 보증금 정하기'], l: [] },
-    { id: 'loanpre', ph: 'p3', star: 1, t: '대출 사전 상담 받기',
+    { id: 'loanpre', ph: 'p3', star: 1, who: 'both', t: '대출 사전 상담 받기',
       why: '실제 한도와 필요 서류를 미리 알면 계약 때 당황하지 않아요.',
-      steps: ['정책대출 취급은행 상담 예약', '한도·금리·필요 서류 목록 받기', '임대인 동의가 필요한지 물어보기'], l: ['fund'] },
-    { id: 'safe', ph: 'p3', star: 0, t: '안전 확인 맛보기 (자세한 계약은 나중에)',
+      steps: ['정책대출 취급은행 상담 예약(일정 탭에 날짜 넣기)', '한도·금리·필요 서류 목록 받기', '임대인 동의가 필요한지 물어보기'], l: ['fund'] },
+    { id: 'safe', ph: 'p3', star: 0, who: 'both', t: '안전 확인 맛보기 (자세한 계약은 나중에)',
       why: '계약 내용은 지금 깊게 보지 않아도 돼요. 기본 개념만 익혀 둬요.',
       steps: ['등기부등본에서 소유자와 근저당 보는 법 익히기', '선순위 대출과 보증금 합이 시세의 70% 안쪽인지 보는 법 익히기', '전세보증보험에 가입되는 집인지 확인하는 법 익히기'], l: ['hug', 'hf', 'sgi'] },
-    { id: 'curhome', ph: 'p3', star: 0, t: '현재 집 만료일과 이사 일정 맞추기',
-      why: '입주 시기와 현재 집 계약이 어긋나면 비용이 생겨요.',
-      steps: ['현재 집 계약 만료일과 통보 기한 확인', '비는 기간이 생기면 대안 정하기', '이사 견적 두세 곳 받아 보기'], l: [] }
+    { id: 'curhome', ph: 'p3', star: 0, who: 'each', t: '내 현재 집 만료일과 통보 기한 확인하기',
+      why: '입주 시기와 현재 집 계약이 어긋나면 비용이 생겨요. 각자 사는 집이 다를 수 있어요.',
+      steps: ['내 현재 집 계약 만료일과 통보 기한 확인하기', '일정에 만료일 넣기', '비는 기간이 생기면 대안 정하기'], l: [] },
+    { id: 'move', ph: 'p3', star: 0, who: 'both', t: '이사 일정과 견적 맞추기',
+      why: '이사철에는 견적이 일찍 마감돼요.',
+      steps: ['이사 견적 두세 곳 받아 보기', '부대비용 칸에 이사·가전 예산 반영하기'], l: [] }
   ];
 
   var POLICIES = [
@@ -705,12 +821,19 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function write(path, fn) {
     var prev = queues.get(path) || Promise.resolve();
     var next = prev.then(function () { setState('busy', '저장 중'); return fn(); })
-      .then(function () { setState('ok', '저장됨'); })
-      .catch(function (e) { setState('err', '저장 실패'); showBanner(e && e.code === 'invalid_argument' ? '저장할 권한이 없는 것 같아요. 공유 설정에서 상대방을 “기여자” 이상으로 초대해 주세요.' : '저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.'); });
+      .then(function () { setState('ok', '저장됨'); return true; })
+      .catch(function (e) { setState('err', '저장 실패'); showBanner(e && e.code === 'invalid_argument' ? '저장할 권한이 없는 것 같아요. 공유 설정에서 상대방을 “기여자” 이상으로 초대해 주세요.' : '저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.'); return false; });
     queues.set(path, next);
     return next;
   }
   function debounce(key, ms, fn) { clearTimeout(timers.get(key)); timers.set(key, setTimeout(fn, ms)); }
+  var pending = {};
+  function deepMerge(a, b) { var o = Object.assign({}, a); Object.keys(b || {}).forEach(function (k) { var v = b[k]; o[k] = v && typeof v === 'object' && !Array.isArray(v) ? deepMerge(o[k] && typeof o[k] === 'object' ? o[k] : {}, v) : v; }); return o; }
+  function addPending(path, patch) { var e = pending[path] || (pending[path] = { patch: {}, v: 0 }); e.patch = deepMerge(e.patch, patch); e.v++; }
+  function withPending(path, obj) { var e = pending[path]; return e ? deepMerge(obj || {}, e.patch) : (obj || {}); }
+  function flushWrite(path, key, ms, fn) {
+    debounce(key, ms, function () { var e = pending[path], v = e ? e.v : 0; write(path, fn).then(function (ok) { var e2 = pending[path]; if (ok && e2 && e2.v === v) delete pending[path]; }); });
+  }
   function upsert(path, patch) {
     var ref = db.doc(path);
     return ref.update(patch).catch(function (err) { if (err && err.code === 'invalid_argument') return ref.set(patch); throw err; });
@@ -758,16 +881,21 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (p.s == null && e <= s) return '지금';
     return dotYm(fromIdx(s)) + ' ~ ' + dotYm(fromIdx(Math.max(s, e - 1)));
   }
-  function stepsDone(id, n) { var st = (taskState[id] && taskState[id].steps) || {}, c = 0; for (var i = 0; i < n; i++) if (st[i]) c++; return c; }
+  function stepKey(t, i, w) { return t.who === 'each' ? i + w : String(i); }
+  function stDone(t, i, w) { var st = (taskState[t.id] && taskState[t.id].steps) || {}; return !!st[stepKey(t, i, w)]; }
+  function personSteps(t, w) { var c = 0; for (var i = 0; i < t.steps.length; i++) if (stDone(t, i, w)) c++; return c; }
+  function fullSteps(t) { var c = 0; for (var i = 0; i < t.steps.length; i++) { if (t.who === 'each' ? (stDone(t, i, 'a') && stDone(t, i, 'b')) : stDone(t, i)) c++; } return c; }
+  function isDone(t) { return fullSteps(t) === t.steps.length; }
   function allTasks() {
-    var list = TASKS.map(function (t) { return { id: t.id, ph: t.ph, star: t.star, t: t.t, why: t.why, steps: t.steps, l: t.l, custom: false }; });
+    var list = TASKS.map(function (t) { return { id: t.id, ph: t.ph, star: t.star, who: t.who, t: t.t, why: t.why, steps: t.steps, l: t.l, custom: false }; });
     Object.keys(taskState).forEach(function (id) {
       var s = taskState[id];
-      if (s && s.custom) list.push({ id: id, ph: s.phase || 'p0', star: 0, t: s.title || '', why: '', steps: ['완료하기'], l: [], custom: true });
+      if (s && s.custom) list.push({ id: id, ph: s.phase || 'p0', star: 0, who: s.who === 'each' ? 'each' : 'both', t: s.title || '', why: '', steps: ['완료하기'], l: [], custom: true });
     });
     return list;
   }
-  function isDone(t) { return stepsDone(t.id, t.steps.length) === t.steps.length; }
+  function getMe() { try { var v = localStorage.getItem('ttk-me'); return v === 'A' || v === 'B' ? v : null; } catch (e) { return null; } }
+  function setMe(v) { try { localStorage.setItem('ttk-me', v); } catch (e) {} }
 
   /* ---------- core calc ---------- */
   function programsFor(income, baby) {
@@ -803,6 +931,41 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function needFor(c, D, Lx) { return Math.max(0, D - Lx + c.costs); }
   function interestOf(p, Lx) { return Lx * p.rate / 100 / 12; }
 
+  function withRo(w) { var c = w.charCodeAt(w.length - 1) - 0xAC00, jong = c >= 0 && c <= 11171 ? c % 28 : 0; return w + (jong === 0 || jong === 8 ? '로' : '으로'); }
+  function fmtS(v) { return fmt(v).replace(/원$/, ''); }
+  function brokerFee(D) {
+    var r, cap = null;
+    if (D < 5000) { r = 0.005; cap = 20; } else if (D < 10000) { r = 0.004; cap = 30; } else if (D < 60000) r = 0.003;
+    else if (D < 120000) r = 0.004; else if (D < 150000) r = 0.005; else r = 0.006;
+    var f = D * r; return cap != null ? Math.min(f, cap) : f;
+  }
+  function renderRent() {
+    var out = $('#rentOut'); out.textContent = '';
+    var D = num('deposit'), c = core, rd = num('rentDeposit'), rm = num('rentMonthly'), sv = A('asmSave');
+    function row(a, b, cls) { var r = el('div', 'row'); r.appendChild(el('span', null, a)); r.appendChild(el('span', cls || '', b)); out.appendChild(r); }
+    if (!(c.ready && D > 0) || !(rm > 0)) { out.appendChild(el('div', 'muted', '목표 전세가와 월세를 넣으면 비교해 드려요.')); return; }
+    var b = bestFor(c, D); if (!b) { out.appendChild(el('div', 'muted', '연소득을 넣으면 비교해 드려요.')); return; }
+    var interest = interestOf(b.p, b.L), opp = (D - b.L) * sv / 100 / 12, jCost = interest + opp;
+    var rOpp = rd * sv / 100 / 12, rCost = rm + rOpp, diff = rCost - jCost;
+    row('전세: 대출 이자', fmt(interest)); row('전세: 묶인 내 돈의 예금이자', fmt(opp)); row('전세 월 비용', fmt(jCost), 'ok');
+    row('월세: 월세', fmt(rm)); row('월세: 보증금의 예금이자', fmt(rOpp)); row('월세 월 비용', fmt(rCost), 'ok');
+    row('월 비용 차이', (diff > 0 ? '전세가 ' : '월세가 ') + fmt(Math.abs(diff)) + ' 저렴', diff > 0 ? 'ok' : 'warn');
+    if (D > rd) row('전월세 전환율 환산', '연 ' + (rm * 12 / (D - rd) * 100).toFixed(1) + '%');
+  }
+  function dDay(d) { var diff = dayNum(d) - dayNum(todayStr()); return diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : 'D+' + (-diff); }
+  function renderEvents() {
+    var box = $('#evList'); box.textContent = '';
+    var ids = Object.keys(eventsState).filter(function (id) { return validD(eventsState[id].date); }).sort(function (a, b) { return eventsState[a].date < eventsState[b].date ? -1 : 1; });
+    if (!ids.length) { box.appendChild(el('div', 'empty', '아직 일정이 없어요. 청약 접수일이나 현재 집 계약 만료일을 넣어 보세요.')); return; }
+    ids.forEach(function (id) {
+      var e = eventsState[id], past = dayNum(e.date) < dayNum(todayStr());
+      var row = el('div', 'evrow' + (past ? ' past' : '')); row.dataset.id = id;
+      row.appendChild(el('div', 'dd', dDay(e.date)));
+      var mid = el('div'); mid.appendChild(el('b', null, e.title || '(이름 없음)')); mid.appendChild(el('small', null, e.date)); row.appendChild(mid);
+      var del = el('button', 'ghost', '삭제'); del.type = 'button'; del.dataset.evdel = id; if (!canWrite) del.disabled = true; row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
   /* ---------- plan render ---------- */
   function renderPlan() {
     core = calcCore();
@@ -815,7 +978,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     });
     $$('[data-nm]').forEach(function (e) { e.textContent = e.dataset.nm === 'A' ? nameA() : nameB(); });
     $$('[data-h]').forEach(function (e) { var k = e.dataset.h; e.textContent = has(k) ? fmt(num(k)) : ''; });
-    renderReverse(); renderHero(); $$('.cx').forEach(refreshCard); refreshRank(); refreshPolicies(); refreshBoard(); refreshMonthly();
+    var D0 = num('deposit'); $('[data-brk]').textContent = D0 > 0 ? '중개보수 상한 약 ' + fmt(brokerFee(D0)) + ' (부가세 별도·협의 가능, 확인 필요)' : '';
+    updateMeSel();
+    renderReverse(); renderRent(); renderHero(); $$('.cx').forEach(refreshCard); refreshRank(); refreshPolicies(); refreshBoard(); refreshMonthly(); refreshHomework();
   }
   function onPlanInput(e) {
     var node = e.target.closest('[data-f]'); if (!node) return;
@@ -825,7 +990,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     plan = Object.assign({}, plan); plan[k] = v;
     renderPlan();
     if (!db) return;
-    debounce('plan:' + k, 500, function () { var patch = {}; patch[k] = v; write('plan/main', function () { return upsert('plan/main', patch); }); });
+    var patch = {}; patch[k] = v; addPending('plan/main', patch); flushWrite('plan/main', 'plan:' + k, 500, function () { return upsert('plan/main', pending['plan/main'] ? pending['plan/main'].patch : patch); });
   }
 
   /* ---------- reverse calc ---------- */
@@ -839,13 +1004,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     $('#sumNeed').textContent = b0 ? fmt(needFor(c, D0, b0.L)) : '–';
     var body = $('#rvLoanBody'); body.textContent = '';
     c.progs.forEach(function (p) {
-      var tr = el('tr'), td0 = el('td', null, p.n); td0.appendChild(el('small', null, '연 ' + p.rate + '% 가정'));
-      var td1 = el('td'); td1.appendChild(el('span', 'chip ' + p.chip[1], p.chip[0]));
-      tr.appendChild(td0); tr.appendChild(td1);
+      var row = el('div', 'lrow'), l1 = el('div', 'l1'); l1.appendChild(el('span', null, p.n));
+      l1.appendChild(el('span', 'chip ' + p.chip[1], p.chip[0])); row.appendChild(l1);
       var okd = c.ready && p.elig;
-      tr.appendChild(el('td', okd ? '' : 'muted', okd ? fmt(p.Lmax) : '–'));
-      tr.appendChild(el('td', okd ? '' : 'muted', okd ? fmt(interestOf(p, p.Lmax)) : '–'));
-      body.appendChild(tr);
+      row.appendChild(el('div', 'l2', okd ? '최대 ' + fmt(p.Lmax) + ' · 월 이자 ' + fmt(interestOf(p, p.Lmax)) + ' · 연 ' + p.rate + '% 가정' : '연 ' + p.rate + '% 가정'));
+      body.appendChild(row);
     });
     $('#rvLoanNote').textContent = c.ready ? '월 이자 예산 ' + fmt(c.budget) + ' 안에서 받을 수 있는 대출이에요. 버팀목·신생아 특례는 대상이 아니면 시중은행만 해당돼요.' : '연소득을 입력하면 계산돼요.';
 
@@ -854,16 +1017,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (D > 0 && list.indexOf(D) < 0) list.push(D);
     list.sort(function (a, b) { return a - b; });
     list.forEach(function (d) {
-      var tr = el('tr'); if (D > 0 && d === D) tr.className = 'focus';
-      tr.appendChild(el('td', null, fmt(d)));
-      var b = c.ready ? bestFor(c, d) : null;
-      if (!b) { for (var i = 0; i < 4; i++) tr.appendChild(el('td', 'muted', '–')); sb.appendChild(tr); return; }
+      var row = el('div', 'srow' + (D > 0 && d === D ? ' focus' : '')); row.appendChild(el('div', 'sp', fmt(d)));
+      var sd = el('div', 'sd'), b = c.ready ? bestFor(c, d) : null;
+      if (!b) { sd.appendChild(el('span', 'muted', '–')); row.appendChild(sd); sb.appendChild(row); return; }
       var need = needFor(c, d, b.L), gap = c.canTotal - need;
-      var t1 = el('td', null, fmt(b.L)); t1.appendChild(el('small', null, b.p.n)); tr.appendChild(t1);
-      tr.appendChild(el('td', null, fmt(need)));
-      tr.appendChild(el('td', c.canTotal > 0 ? (gap >= 0 ? 'ok' : 'bad') : 'muted', c.canTotal > 0 ? (gap >= 0 ? '+' : '−') + fmt(Math.abs(gap)) : '–'));
-      tr.appendChild(el('td', null, fmt(interestOf(b.p, b.L))));
-      sb.appendChild(tr);
+      var l1 = el('span', null, '대출 ' + fmt(b.L)); l1.appendChild(el('small', null, ' · ' + b.p.n + ' · 월 이자 ' + fmt(interestOf(b.p, b.L)))); sd.appendChild(l1);
+      var l2 = el('span'); l2.appendChild(document.createTextNode('필수 저축액 ')); l2.appendChild(el('b', null, fmt(need))); sd.appendChild(l2);
+      if (c.canTotal > 0) sd.appendChild(el('span', gap >= 0 ? 'ok' : 'bad', (gap >= 0 ? '여유 ' : '부족 ') + fmt(Math.abs(gap))));
+      row.appendChild(sd); sb.appendChild(row);
     });
     var s = $('#rvSentence'); s.textContent = '';
     if (!c.ready) { s.textContent = '연소득을 입력하면 결과가 나와요.'; return; }
@@ -871,7 +1032,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var b2 = bestFor(c, D), need2 = needFor(c, D, b2.L);
     function B(t) { return el('b', null, t); }
     s.appendChild(document.createTextNode('전세가 ')); s.appendChild(B(fmt(D)));
-    s.appendChild(document.createTextNode('이면 ' + b2.p.full + '로 대출 ')); s.appendChild(B(fmt(b2.L)));
+    s.appendChild(document.createTextNode('이면 ' + withRo(b2.p.full) + ' 대출 ')); s.appendChild(B(fmt(b2.L)));
     s.appendChild(document.createTextNode('을 받고(월 이자 약 ' + fmt(interestOf(b2.p, b2.L)) + '), 입주 때까지 최소 ')); s.appendChild(B(fmt(need2)));
     s.appendChild(document.createTextNode('을 모아 두어야 해요.'));
     if (c.canTotal > 0) {
@@ -937,6 +1098,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     cc.setAttribute('cx', lp[0].toFixed(1)); cc.setAttribute('cy', lp[1].toFixed(1)); cc.setAttribute('r', 3.5); cc.setAttribute('style', 'fill:var(--accent)');
     svg.appendChild(pl); svg.appendChild(cc); box.appendChild(svg); box.appendChild(el('span', null, vals.length + '회 기록한 전세가 추이'));
   }
+  var VISIT = ['역에서 걸어서 10분 안쪽', '밤에도 조용함', '채광·환기 좋음', '주차 여유', '엘리베이터 대기 짧음', '단지·복도 관리 상태 좋음', '곰팡이·결로 없음', '수압·배수 정상', '주변 편의시설(마트·병원)'];
   function cardHTML() {
     return '<div class="cx-head"><input class="cx-name" data-k="name" placeholder="단지명" aria-label="단지명" maxlength="40">' +
       '<select data-k="status" aria-label="진행 상태">' + STATUS.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select>' +
@@ -946,7 +1108,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '<label class="f"><span class="lbl">전세 매물 수</span><span class="in"><input data-pk="cnt" type="number" inputmode="numeric" min="0" step="1"><em>개</em></span></label>' +
       '<label class="f"><span class="lbl">최저 전세 호가 (만원)</span><input data-pk="jeonse" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hj></span></label>' +
       '<label class="f"><span class="lbl">매매가 (만원)</span><input data-pk="sale" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hs></span></label>' +
+      '<label class="f wide"><span class="lbl">희망 전세가 (만원) · 이 가격 이하로 내려오면 알려 드려요</span><input data-k="want" type="number" inputmode="decimal" min="0" step="500"></label>' +
       '</div><div class="cx-last" data-last></div><div class="spark" data-spark></div><div class="chips" data-chips></div><div class="mini" data-mini></div>' +
+      '<details class="visit"><summary>임장 체크 <span class="chip plain" data-vc>0/' + VISIT.length + '</span></summary><div class="vlist">' +
+      VISIT.map(function (v, i) { return '<label class="vi"><input type="checkbox" data-vk="' + i + '"><span>' + v + '</span></label>'; }).join('') + '</div></details>' +
       '<input data-k="memo" placeholder="메모 (층·향·소음·실거래·보증보험 등)" aria-label="메모" maxlength="300">';
   }
   function refreshCard(card) {
@@ -968,7 +1133,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (tr.cnt != null && tr.cnt !== 0) chips.push(['매물 ' + (tr.cnt > 0 ? '+' : '') + tr.cnt + '개', tr.cnt > 0 ? 'grape' : 'plain']);
       if (tr.pctMonth <= 0 && tr.cnt != null && tr.cnt > 0) chips.push(['협상 여지 신호', 'grape']);
     }
+    var want = Number(d.want) || 0;
+    if (sj && want) chips.push([sj <= want ? '희망 전세가 도달' : '희망가보다 ' + fmt(sj - want) + ' 높음', sj <= want ? 'ok' : 'warn']);
     if (sj && dep) { var gd = sj - dep; chips.push([gd > 0 ? '목표 전세가보다 ' + fmt(gd) + ' 높음' : '목표 전세가 이내', gd > 0 ? 'warn' : 'ok']); }
+    var vis = d.visit || {}, vc = 0; for (var q = 0; q < VISIT.length; q++) if (vis[q]) vc++;
+    card.querySelector('[data-vc]').textContent = vc + '/' + VISIT.length;
+    if (vc > 0) chips.push(['임장 ' + vc + '/' + VISIT.length, 'grape']);
     var box = card.querySelector('[data-chips]'); box.textContent = ''; chips.forEach(function (x) { box.appendChild(el('span', 'chip ' + x[1], x[0])); });
     spark(card.querySelector('[data-spark]'), ser.slice(-16).map(function (x) { return x.j; }));
     var mini = card.querySelector('[data-mini]'); mini.textContent = '';
@@ -995,12 +1165,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (e === document.activeElement) return;
       var v = rec[e.dataset.pk], s = v == null ? '' : String(v); if (e.value !== s) e.value = s;
     });
+    var vis = d.visit || {}; $$('[data-vk]', card).forEach(function (cb) { var on = !!vis[cb.dataset.vk]; if (cb.checked !== on) cb.checked = on; });
     refreshCard(card);
   }
   function renderComplexes(docs) {
     var list = $('#cxlist'), seen = {};
     docs.forEach(function (doc) {
-      var id = doc.id; cxData.set(id, doc.data() || {}); seen[id] = 1;
+      var id = doc.id; cxData.set(id, withPending('complexes/' + id, doc.data() || {})); seen[id] = 1;
       var card = list.querySelector('.cx[data-id="' + id + '"]');
       if (!card) {
         card = el('article', 'card cx'); card.dataset.id = id; card.innerHTML = cardHTML();
@@ -1014,28 +1185,92 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (!docs.length && !empty) { var e2 = el('div', 'empty', '아직 후보 단지가 없어요. 위에 단지명을 적고 추가하면 시세를 적을 카드가 생겨요.'); list.appendChild(e2); }
     else if (docs.length && empty) empty.remove();
     docs.forEach(function (doc) { var c = list.querySelector('.cx[data-id="' + doc.id + '"]'); if (c) list.appendChild(c); });
-    refreshRank(); refreshMonthly();
+    buildQuick(); refreshRank(); refreshMonthly();
   }
-  $('#pxDate').addEventListener('change', function () { $$('.cx').forEach(fillCard); refreshRank(); });
+  function recObj(r) { return { jeonse: r.jeonse == null ? null : r.jeonse, sale: r.sale == null ? null : r.sale, cnt: r.cnt == null ? null : r.cnt }; }
+  function setPriceRec(id, dt, rec) {
+    priceMap[id] = priceMap[id] || {}; priceMap[id][dt] = Object.assign({}, rec);
+    var ppath = 'prices/' + id + '_' + dt, ro = recObj(rec);
+    addPending(ppath, { cx: id, d: dt, jeonse: ro.jeonse, sale: ro.sale, cnt: ro.cnt });
+    flushWrite(ppath, 'px:' + id + dt, 600, function () {
+      var cur = pending[ppath] ? pending[ppath].patch : { jeonse: ro.jeonse, sale: ro.sale, cnt: ro.cnt };
+      return db.doc(ppath).set({ cx: id, d: dt, jeonse: cur.jeonse == null ? null : cur.jeonse, sale: cur.sale == null ? null : cur.sale, cnt: cur.cnt == null ? null : cur.cnt });
+    });
+  }
+  function setPrice(id, dt, pk, v) {
+    if (!db) return;
+    var rec = Object.assign({}, (priceMap[id] || {})[dt]); rec[pk] = v;
+    setPriceRec(id, dt, rec);
+    var card = $('.cx[data-id="' + id + '"]'); if (card) fillCard(card);
+    fillQuick(); refreshRank(); refreshMonthly();
+  }
+  function buildQuick() {
+    var body = $('#quickBody'), seen = {};
+    cxData.forEach(function (d, id) {
+      if (d.status === '탈락') return; seen[id] = 1;
+      var row = body.querySelector('.qrow[data-id="' + id + '"]');
+      if (!row) {
+        row = el('div', 'qrow'); row.dataset.id = id; row.appendChild(el('b'));
+        var g = el('div', 'qgrid');
+        [['jeonse', '전세 호가(만원)'], ['sale', '매매가(만원)'], ['cnt', '매물 수(개)']].forEach(function (f) {
+          var lab = el('label'); lab.appendChild(el('span', null, f[1]));
+          var inp = el('input', 'qin'); inp.type = 'number'; inp.inputMode = 'decimal'; inp.min = '0'; inp.dataset.qcx = id; inp.dataset.pk = f[0]; inp.setAttribute('aria-label', f[1]); if (!canWrite) inp.disabled = true;
+          lab.appendChild(inp); g.appendChild(lab);
+        });
+        row.appendChild(g); body.appendChild(row);
+      }
+      row.firstChild.textContent = d.name || '(이름 없음)';
+    });
+    $$('.qrow', body).forEach(function (r) { if (!seen[r.dataset.id]) r.remove(); });
+    $('#quickEmpty').hidden = !!body.children.length; $('#quickCopy').hidden = !body.children.length;
+    fillQuick();
+  }
+  function fillQuick() {
+    var dt = pxDate();
+    $$('#quickBody input').forEach(function (inp) {
+      if (inp === document.activeElement) return;
+      var v = ((priceMap[inp.dataset.qcx] || {})[dt] || {})[inp.dataset.pk], s = v == null ? '' : String(v); if (inp.value !== s) inp.value = s;
+      var prev = seriesOf(inp.dataset.qcx).filter(function (x) { return x.d < dt; }).pop(), pv = prev ? ((priceMap[inp.dataset.qcx] || {})[prev.d] || {})[inp.dataset.pk] : null;
+      inp.placeholder = pv == null ? '' : '지난 ' + pv;
+    });
+  }
+  $('#quickBody').addEventListener('input', function (e) {
+    var inp = e.target.closest('[data-pk]'); if (!inp || !db) return;
+    var v = inp.value === '' ? null : Number(inp.value); if (v !== null && !isFinite(v)) return;
+    setPrice(inp.dataset.qcx, pxDate(), inp.dataset.pk, v);
+  });
+  $('#quickCopy').addEventListener('click', function () {
+    if (!db) return; var dt = pxDate(), n = 0;
+    cxData.forEach(function (d, id) {
+      if (d.status === '탈락') return;
+      var cur = (priceMap[id] || {})[dt]; if (cur && Number(cur.jeonse) > 0) return;
+      var prev = seriesOf(id).filter(function (x) { return x.d < dt; }).pop(); if (!prev) return;
+      var src = priceMap[id][prev.d]; setPriceRec(id, dt, { jeonse: src.jeonse, sale: src.sale, cnt: src.cnt }); n++;
+      var card = $('.cx[data-id="' + id + '"]'); if (card) fillCard(card);
+    });
+    fillQuick(); refreshRank(); refreshMonthly(); setState('ok', n ? n + '개 단지 기록을 불러왔어요' : '불러올 지난 기록이 없어요');
+  });
+  $('#pxDate').addEventListener('change', function () { $$('.cx').forEach(fillCard); fillQuick(); refreshRank(); });
   $('#cxlist').addEventListener('input', function (e) {
     var card = e.target.closest('.cx'); if (!card || !db) return;
     var id = card.dataset.id, pk = e.target.dataset.pk, k = e.target.dataset.k, v;
     if (pk) {
       v = e.target.value === '' ? null : Number(e.target.value); if (v !== null && !isFinite(v)) return;
-      var dt = pxDate(); priceMap[id] = priceMap[id] || {};
-      var rec = Object.assign({}, priceMap[id][dt]); rec[pk] = v; priceMap[id][dt] = rec;
-      refreshCard(card); refreshRank(); refreshMonthly();
-      debounce('px:' + id + dt, 600, function () {
-        var cur = priceMap[id][dt] || {}, path = 'prices/' + id + '_' + dt;
-        write(path, function () { return db.doc(path).set({ cx: id, d: dt, jeonse: cur.jeonse == null ? null : cur.jeonse, sale: cur.sale == null ? null : cur.sale, cnt: cur.cnt == null ? null : cur.cnt }); });
-      });
+      setPrice(id, pxDate(), pk, v);
       return;
     }
     if (!k) return;
     if (e.target.type === 'number') { v = e.target.value === '' ? null : Number(e.target.value); if (v !== null && !isFinite(v)) return; } else v = e.target.value;
     var dd = Object.assign({}, cxData.get(id) || {}); dd[k] = v; cxData.set(id, dd);
-    refreshCard(card); refreshRank(); refreshMonthly();
-    debounce('cx:' + id + ':' + k, 500, function () { var patch = {}; patch[k] = v; write('complexes/' + id, function () { return db.doc('complexes/' + id).update(patch); }); });
+    refreshCard(card); if (k === 'name' || k === 'status') buildQuick(); refreshRank(); refreshMonthly();
+    var patch = {}; patch[k] = v; addPending('complexes/' + id, patch); flushWrite('complexes/' + id, 'cx:' + id + ':' + k, 500, function () { return db.doc('complexes/' + id).update(pending['complexes/' + id] ? pending['complexes/' + id].patch : patch); });
+  });
+  $('#cxlist').addEventListener('change', function (e) {
+    var cb = e.target.closest('[data-vk]'); if (!cb || !db) return;
+    var card = cb.closest('.cx'), id = card.dataset.id, i = cb.dataset.vk;
+    var dd = Object.assign({}, cxData.get(id) || {}); dd.visit = Object.assign({}, dd.visit); dd.visit[i] = cb.checked; cxData.set(id, dd); refreshCard(card);
+    var patch = { visit: {} }; patch.visit[i] = cb.checked; addPending('complexes/' + id, patch);
+    flushWrite('complexes/' + id, 'cxv:' + id + i, 0, function () { return db.doc('complexes/' + id).update(pending['complexes/' + id] ? pending['complexes/' + id].patch : patch); });
   });
   $('#cxlist').addEventListener('click', function (e) {
     var btn = e.target.closest('[data-del]'); if (!btn || !db) return;
@@ -1200,7 +1435,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var c = e.target.closest('.pol'), k = e.target.dataset.k; if (!c || !k || !db) return;
     var id = c.dataset.id, patch = {}; patch[k] = e.target.value; if (k === 'status') patch.checkedAt = ymNow();
     policyState[id] = Object.assign({}, policyState[id], patch); refreshPolicies();
-    debounce('pol:' + id + k, k === 'status' ? 0 : 500, function () { write('policies/' + id, function () { return upsert('policies/' + id, patch); }); });
+    addPending('policies/' + id, patch); flushWrite('policies/' + id, 'pol:' + id + k, k === 'status' ? 0 : 500, function () { return upsert('policies/' + id, pending['policies/' + id] ? pending['policies/' + id].patch : patch); });
   }
   $('#polTabs').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-kind]'); if (!b) return;
@@ -1215,18 +1450,34 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
   /* ---------- board ---------- */
   function makeTaskRow(t) {
-    var d = el('details', 'task'); d.dataset.id = t.id;
+    var d = el('details', 'task'); d.dataset.id = t.id; d.dataset.who = t.who;
     var sm = el('summary'), tt = el('span', 'tk-title'); tt.appendChild(document.createTextNode(t.t)); if (t.star) tt.appendChild(el('span', 'badge', '★ 추천'));
     var pg = el('span', 'tk-prog'); pg.dataset.tp = '1'; sm.appendChild(tt); sm.appendChild(pg); d.appendChild(sm);
     var body = el('div', 'tk-body');
     if (t.why) { var w = el('p', 'tk-why'); w.appendChild(el('b', null, '왜 필요할까요?  ')); w.appendChild(document.createTextNode(t.why)); body.appendChild(w); }
     var ol = el('ol', 'tk-steps');
-    t.steps.forEach(function (s, i) { var li = el('li'), lab = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.className = 'st-cb'; cb.dataset.i = i; lab.appendChild(cb); lab.appendChild(el('span', null, s)); li.appendChild(lab); ol.appendChild(li); });
+    t.steps.forEach(function (st, i) {
+      var li = el('li');
+      if (t.who === 'each') {
+        li.className = 'st2'; li.appendChild(el('span', 'st-t', st));
+        var whos = el('span', 'whos');
+        ['a', 'b'].forEach(function (w) {
+          var lab = el('label', 'who'); lab.dataset.w = w; var cb = el('input'); cb.type = 'checkbox'; cb.className = 'st-cb'; cb.dataset.i = i; cb.dataset.w = w;
+          var nm = el('b'); nm.dataset.wn = w; lab.appendChild(cb); lab.appendChild(nm); whos.appendChild(lab);
+        });
+        li.appendChild(whos);
+      } else {
+        var lab2 = el('label'), cb2 = el('input'); cb2.type = 'checkbox'; cb2.className = 'st-cb'; cb2.dataset.i = i; lab2.appendChild(cb2); lab2.appendChild(el('span', null, st)); li.appendChild(lab2);
+      }
+      ol.appendChild(li);
+    });
     body.appendChild(ol);
-    var meta = el('div', 'tk-meta'), sel = el('select'); sel.dataset.k = 'assignee'; sel.setAttribute('aria-label', '담당');
-    sel.innerHTML = '<option value="">담당 미정</option><option value="A"></option><option value="B"></option><option value="both">함께</option>';
-    var note = el('input'); note.dataset.k = 'note'; note.placeholder = '메모'; note.maxLength = 300; note.setAttribute('aria-label', '메모');
-    meta.appendChild(sel); meta.appendChild(note);
+    var meta = el('div', 'tk-meta' + (t.who === 'each' ? ' solo' : ''));
+    if (t.who !== 'each') {
+      var sel = el('select'); sel.dataset.k = 'assignee'; sel.setAttribute('aria-label', '담당');
+      sel.innerHTML = '<option value="">담당 미정</option><option value="A"></option><option value="B"></option><option value="both">함께</option>'; meta.appendChild(sel);
+    }
+    var note = el('input'); note.dataset.k = 'note'; note.placeholder = '메모'; note.maxLength = 300; note.setAttribute('aria-label', '메모'); meta.appendChild(note);
     if (t.l && t.l.length) meta.appendChild(linkChips(t.l));
     if (t.custom) { var del = el('button', 'ghost tdel', '삭제'); del.type = 'button'; del.dataset.tdel = '1'; meta.appendChild(del); }
     body.appendChild(meta); d.appendChild(body);
@@ -1241,41 +1492,55 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var nb = el('span', 'badge mine', '지금 여기'); nb.dataset.now = '1'; nb.hidden = true; head.appendChild(nb);
       var pr = el('span', 'prog'); pr.dataset.prog = '1'; head.appendChild(pr); sec.appendChild(head);
       sec.appendChild(el('p', 'ph-sub', p.sub));
-      var list = el('div'); list.dataset.list = '1'; sec.appendChild(list);
+      [['each', '각자 해야 할 숙제'], ['both', '같이 할 숙제']].forEach(function (g) {
+        var grp = el('div', 'grp'); grp.dataset.grp = g[0];
+        var gh = el('div', 'grp-h'); gh.appendChild(el('b', null, g[1])); var gs = el('span'); gs.dataset.gp = g[0]; gh.appendChild(gs); grp.appendChild(gh);
+        var list = el('div'); list.dataset.list = g[0]; grp.appendChild(list); sec.appendChild(grp);
+      });
       TASKS.filter(function (t) { return t.ph === p.id; }).forEach(function (t) {
-        var row = makeTaskRow({ id: t.id, star: t.star, t: t.t, why: t.why, steps: t.steps, l: t.l, custom: false });
-        if (p.id === cur && t.star) row.open = true; list.appendChild(row);
+        var row = makeTaskRow(t); if (p.id === cur && t.star) row.open = true;
+        sec.querySelector('[data-list="' + t.who + '"]').appendChild(row);
       });
       var form = el('form', 'addtask'); form.dataset.ph = p.id;
+      var ws = el('select'); ws.setAttribute('aria-label', '종류'); ws.innerHTML = '<option value="both">같이</option><option value="each">각자</option>';
       var inp = el('input'); inp.placeholder = '이 단계에 우리 숙제 추가'; inp.maxLength = 80; inp.setAttribute('aria-label', p.t + ' 숙제 추가');
-      var btn = el('button', null, '추가'); btn.type = 'submit'; form.appendChild(inp); form.appendChild(btn); sec.appendChild(form); root.appendChild(sec);
+      var btn = el('button', null, '추가'); btn.type = 'submit'; form.appendChild(ws); form.appendChild(inp); form.appendChild(btn); sec.appendChild(form); root.appendChild(sec);
     });
   }
   function refreshBoard() {
-    var cur = currentPhase(), seen = {}, tasks = allTasks(), byId = {};
+    var cur = currentPhase(), seen = {}, tasks = allTasks(), byId = {}, me = getMe();
     tasks.forEach(function (t) { byId[t.id] = t; });
     tasks.forEach(function (t) {
       if (!t.custom) return; seen[t.id] = 1;
       var row = $('.task[data-id="' + t.id + '"]'), sec = $('.phase[data-ph="' + t.ph + '"]') || $('.phase[data-ph="p0"]');
-      if (!row) { row = makeTaskRow(t); if (!canWrite) $$('input,select,button', row).forEach(function (x) { x.disabled = true; }); sec.querySelector('[data-list]').appendChild(row); }
+      if (row && row.dataset.who !== t.who) { row.remove(); row = null; }
+      if (!row) { row = makeTaskRow(t); if (!canWrite) $$('input,select,button', row).forEach(function (x) { x.disabled = true; }); sec.querySelector('[data-list="' + t.who + '"]').appendChild(row); }
       var tt = row.querySelector('.tk-title'); if (tt.firstChild && tt.firstChild.nodeValue !== t.t) tt.firstChild.nodeValue = t.t;
     });
-    $$('.task').forEach(function (row) { var id = row.dataset.id; if (!byId[id]) row.remove(); });
-    var totalSteps = 0, doneSteps = 0, doneTasks = 0, totalTasks = 0;
+    $$('.task').forEach(function (row) { if (!byId[row.dataset.id]) row.remove(); });
+    var totalTasks = 0, doneTasks = 0, totalSteps = 0, doneSteps = 0;
     $$('.task').forEach(function (row) {
       var t = byId[row.dataset.id]; if (!t) return;
-      var s = taskState[t.id] || {}, st = s.steps || {}, n = t.steps.length, d = 0;
-      $$('.st-cb', row).forEach(function (cb) { var on = !!st[cb.dataset.i]; if (cb.checked !== on) cb.checked = on; if (on) d++; });
-      row.classList.toggle('done', d === n); row.querySelector('[data-tp]').textContent = d === n ? '완료' : d + ' / ' + n;
-      totalSteps += n; doneSteps += d; totalTasks++; if (d === n) doneTasks++;
-      var sel = row.querySelector('select'); sel.options[1].textContent = nameA(); sel.options[2].textContent = nameB();
-      var v = s.assignee || ''; if (sel !== document.activeElement && sel.value !== v) sel.value = v;
+      var s = taskState[t.id] || {}, n = t.steps.length, each = t.who === 'each';
+      $$('.st-cb', row).forEach(function (cb) { var on = stDone(t, +cb.dataset.i, cb.dataset.w); if (cb.checked !== on) cb.checked = on; });
+      $$('[data-wn]', row).forEach(function (x) { x.textContent = x.dataset.wn === 'a' ? nameA() : nameB(); });
+      $$('label.who', row).forEach(function (l) { l.classList.toggle('me', !!me && l.dataset.w === me.toLowerCase()); });
+      var full = fullSteps(t), a = each ? personSteps(t, 'a') : 0, b = each ? personSteps(t, 'b') : 0;
+      row.classList.toggle('done', full === n);
+      row.querySelector('[data-tp]').textContent = full === n ? '완료' : each ? nameA() + ' ' + a + '/' + n + ' · ' + nameB() + ' ' + b + '/' + n : full + ' / ' + n;
+      totalTasks++; if (full === n) doneTasks++; totalSteps += each ? 2 * n : n; doneSteps += each ? a + b : full;
+      var sel = row.querySelector('select'); if (sel) { sel.options[1].textContent = nameA(); sel.options[2].textContent = nameB(); var v = s.assignee || ''; if (sel !== document.activeElement && sel.value !== v) sel.value = v; }
       var note = row.querySelector('input[data-k="note"]'), nv = s.note || ''; if (note !== document.activeElement && note.value !== nv) note.value = nv;
     });
     PHASES.forEach(function (p) {
       var sec = $('.phase[data-ph="' + p.id + '"]'), rows = $$('.task', sec), d = rows.filter(function (r) { return r.classList.contains('done'); }).length;
       sec.querySelector('[data-rng]').textContent = phaseLabel(p); sec.querySelector('[data-prog]').textContent = d + ' / ' + rows.length + ' 완료';
       sec.classList.toggle('now', p.id === cur); sec.querySelector('[data-now]').hidden = p.id !== cur;
+      var ea = 0, eb = 0, en = 0;
+      tasks.forEach(function (t) { if (t.ph === p.id && t.who === 'each') { ea += personSteps(t, 'a'); eb += personSteps(t, 'b'); en += t.steps.length; } });
+      sec.querySelector('[data-gp="each"]').textContent = en ? nameA() + ' ' + ea + '/' + en + ' · ' + nameB() + ' ' + eb + '/' + en : '';
+      sec.querySelector('[data-gp="both"]').textContent = '';
+      ['each', 'both'].forEach(function (g) { var grp = sec.querySelector('[data-grp="' + g + '"]'); grp.hidden = !grp.querySelector('.task'); });
     });
     $('#bdText').textContent = doneTasks + ' / ' + totalTasks + ' 숙제 · 단계 ' + doneSteps + ' / ' + totalSteps;
     $('#bdBar').style.width = (totalSteps ? doneSteps / totalSteps * 100 : 0) + '%';
@@ -1284,37 +1549,46 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (!db) return;
     var cur = taskState[id] || {}, next = Object.assign({}, cur, patch);
     if (patch.steps) next.steps = Object.assign({}, cur.steps, patch.steps);
-    taskState[id] = next; refreshBoard(); refreshMonthly();
-    debounce('tk:' + id + Object.keys(patch).join(), ms || 0, function () { write('tasks/' + id, function () { return upsert('tasks/' + id, patch); }); });
+    taskState[id] = next; refreshBoard(); refreshMonthly(); refreshHomework();
+    addPending('tasks/' + id, patch); flushWrite('tasks/' + id, 'tk:' + id + Object.keys(patch).join(), ms || 0, function () { return upsert('tasks/' + id, pending['tasks/' + id] ? pending['tasks/' + id].patch : patch); });
   }
   $('#phases').addEventListener('change', function (e) {
     var row = e.target.closest('.task'); if (!row) return; var id = row.dataset.id;
-    if (e.target.classList.contains('st-cb')) { var p = { steps: {} }; p.steps[e.target.dataset.i] = e.target.checked; saveTask(id, p); }
+    if (e.target.classList.contains('st-cb')) { var t = allTasks().filter(function (x) { return x.id === id; })[0]; if (!t) return; var p = { steps: {} }; p.steps[stepKey(t, +e.target.dataset.i, e.target.dataset.w)] = e.target.checked; saveTask(id, p); }
     else if (e.target.dataset.k === 'assignee') saveTask(id, { assignee: e.target.value });
   });
   $('#phases').addEventListener('input', function (e) { var row = e.target.closest('.task'); if (row && e.target.dataset.k === 'note') saveTask(row.dataset.id, { note: e.target.value }, 500); });
   $('#phases').addEventListener('click', function (e) {
     var b = e.target.closest('[data-tdel]'); if (!b || !db) return; var id = b.closest('.task').dataset.id;
-    if (b.classList.contains('confirm')) { delete taskState[id]; refreshBoard(); refreshMonthly(); write('tasks/' + id, function () { return db.doc('tasks/' + id).delete(); }); return; }
+    if (b.classList.contains('confirm')) { delete taskState[id]; refreshBoard(); refreshMonthly(); refreshHomework(); write('tasks/' + id, function () { return db.doc('tasks/' + id).delete(); }); return; }
     b.classList.add('confirm'); b.textContent = '정말 삭제'; setTimeout(function () { b.classList.remove('confirm'); b.textContent = '삭제'; }, 3000);
   });
   $('#phases').addEventListener('submit', function (e) {
     var f = e.target.closest('.addtask'); if (!f) return; e.preventDefault();
-    var inp = f.querySelector('input'), title = inp.value.trim(); if (!title || !db) return; inp.value = '';
-    write('tasks/new', function () { return db.collection('tasks').add({ custom: true, title: title, phase: f.dataset.ph, assignee: '', note: '', createdAt: Date.now() }); });
+    var inp = f.querySelector('input'), title = inp.value.trim(), who = f.querySelector('select').value === 'each' ? 'each' : 'both'; if (!title || !db) return; inp.value = '';
+    write('tasks/new', function () { return db.collection('tasks').add({ custom: true, title: title, phase: f.dataset.ph, who: who, assignee: '', note: '', createdAt: Date.now() }); });
   });
   $('#onlyOpen').addEventListener('change', function (e) { $('#phases').classList.toggle('only-open', e.target.checked); });
 
-  /* ---------- monthly homework ---------- */
+  /* ---------- me selector ---------- */
+  function initMeSel() {
+    var sel = $('#meSel'); sel.innerHTML = '<option value="">나는…</option><option value="A"></option><option value="B"></option>';
+    sel.addEventListener('change', function () { setMe(sel.value); refreshBoard(); refreshHomework(); });
+  }
+  function updateMeSel() {
+    var sel = $('#meSel'); sel.options[1].textContent = '나는 ' + nameA(); sel.options[2].textContent = '나는 ' + nameB();
+    var me = getMe() || ''; if (sel.value !== me) sel.value = me;
+  }
+
+  /* ---------- monthly homework & homework status ---------- */
   function refreshMonthly() {
-    var ym = ymNow(), cur = currentPhase(), ph = PHASES.filter(function (p) { return p.id === cur; })[0], n = 0;
+    var ym = ymNow(), cur = currentPhase(), n = 0;
     $('#moLabel').textContent = ym.slice(0, 4) + '년 ' + (+ym.slice(5)) + '월';
-    $('#moPhase').textContent = ph.t + ' · ' + phaseLabel(ph);
     function mark(key, done) { var r = $('.quest[data-m="' + key + '"]'); r.classList.toggle('done', done); if (done) n++; }
     var act = []; cxData.forEach(function (d, id) { if (d.status !== '탈락') act.push(id); });
     var lastD = null, filled = 0;
     act.forEach(function (id) { var ser = seriesOf(id), got = false; ser.forEach(function (x) { if (x.d.slice(0, 7) === ym) got = true; if (!lastD || x.d > lastD) lastD = x.d; }); if (got) filled++; });
-    var pxDone = act.length > 0 && filled === act.length; mark('px', pxDone);
+    mark('px', act.length > 0 && filled === act.length);
     var ago = lastD ? Math.max(0, dayNum(todayStr()) - dayNum(lastD)) : null;
     $('#moPxSub').textContent = act.length ? filled + ' / ' + act.length + '개 단지 이번 달 기록' + (ago != null ? ' · 마지막 기록 ' + ago + '일 전 (주 1회 권장)' : '') : '매물 탭에서 후보 단지를 먼저 추가하세요.';
     var polDone = !!(monthlyState[ym] && monthlyState[ym].policy);
@@ -1322,16 +1596,50 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var cb = $('#moPolicy'); if (cb.checked !== polDone) cb.checked = polDone;
     var left = allTasks().filter(function (t) { return t.ph === cur && !isDone(t); });
     mark('tk', left.length === 0); $('#moTkSub').textContent = left.length === 0 ? '이 단계 숙제를 모두 끝냈어요.' : left.length + '개 남음';
-    $('#moProg').textContent = n + ' / 3';
-    var rec = left.slice().sort(function (a, b) { return (b.star ? 1 : 0) - (a.star ? 1 : 0); }).slice(0, 3), ol = $('#moRec'); ol.textContent = '';
-    if (!rec.length) ol.appendChild(el('li', 'none', '이 단계 숙제를 모두 끝냈어요. 다음 단계 숙제를 미리 봐 두세요.'));
-    rec.forEach(function (t) { var li = el('li'); li.appendChild(el('span', null, t.t)); var b = el('button', 'ghost', '보기'); b.type = 'button'; b.dataset.goTask = t.id; li.appendChild(b); ol.appendChild(li); });
+    $('#moProg').textContent = n + ' / 3'; refreshOnboard();
   }
-  $('#moPolicy').addEventListener('change', function (e) {
-    if (!db) return; var ym = ymNow(), v = e.target.checked; monthlyState[ym] = { policy: v }; refreshMonthly();
-    write('monthly/' + ym, function () { return upsert('monthly/' + ym, { policy: v }); });
-  });
+  function refreshOnboard() {
+    var rows = { me: !!getMe(), inc: has('incomeA') && has('incomeB') && has('canA') && has('canB'), dep: has('deposit'), cx: cxData.size > 0 }, n = 0;
+    Object.keys(rows).forEach(function (k) { var r = $('.quest[data-ob="' + k + '"]'); r.classList.toggle('done', rows[k]); if (rows[k]) n++; });
+    $('#obProg').textContent = n + ' / 4'; $('#onboard').hidden = n === 4;
+  }
+  function refreshHomework() {
+    refreshOnboard();
+    var cur = currentPhase(), ph = PHASES.filter(function (p) { return p.id === cur; })[0], me = getMe(), tasks = allTasks();
+    $('#hwPhase').textContent = ph.t + ' · ' + phaseLabel(ph);
+    var each = tasks.filter(function (t) { return t.who === 'each' && t.ph === cur; });
+    var total = 0, a = 0, b = 0; each.forEach(function (t) { total += t.steps.length; a += personSteps(t, 'a'); b += personSteps(t, 'b'); });
+    var bars = $('#hwBars'); bars.textContent = '';
+    [['A', nameA(), a], ['B', nameB(), b]].forEach(function (p) {
+      var row = el('div', 'pbar'); row.appendChild(el('b', null, p[1]));
+      var bar = el('div', 'bar2'), i = el('i'); i.style.width = (total ? p[2] / total * 100 : 0) + '%'; bar.appendChild(i); row.appendChild(bar);
+      row.appendChild(el('span', null, total ? p[2] + ' / ' + total : '–')); bars.appendChild(row);
+    });
+    var nudge = $('#hwNudge'); nudge.className = 'nudge'; nudge.textContent = '';
+    if (total) {
+      var la = total - a, lb = total - b;
+      if (la === 0 && lb === 0) { nudge.textContent = '각자 숙제를 둘 다 끝냈어요.'; nudge.className = 'nudge ok'; }
+      else if (la === lb) nudge.textContent = nameA() + '와 ' + nameB() + ' 모두 ' + la + '개씩 남았어요.';
+      else { var slow = la > lb ? nameA() : nameB(); nudge.textContent = slow + ' 숙제가 ' + Math.max(la, lb) + '개 남았어요 (상대는 ' + Math.min(la, lb) + '개).'; }
+    }
+    $('#meChoose').hidden = !!me;
+    $$('[data-me]').forEach(function (bt) { bt.textContent = bt.dataset.me === 'A' ? nameA() : nameB(); });
+    function fill(ul, list, empty, mode) {
+      ul.textContent = '';
+      if (!list.length) { ul.appendChild(el('li', 'none', empty)); return; }
+      list.slice(0, 3).forEach(function (t) {
+        var li = el('li'), sp = el('span', null, t.t); li.appendChild(sp);
+        var bt = el('button', 'ghost', '보기'); bt.type = 'button'; bt.dataset.goTask = t.id; li.appendChild(bt); ul.appendChild(li);
+      });
+    }
+    function byStar(x, y) { return (y.star ? 1 : 0) - (x.star ? 1 : 0); }
+    var mine = me ? each.filter(function (t) { return personSteps(t, me.toLowerCase()) < t.steps.length; }).sort(byStar) : [];
+    fill($('#hwMine'), mine, me ? '지금 단계에서 내가 할 숙제를 모두 끝냈어요.' : '위에서 “나는 누구”를 고르면 내 숙제가 보여요.');
+    var both = tasks.filter(function (t) { return t.who === 'both' && t.ph === cur && !isDone(t); }).sort(byStar);
+    fill($('#hwBoth'), both, '지금 단계의 같이 할 숙제를 모두 끝냈어요.');
+  }
   document.addEventListener('click', function (e) {
+    var m = e.target.closest('[data-me]'); if (m) { setMe(m.dataset.me); updateMeSel(); refreshBoard(); refreshHomework(); return; }
     var g = e.target.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
     var tg = e.target.closest('[data-tab-go]'); if (tg) { showTab(tg.dataset.tabGo); return; }
     var t = e.target.closest('[data-go-task]');
@@ -1339,6 +1647,31 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       showTab('study', true); $$('#studySeg button')[0].click();
       var row = $('.task[data-id="' + t.dataset.goTask + '"]'); if (row) { row.open = true; row.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' }); }
     }
+    var ed = e.target.closest('[data-evdel]');
+    if (ed && db) {
+      var id = ed.dataset.evdel;
+      if (ed.classList.contains('confirm')) { delete eventsState[id]; renderEvents(); write('events/' + id, function () { return db.doc('events/' + id).delete(); }); return; }
+      ed.classList.add('confirm'); ed.textContent = '정말 삭제'; setTimeout(function () { ed.classList.remove('confirm'); ed.textContent = '삭제'; }, 3000);
+    }
+  });
+  $('#heroCopy').addEventListener('click', async function () {
+    var c = core, D = num('deposit'), b = c.ready && D > 0 ? bestFor(c, D) : null, lines = ['땅콩집 플래너 요약 (' + todayStr() + ')', '입주 목표 ' + dotYm(targetYm()) + ' · ' + c.mo + '개월 남음'];
+    if (b) { var need = needFor(c, D, b.L); lines.push('목표 전세가 ' + fmt(D) + ' · 대출 ' + fmt(b.L) + ' (' + b.p.full + ') · 월 이자 ' + fmt(interestOf(b.p, b.L))); lines.push('필수 저축액 ' + fmt(need) + ' · 둘이 모을 수 있는 금액 ' + (c.canTotal > 0 ? fmt(c.canTotal) : '미입력')); }
+    else lines.push('아직 목표 전세가를 정하지 않았어요.');
+    var sc = allScores().scored.slice(0, 3); if (sc.length) lines.push('후보 순위: ' + sc.map(function (x, i) { return (i + 1) + '위 ' + x.name + ' ' + x.total + '점'; }).join(', '));
+    var text = lines.join('\n'), btn = $('#heroCopy');
+    try { await navigator.clipboard.writeText(text); btn.textContent = '복사했어요'; setTimeout(function () { btn.textContent = '요약 복사해서 보내기'; }, 2000); }
+    catch (e) { showBanner(text, [['닫기', function () { showBanner(''); }]]); }
+  });
+  $('#moPolicy').addEventListener('change', function (e) {
+    if (!db) return; var ym = ymNow(), v = e.target.checked; monthlyState[ym] = { policy: v }; refreshMonthly();
+    write('monthly/' + ym, function () { return upsert('monthly/' + ym, { policy: v }); });
+  });
+  $('#evForm').addEventListener('submit', function (e) {
+    e.preventDefault(); if (!db) return;
+    var t = $('#evTitle').value.trim(), d = $('#evDate').value; if (!t || !validD(d)) return;
+    $('#evTitle').value = '';
+    write('events/new', function () { return db.collection('events').add({ title: t, date: d, createdAt: Date.now() }); });
   });
 
   /* ---------- backup / restore ---------- */
@@ -1346,7 +1679,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var cx = [], px = [];
     cxData.forEach(function (d, id) { cx.push(Object.assign({ id: id }, d)); });
     Object.keys(priceMap).forEach(function (id) { Object.keys(priceMap[id]).forEach(function (d) { var r = priceMap[id][d]; px.push({ cx: id, d: d, jeonse: r.jeonse == null ? null : r.jeonse, sale: r.sale == null ? null : r.sale, cnt: r.cnt == null ? null : r.cnt }); }); });
-    return { app: 'ttangkong-planner', version: 2, exportedAt: new Date().toISOString(), plan: plan, complexes: cx, prices: px, tasks: taskState, policies: policyState, monthly: monthlyState };
+    return { app: 'ttangkong-planner', version: 2, exportedAt: new Date().toISOString(), plan: plan, complexes: cx, prices: px, events: eventsState, tasks: taskState, policies: policyState, monthly: monthlyState };
   }
   $('#btnBackup').addEventListener('click', async function () {
     if (!dl) { showBanner('이 화면에서는 백업 파일을 저장할 수 없어요.'); return; }
@@ -1370,7 +1703,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (o.plan && typeof o.plan === 'object') await db.doc('plan/main').set(o.plan);
       for (var i = 0; i < (o.complexes || []).length; i++) { var c = Object.assign({}, o.complexes[i]), id = String(c.id || ''); delete c.id; if (id) await db.doc('complexes/' + id).set(c); }
       for (var j = 0; j < (o.prices || []).length; j++) { var p = o.prices[j]; if (p && p.cx && validD(p.d)) await db.doc('prices/' + p.cx + '_' + p.d).set({ cx: p.cx, d: p.d, jeonse: p.jeonse == null ? null : p.jeonse, sale: p.sale == null ? null : p.sale, cnt: p.cnt == null ? null : p.cnt }); }
-      var maps = [['tasks', o.tasks], ['policies', o.policies], ['monthly', o.monthly]];
+      var maps = [['tasks', o.tasks], ['policies', o.policies], ['monthly', o.monthly], ['events', o.events]];
       for (var m = 0; m < maps.length; m++) { var mp = maps[m][1] || {}, keys = Object.keys(mp); for (var q = 0; q < keys.length; q++) await db.doc(maps[m][0] + '/' + keys[q]).set(mp[keys[q]]); }
       setState('ok', '복원 완료');
     } catch (e) { setState('err', '복원 실패'); showBanner('복원 중 문제가 생겼어요. 일부만 복원됐을 수 있어요.'); }
@@ -1384,12 +1717,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   $('#pollist').addEventListener('change', function (e) { if (e.target.dataset.k === 'status') onPolicyInput(e); });
   (function () { var d = new Date(), w = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()]; $('#today').textContent = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + w + '요일'; })();
   $('#pxDate').value = todayStr();
-  buildPolicies(); buildBoard(); renderPlan(); showTab(initialTab(), true);
+  buildPolicies(); buildBoard(); initMeSel(); renderPlan(); renderEvents(); showTab(initialTab(), true);
+  $('#evDate').value = todayStr();
   window.addEventListener('hashchange', function () { var h = (location.hash || '').replace('#', ''); if (TABS.indexOf(h) >= 0) showTab(h, true); });
 
   function lockInputs() {
     canWrite = false;
-    $$('input, select, button').forEach(function (x) { if (x.closest('.tabbar') || x.closest('#studySeg') || x.closest('#polTabs') || x.hasAttribute('data-go') || x.hasAttribute('data-tab-go') || x.id === 'aiBtn' || x.id === 'aiStop' || x.id === 'btnBackup' || x.id === 'pxDate' || x.id === 'onlyOpen') return; x.disabled = true; });
+    $$('input, select, button').forEach(function (x) { if (x.closest('.tabbar') || x.closest('#studySeg') || x.closest('#polTabs') || x.hasAttribute('data-go') || x.hasAttribute('data-tab-go') || x.id === 'aiBtn' || x.id === 'aiStop' || x.id === 'btnBackup' || x.id === 'pxDate' || x.id === 'meSel' || x.id === 'onlyOpen') return; x.disabled = true; });
   }
   async function init() {
     var claude = window.claude;
@@ -1404,16 +1738,18 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (cw === false) { lockInputs(); $('#btnRestore').hidden = true; showBanner('보기 전용으로 열렸어요. 입력하려면 공유 설정에서 “기여자” 이상 권한이 필요해요.'); }
     } catch (e) {}
     function onErr(e) { setState('err', '연결 끊김'); if (e && e.code === 'revoked') showBanner('접근 권한이 바뀌어 더 이상 불러올 수 없어요.'); }
-    db.doc('plan/main').onSnapshot(function (s) { plan = s.exists ? Object.assign({}, s.data()) : {}; renderPlan(); setState('ok', '실시간 공유 중'); }, onErr);
+    db.doc('plan/main').onSnapshot(function (s) { plan = withPending('plan/main', s.exists ? Object.assign({}, s.data()) : {}); renderPlan(); setState('ok', '실시간 공유 중'); }, onErr);
     db.collection('complexes').orderBy('createdAt').onSnapshot(function (s) { renderComplexes(s.docs); }, onErr);
     db.collection('prices').onSnapshot(function (s) {
       priceMap = {};
       s.docs.forEach(function (d) { var v = d.data() || {}; if (!v.cx || !validD(v.d)) return; priceMap[v.cx] = priceMap[v.cx] || {}; priceMap[v.cx][v.d] = { jeonse: v.jeonse, sale: v.sale, cnt: v.cnt }; });
-      $$('.cx').forEach(fillCard); refreshRank(); refreshMonthly();
+      Object.keys(pending).forEach(function (pth) { if (pth.indexOf('prices/') !== 0) return; var pp = pending[pth].patch; if (!pp.cx || !validD(pp.d)) return; priceMap[pp.cx] = priceMap[pp.cx] || {}; priceMap[pp.cx][pp.d] = Object.assign({}, priceMap[pp.cx][pp.d], { jeonse: pp.jeonse, sale: pp.sale, cnt: pp.cnt }); });
+      $$('.cx').forEach(fillCard); fillQuick(); refreshRank(); refreshMonthly();
     }, onErr);
-    db.collection('tasks').onSnapshot(function (s) { taskState = {}; s.docs.forEach(function (d) { taskState[d.id] = Object.assign({}, d.data()); }); refreshBoard(); refreshMonthly(); }, onErr);
-    db.collection('policies').onSnapshot(function (s) { policyState = {}; s.docs.forEach(function (d) { policyState[d.id] = Object.assign({}, d.data()); }); refreshPolicies(); }, onErr);
+    db.collection('tasks').onSnapshot(function (s) { taskState = {}; s.docs.forEach(function (d) { taskState[d.id] = withPending('tasks/' + d.id, Object.assign({}, d.data())); }); refreshBoard(); refreshMonthly(); refreshHomework(); }, onErr);
+    db.collection('policies').onSnapshot(function (s) { policyState = {}; s.docs.forEach(function (d) { policyState[d.id] = withPending('policies/' + d.id, Object.assign({}, d.data())); }); refreshPolicies(); }, onErr);
     db.collection('monthly').onSnapshot(function (s) { monthlyState = {}; s.docs.forEach(function (d) { monthlyState[d.id] = Object.assign({}, d.data()); }); refreshMonthly(); }, onErr);
+    db.collection('events').onSnapshot(function (s) { eventsState = {}; s.docs.forEach(function (d) { eventsState[d.id] = Object.assign({}, d.data()); }); renderEvents(); }, onErr);
   }
   init();
 })();
