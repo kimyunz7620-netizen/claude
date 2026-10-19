@@ -230,7 +230,9 @@ button.hbar{font:inherit;color:inherit;background:none;border:0;padding:4px 0;wi
 .vbars i{display:block;width:100%;max-width:34px;border-radius:4px 4px 0 0;background:var(--line)}.vbars .hi i{background:var(--accent,var(--mint))}
 .vbars span{font-size:.66rem;color:var(--muted);white-space:nowrap}.vbars b{font-size:.62rem;font-variant-numeric:tabular-nums;white-space:nowrap}
 .dd{font-size:.7rem;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--bg);color:var(--muted);white-space:nowrap}.dd.soon{background:var(--coral-soft);color:var(--coral)}
-.txd summary{cursor:pointer;list-style:none}.txd summary::after{content:" ›";opacity:.6}.txd[open] summary::after{content:" ⌄"}.txd summary::-webkit-details-marker{display:none}.txd ul{margin:4px 0 0;padding-left:1.1em;display:flex;flex-direction:column;gap:2px}
+.txd summary{cursor:pointer;list-style:none}.txd summary::after{content:" ›";opacity:.6}.txd[open] summary::after{content:" ⌄"}.txd summary::-webkit-details-marker{display:none}.txl{margin-top:8px;display:flex;flex-direction:column}.txl>div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px dashed var(--line);line-height:1.4}
+.txl span{min-width:0;display:flex;flex-direction:column}.txl small{font-size:.72rem;color:var(--muted)}.txl b{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700;color:var(--ink)}
+.txp{margin:8px 0 0;line-height:1.6}
 #v-settings .fold>h2{cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin:0}#v-settings .fold>h2::after{content:"펼치기 ›";font-size:.74rem;font-weight:600;color:var(--muted)}
 #v-settings .fold:not(.open)>:not(h2){display:none!important}#v-settings .fold.open>h2{margin-bottom:12px}#v-settings .fold.open>h2::after{content:"접기 ⌄"}
 .qk-box{display:flex;flex-direction:column;gap:6px}
@@ -989,7 +991,8 @@ function payTxSteps(M,pl){
   if(pl.gift&&gapDest!==fundAcc){const ro=(c=>c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28&&(c-0xAC00)%28!==8?"으로":"로")(fundAcc.charCodeAt(fundAcc.length-1));
     steps.push({k:"giftmove",from:gapDest,to:fundAcc,amt:pl.gift,sub:`✋ 자동이체 아님 · 직접 옮기기 (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")}) · 매달 ${won((fundFix&&fundFix.amount)||0)}은 ${(fundFix&&fundFix.day)||22}일에 자동으로 ${fundAcc}${ro} 들어가요`})}
   if(toCard>0)steps.push({k:"kb",from:SALARY,to:ca,amt:toCard,sub:[`카드값 ${won(pl.card-pl.giftCard)}`,prepay?`할부 선결제용 ${won(prepay)}`:""].filter(Boolean).join(" + ")});
-  if(pl.cashRes)steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,sub:"체크카드 생활비"});
+  if(pl.cashRes){const ce=entriesIn(cycleOf(M),e=>e.method==="cash"&&!imported(e)),auto=ST().cashReserve==null||ST().cashReserve==="";
+    steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,sub:auto&&ce.length?`케뱅(체크카드)에서 쓴 생활비를 다시 채워요 · `+ce.map(e=>`${md(bDate(e))} ${e.memo||catName(e.cat)} ${won(e.amount)}`).join(" + "):"체크카드로 쓸 생활비"})}
   if(pl.giftCard)steps.push({k:"gc",from:fundAcc,to:ca,amt:pl.giftCard,sub:"카드로 산 경조사 선물만큼 경조사 통장에서 채워요"});
   steps.push({k:"pay",act:`롯데카드 앱 › ${early?"즉시결제":"결제계좌 확인"}`,amt:pl.card,sub:early?`결제예정금액 › 즉시결제 · ${ca}에서 빠져요`:`${md(pd)}에 ${ca}에서 자동으로 빠져요`});
   if(items.length)steps.push({k:"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 '선결제·상환 기록'에 적기"});
@@ -1012,7 +1015,7 @@ function renderPayTx(M,pl,phase){
 
 /* a long transfer note folds: "주거비 686,000원 외 6건 ›" and the full list on tap */
 function txSub(t){if(t.length<=60)return `<div class="txs">${esc(t)}</div>`;const parts=t.split(" + "),head=parts.length>1?`${parts[0].replace(/\s*\(.*$/,"")} 외 ${parts.length-1}건`:t.split(" · ")[0].slice(0,40)+"…";
-  return `<details class="txs txd"><summary>${esc(head)}</summary>${parts.length>1?`<ul>${parts.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:esc(t)}</details>`}
+  return `<details class="txs txd"><summary>${esc(head)}</summary>${parts.length>1?`<div class="txl">${parts.map(p=>{const m=p.match(/^(.*?)\s([\d,]+원)(.*)$/);return m?`<div><span>${esc(m[1])}${m[3]?`<small>${esc(m[3].replace(/^\s*[·(]?\s*/,"").replace(/\)$/,""))}</small>`:""}</span><b>${esc(m[2])}</b></div>`:`<div><span>${esc(p)}</span></div>`}).join("")}</div>`:`<p class="txp">${esc(t).replace(/ · /g,"<br>")}</p>`}</details>`}
 /* ---------- payday plan ---------- */
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
