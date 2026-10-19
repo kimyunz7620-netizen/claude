@@ -241,6 +241,11 @@ details.fxi .fxn{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-sp
 .fxe{display:flex;flex-direction:column;gap:8px;margin-top:10px}.fxe .fxe-name{font-weight:700}
 .fxe-2{display:grid;grid-template-columns:minmax(0,1fr) 5.5rem;gap:8px}.fxe-day{display:flex;align-items:center;gap:4px}.fxe-day input{width:100%;text-align:right}
 .fxe-more>summary{cursor:pointer;list-style:none;margin-bottom:6px}.fxe-more>summary::-webkit-details-marker{display:none}
+.cd .nz{font-size:.6rem;font-weight:800;color:var(--mint);letter-spacing:-.02em}
+.calscore{display:flex;flex-direction:column;gap:6px;margin:12px 0 4px;padding:12px;border-radius:14px;background:var(--bg)}
+.calscore .big-pct{font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums}
+.calscore .stack{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line);gap:2px}.calscore .stack i{display:block;height:100%}
+.calscore .stack .g{background:var(--mint)}.calscore .stack .w{background:var(--sun)}.calscore .stack .b{background:var(--coral)}
 .qk-box{display:flex;flex-direction:column;gap:6px}
 #entryForm.qmode>:not(.row):not(.qk-box):not(#enMode){display:none!important}#entryForm:not(.qmode)>.qk-box{display:none}
 #qkText{width:100%;min-height:44px;resize:none;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px dashed var(--line);background:var(--bg);color:var(--fg,inherit);field-sizing:content;min-height:5.5em;max-height:12em}
@@ -438,6 +443,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <div class="btns"><button type="button" class="btn ghost" data-act="search" aria-label="지출 찾기">🔍</button><button type="button" class="btn ghost" id="calPrev" aria-label="이전 달">‹</button><button type="button" class="btn ghost" id="calNext" aria-label="다음 달">›</button></div></div>
       <div class="cal-h"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
       <div class="cal" id="cal"></div>
+      <div class="calscore" id="calScore"></div>
       <p class="tiny muted" id="calLegend"></p>
       <div class="row daysec"><h2 id="dayTitle">🧾 오늘 기록</h2><span class="disp" id="dayTotal"></span></div>
       <div class="list" id="dayList"></div>
@@ -457,7 +463,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <div class="btns"><button class="btn" type="submit" style="flex:1" id="spSave">기록</button><button type="button" class="btn ghost" id="spReset" hidden>원래대로</button></div>
       </form>
       </div>
-      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">🥚 오늘은 안 썼어요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
+      <div class="btns"><button type="button" class="btn ghost" id="noSpendBtn" style="flex:1">✨ 오늘 무지출이에요</button><button type="button" class="btn ghost" id="backToday" hidden>오늘로</button></div>
         <div class="mstats"><div><span id="calSumLbl">이 달 생활비</span><strong id="calSum">-</strong></div><div><span>하루 평균</span><strong id="calAvg">-</strong></div><div><span>무지출</span><strong id="calZero">-</strong></div></div>
       <button type="button" class="btn ghost" id="calCats">이 달 카테고리별 보기</button>
     </div>
@@ -1119,12 +1125,14 @@ const refName=e=>e.cancelItem?`${(ITEMS().find(x=>x.id===e.cancelItem)||{name:"�
 function entryRow(e){const[em,col]=look(e.cat),rf=e.amount<0,cx=rf?0:sum(S.entries.filter(x=>x.cancelOf===e.id),x=>-x.amount);
   if(rf)return `<div class="li" style="--c:${col}"><span class="av">↩️</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(refName(e))} 결제 취소${e.memo&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.pending?"⏳ 취소 예정 · 카드 앱에 뜨면 체크":"✅ 카드 취소 완료"}${e.cancelItem?` · ${ymKo(e.fromYm)} 청구부터 없음`:e.excl?" · 예전 결제라 생활비엔 안 들어가요":""}</div></button><div class="a good-t">${e.amount?`−${num(-e.amount)}`:"취소"}</div></div>`;
   return `<div class="li" style="--c:${col}"><span class="av">${em}</span><button type="button" class="link" data-edit="${esc(e.id)}"><div class="t">${esc(catName(e.cat))}${e.memo?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${e.method==="lotte"?"💳 롯데 일시불":e.method==="cash"?"🏦 체크·현금":(e.cardItem?`💳 할부 ${e.months}개월${e.free?" 무이자":""} · 카드 할부 목록에서 갚는 중`:`💳 할부 ${e.months}개월${e.free?" 무이자":" 유이자 ⚠️"} · 생활비엔 월 ${num(Math.floor(e.amount/e.months))}씩`)}${e.excl?e.back?S.tasks["back-"+e.id]?' · <span class="back-t got">💵 돌려받음 ✓</span>':' · <span class="back-t">💵 돌려받을 돈 · 아직 안 받음</span>':" · 🎒 예산 제외":""}${cx?` · ↩️ ${num(cx)} 취소`:""}</div></button><div class="a${e.back&&e.excl&&!S.tasks["back-"+e.id]?" back-t":""}">${num(e.amount)}</div></div>`}
+/* a past month's calendar score, same colours as the calendar */
+function calScoreOf(ym){const[y,m]=ym.split("-").map(Number),n=new Date(y,m,0).getDate(),o={rec:0,g:0};for(let k=1;k<=n;k++){const d=ym+"-"+pad(k);if(d>=TODAY)break;const es=LIV().filter(e=>bDate(e)===d&&!e.excl&&!fundOut(e)),ns=S.days[d]&&S.days[d].noSpend;if(!(es.length||ns||recorded(d)))continue;o.rec++;if(sum(es,e=>e.amount)<=weekLimit(d)/7)o.g++}return o}
 function renderToday(){
   const allow=todayAllowance(),todays=LIV().filter(e=>bDate(e)===TODAY&&!e.excl&&!fundOut(e)),spentT=sum(todays,e=>e.amount),left=allow-spentT,day=S.days[TODAY]||{};
   $("heroLeft").textContent=won(Math.max(0,left));
   $("heroLbl").textContent=allow>0?`오늘 남은 돈 · 오늘 ${won(spentT)} 씀`:"오늘 남은 돈 · 이번 주 한도 다 씀";
   const ratio=allow>0?spentT/allow:spentT>0?2:0;
-  const[face,mood]=day.noSpend&&!todays.length?["🥚","무지출 데이! 최고예요"]:spentT===0?(allow>0?["😎","아직 0원! 이대로 가요"]:["😬","이번 주 한도를 다 썼어요. 일요일까지 무지출 도전 🥚"]):ratio<=.5?["🙂","여유 있어요"]:ratio<=1?["😬","오늘 한도에 거의 다 왔어요"]:allow>0?["🚨",`오늘 ${won(spentT-allow)} 넘었어요. 내일 줄여요`]:["🚨",`오늘 ${won(spentT)} 썼어요. 일요일까지 무지출 도전 💪`];
+  const[face,mood]=day.noSpend&&!todays.length?["✨","무지출 데이! 최고예요"]:spentT===0?(allow>0?["😎","아직 0원! 이대로 가요"]:["😬","이번 주 한도를 다 썼어요. 일요일까지 무지출 도전 ✨"]):ratio<=.5?["🙂","여유 있어요"]:ratio<=1?["😬","오늘 한도에 거의 다 왔어요"]:allow>0?["🚨",`오늘 ${won(spentT-allow)} 넘었어요. 내일 줄여요`]:["🚨",`오늘 ${won(spentT)} 썼어요. 일요일까지 무지출 도전 💪`];
   $("ringFace").textContent=face;$("heroMood").textContent=mood;
   const wr=weekRange(TODAY),W=weekLimit(TODAY),dayB=W/7;
 
@@ -1160,7 +1168,7 @@ function renderToday(){
   const fundNote=fx.map(c=>`<span class="chip good">${look(c.id)[0]} ${esc(c.fund.bank)}에서 · 남은 ${num(fundBalance(c))}</span>`).join("");
   $("dayCats").innerHTML=fundNote?`<div class="chips">${fundNote}</div>`:""; /* categories running hot are in the briefing's notes */
   const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;$("backToday").hidden=isToday;
-  ns.textContent=dd.noSpend?"🥚 무지출 · 취소":isToday?"🥚 오늘은 안 썼어요":"🥚 이날은 안 썼어요";
+  ns.textContent=dd.noSpend?"✨ 무지출 표시 취소":isToday?"✨ 오늘 무지출이에요":"✨ 이날 무지출이었어요";
   const ho=habitsOn(selDate),ha=habitAuto(selDate);
   HK.forEach(k=>{const el=$("hk_"+k),auto=k==="noInst"||(k==="appCheck"&&ha.appCheck);el.checked=ho[k];el.disabled=auto;el.closest(".hb").classList.toggle("on",ho[k]);el.closest(".hb").classList.toggle("auto",auto)});
 
@@ -1176,12 +1184,12 @@ function renderToday(){
 
 function renderCal(){
   if(!calYm)calYm=ymOf(TODAY);
-  const [y,m]=calYm.split("-").map(Number),first=calYm+"-01",days=new Date(y,m,0).getDate(),lead=parse(first).getDay(),dayLim=d=>weekLimit(d)/7,segs=[];
+  const [y,m]=calYm.split("-").map(Number),first=calYm+"-01",days=new Date(y,m,0).getDate(),lead=parse(first).getDay(),dayLim=d=>weekLimit(d)/7,segs=[],sc={g:0,w:0,b:0};
   $("calLabel").textContent=`📅 ${m}월 기록${y!==Number(TODAY.slice(0,4))?` (${y})`:""}`;$("calNext").disabled=calYm>=ymOf(TODAY);
   let html="",tot=0,recDays=0,zero=0;
   for(let i=0;i<lead;i++)html+='<span class="cd pad"></span>';
   for(let k=1;k<=days;k++){const d=calYm+"-"+pad(k),fut=d>TODAY,es=LIV().filter(e=>bDate(e)===d&&!e.excl&&!fundOut(e)),dayB=dayLim(d),s=sum(es,e=>e.amount),ns=S.days[d]&&S.days[d].noSpend,rec=es.length>0||!!ns||recorded(d); /* the calendar shows every day with data, imported ones too (the streak stays app-only) */
-    if(!fut&&rec){recDays++;tot+=s;if(s===0)zero++}
+    if(!fut&&rec&&!(d===TODAY&&s===0&&!ns)){recDays++;tot+=s;if(s===0)zero++;sc[s<=dayB?"g":s<=dayB*1.5?"w":"b"]++} /* today only counts once something is spent or 무지출 is marked */
     const cls=fut||!rec?"":s<=dayB?"g":s<=dayB*1.5?"w":"b";
     /* the daily limit follows each week's own limit, so it can change inside a month (new card cycle, a lower week goal) */
     if(d<=TODAY||k===1){const v1=Math.round(dayB);if(!segs.length||segs[segs.length-1].v!==v1)segs.push({d,v:v1})}
@@ -1189,11 +1197,17 @@ function renderCal(){
     const inc=sum(S.wins.filter(w=>w.kind==="sell"&&w.date===d),w=>w.amount)+(dom(d)===PAY()&&!fut?incomeAt(ymOf(d)):0);
     /* 경조사 paid from its own account stays out of the 생활비 colour but still shows on the day */
     const gs=sum(S.entries.filter(e=>e.date===d&&!e.excl&&fundOut(e)),e=>e.amount),gtxt=gs?`🎁${gs>=10000?manC(gs):num(gs)}`:"";
-    const v=fut?"":s>0?(s>=10000?manC(s):num(s)):gs?gtxt:ns?"🥚":rec?"0":"",fxs=sum(fixedOn(d),x=>x.amount),ftxt=fxs?`📌${fxs>=10000?manC(fxs):num(fxs)}`:s>0&&gs?gtxt:"";
+    const v=fut?"":s>0?(s>=10000?manC(s):num(s)):gs?gtxt:d===TODAY&&!ns?(rec?"0원":""):rec?'<span class="nz">무지출</span>':"",fxs=sum(fixedOn(d),x=>x.amount),ftxt=fxs?`📌${fxs>=10000?manC(fxs):num(fxs)}`:s>0&&gs?gtxt:"";
     html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
   $("cal").innerHTML=html;
-  $("calLegend").innerHTML=`<span class="cdk g"></span>하루 한도(${segs.length>1?segs.map((x,i)=>`${i?md(x.d)+"~ ":"~"+md(addDays(segs[1].d,-1))+" "}${man1(x.v)}`).join(", "):man1(segs[0].v)}) 안 · <span class="cdk w"></span>조금 넘음 · <span class="cdk b"></span>많이 넘음 · <span style="color:var(--mint);font-weight:700">+초록</span>은 들어온 돈 · 📌는 고정비 나가는 날`;
-  $("calSum").textContent=won(tot);$("calSumLbl").textContent=`${Number(calYm.slice(5))}월(1~말일) 합계`;$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
+  /* 이 달 성적: 기록한 날 중 하루 한도 안(초록)이 몇 %, 지난달과 비교 */
+  {const pct=recDays?Math.round(sc.g/recDays*100):0,pv=calScoreOf(ymAdd(calYm,-1)),dp=pv&&pv.rec?pct-Math.round(pv.g/pv.rec*100):null,bar=k=>recDays?sc[k]/recDays*100:0;
+   $("calScore").innerHTML=recDays?`<div class="row" style="align-items:baseline"><strong>${Number(calYm.slice(5))}월 초록 <span class="good-t">${sc.g}일</span> / 기록 ${recDays}일</strong><span class="big-pct ${pct>=70?"good-t":pct>=50?"":"bad-t"}">${pct}%</span></div>
+    <div class="stack"><i class="g" style="width:${bar("g")}%"></i><i class="w" style="width:${bar("w")}%"></i><i class="b" style="width:${bar("b")}%"></i></div>
+    <div class="tiny muted">🟢 한도 안 ${sc.g}일${zero?` (그중 무지출 ${zero}일)`:""} · 🟡 조금 넘음 ${sc.w}일 · 🔴 많이 넘음 ${sc.b}일${dp!=null?` · 지난달보다 <b class="${dp>=0?"good-t":"bad-t"}">${dp>=0?"+":""}${dp}%p</b>`:""}</div>
+    <div class="small">${pct>=80?"👏 거의 매일 한도를 지켰어요!":pct>=60?"💪 절반 넘게 초록이에요. 이 페이스 그대로!":pct>=40?"🌱 초록 하루만 더 늘려 봐요":"🔄 이번 주부터 다시 초록으로 채워 봐요"}</div>`:""}
+  $("calLegend").innerHTML=`<span class="cdk g"></span>하루 한도(${segs.length>1?segs.map((x,i)=>`${i?md(x.d)+"~ ":"~"+md(addDays(segs[1].d,-1))+" "}${man1(x.v)}`).join(", "):man1(segs[0].v)}) 안 · <span class="cdk w"></span>조금 넘음 · <span class="cdk b"></span>많이 넘음 · <b>무지출</b>은 기록했는데 0원인 날 · <span style="color:var(--mint);font-weight:700">+초록</span>은 들어온 돈 · 📌는 고정비 나가는 날`;
+  $("calSum").textContent=won(tot);$("calSumLbl").textContent=`${Number(calYm.slice(5))}월 합계`;$("calAvg").textContent=recDays?won(tot/recDays):"-";$("calZero").textContent=`${zero}일`;
 }
 
 /* ---------- 퀘스트 ---------- */
@@ -1383,7 +1397,7 @@ function renderWeek(){
     (overDays.length?`<h3 style="margin-top:14px">하루 한도(${man1(dayB)})를 넘은 날</h3>`+overDays.map(x=>`<div class="rvod"><div class="row"><strong class="small">${mdw(x.d)}</strong><span class="bad-t small">${won(x.v)} · 한도보다 +${x.v-dayB<10000?won(Math.round(x.v-dayB)):man1(x.v-dayB)}</span></div>${dayItems(x.d).slice(0,3).map(itemRow).join("")}</div>`).join("")
       :`<p class="small good-t" style="margin-top:14px">✅ 하루 한도(${man1(dayB)})를 넘은 날이 없어요</p>`)+
     (!overDays.length&&top3.length?`<h3 style="margin-top:14px">이번 주 큰 지출</h3>`+top3.map(itemRow).join(""):"")+
-    `<div class="chips" style="margin-top:12px"><span class="chip ${zero?"good":""}">🥚 무지출 ${zero}일</span>${skips?`<span class="chip good">🙅 참은 돈 ${won(skips)}</span>`:""}${prevSp?`<span class="chip ${sp<=prevSp?"good":"bad"}">지난주보다 ${sp<=prevSp?`${man1(prevSp-sp)} 덜`:`${man1(sp-prevSp)} 더`} 썼어요</span>`:""}</div>`
+    `<div class="chips" style="margin-top:12px"><span class="chip ${zero?"good":""}">✨ 무지출 ${zero}일</span>${skips?`<span class="chip good">🙅 참은 돈 ${won(skips)}</span>`:""}${prevSp?`<span class="chip ${sp<=prevSp?"good":"bad"}">지난주보다 ${sp<=prevSp?`${man1(prevSp-sp)} 덜`:`${man1(sp-prevSp)} 더`} 썼어요</span>`:""}</div>`
     :'<p class="small muted">이번 주 기록이 아직 없어요.</p>');
   if(!bdKey)bdKey=bdMode==="cycle"?payYmOf(TODAY):ymOf(TODAY);
   const r=bdRange();$("bdLabel").textContent=r.label;
@@ -1852,7 +1866,7 @@ document.addEventListener("click",async e=>{
   if(t.dataset.delWeek){if(!confirmTap(t))return;try{await del("weekly/"+t.dataset.delWeek)}catch(_){}return}
   if(t.dataset.delPay){if(!confirmTap(t))return;try{await del("payments/"+t.dataset.delPay);toast("상환 기록을 지웠어요")}catch(_){}return}
   if(t.dataset.delNw){if(!confirmTap(t))return;try{await del("networth/"+t.dataset.delNw)}catch(_){}return}
-  if(t.id==="noSpendBtn"){const d0=S.days[selDate]||{},doc={...d0,noSpend:!d0.noSpend,savedAt:new Date().toISOString()};S.days={...S.days,[selDate]:doc};render();if(doc.noSpend)toast("🥚 무지출 데이! 연속 기록에 들어가요");const ds=selDate;dayWriting=dayWriting.then(()=>put("days/"+ds,doc).catch(()=>{}));return}
+  if(t.id==="noSpendBtn"){const d0=S.days[selDate]||{},doc={...d0,noSpend:!d0.noSpend,savedAt:new Date().toISOString()};S.days={...S.days,[selDate]:doc};render();if(doc.noSpend)toast("✨ 무지출 데이! 연속 기록에 들어가요");const ds=selDate;dayWriting=dayWriting.then(()=>put("days/"+ds,doc).catch(()=>{}));return}
 });
 $("gear").addEventListener("click",()=>go("settings"));
 $("bdPrev").addEventListener("click",()=>{bdKey=ymAdd(bdKey,-1);renderWeek()});
