@@ -212,6 +212,17 @@ body.sheet-on{overflow:hidden}
 .sheet .link{font:inherit;background:none;border:0;padding:4px 2px;color:var(--muted);font-weight:600;cursor:pointer;margin-left:auto}
 .daysec{border-top:1px solid var(--line);padding-top:14px;margin-top:2px}
 #v-today{padding-bottom:70px}
+.rp-hero{display:flex;flex-direction:column;gap:4px}.rp-hero .big{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+.rp-sec{display:flex;flex-direction:column;gap:8px;padding-top:14px;margin-top:14px;border-top:1px solid var(--line)}
+.rp-sec h3{font-size:.92rem;margin:0}
+.rp-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rp-two>div{background:var(--bg);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.hbar{display:grid;grid-template-columns:5.6rem minmax(0,1fr) auto;gap:8px;align-items:center;font-size:.84rem}
+.hbar .tr{height:8px;border-radius:4px;background:var(--bg);overflow:hidden}.hbar .tr i{display:block;height:100%;border-radius:4px;background:var(--accent,var(--mint))}
+.hbar .v{font-variant-numeric:tabular-nums;font-weight:700}
+.vbars{display:grid;gap:6px;align-items:end;height:110px}.vbars>div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;min-width:0}
+.vbars i{display:block;width:100%;max-width:34px;border-radius:4px 4px 0 0;background:var(--line)}.vbars .hi i{background:var(--accent,var(--mint))}
+.vbars span{font-size:.66rem;color:var(--muted);white-space:nowrap}.vbars b{font-size:.62rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dd{font-size:.7rem;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--bg);color:var(--muted);white-space:nowrap}.dd.soon{background:var(--coral-soft);color:var(--coral)}
 .qk-box{display:flex;flex-direction:column;gap:6px}
 #qkText{width:100%;min-height:44px;resize:none;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px dashed var(--line);background:var(--bg);color:var(--fg,inherit);field-sizing:content;max-height:9em}
 #qkText:focus{outline:none;border-style:solid;border-color:var(--accent,var(--mint))}
@@ -436,6 +447,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     <form class="card sheet-body" id="entryForm" autocomplete="off">
       <div class="row"><h2 id="entryTitle">✏️ 쓴 돈 기록</h2><span class="chip plain" id="enDateChip"></span><button type="button" class="link small" data-sheetclose="1" aria-label="닫기">닫기</button></div>
       <div class="qk-box"><textarea id="qkText" rows="1" placeholder="⚡ 빠른 입력: 스타벅스 4500 · 택시 만이천원 (여러 줄 = 여러 건)" aria-label="빠른 입력"></textarea>
+        <div class="row" id="qkShotRow" hidden style="gap:8px"><label class="pill" style="cursor:pointer">📷 카드 앱 캡처로 가져오기<input type="file" id="qkShot" accept="image/*" multiple hidden></label><span class="tiny muted" id="qkShotMsg">이용내역 화면 캡처 → 날짜·가맹점·금액만 읽어요</span></div>
         <div id="qkPrev" hidden></div></div>
       <div class="quick" id="enQuick" role="group" aria-label="자주 쓰는 지출"></div>
       <input class="amount" id="enAmount" type="text" inputmode="numeric" placeholder="0원" aria-label="금액">
@@ -594,7 +606,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 
   <!-- 현황 -->
   <section class="view" id="v-dash" aria-label="현황" hidden>
-    <div class="seg dsub" id="dashSub" role="tablist" aria-label="현황 나누어 보기"><button type="button" data-dsub="plan" aria-pressed="true">🗺️ 계획</button><button type="button" data-dsub="save" aria-pressed="false">🐷 순자산</button><button type="button" data-dsub="debt" aria-pressed="false">💳 빚·할부</button></div>
+    <div class="seg dsub" id="dashSub" role="tablist" aria-label="현황 나누어 보기"><button type="button" data-dsub="plan" aria-pressed="true">🗺️ 계획</button><button type="button" data-dsub="save" aria-pressed="false">🐷 순자산</button><button type="button" data-dsub="debt" aria-pressed="false">💳 빚·할부</button><button type="button" data-dsub="report" aria-pressed="false">📊 소비</button></div>
     <div class="card road-card" data-sub="plan">
       <div class="row"><div class="title"><span class="em">🗺️</span><h2>앞으로의 길</h2></div><span class="muted small" id="pjBasis"></span></div>
       <div class="pj-head"><span class="small muted" id="pjWhen"></span><span class="pj-big" id="pjBig"></span><span class="small" id="pjSub"></span></div>
@@ -638,6 +650,8 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       <details class="more" open><summary>📅 월별 할부 결제 일정</summary>
         <div class="tbl-wrap" style="margin-top:8px"><table id="schTbl"></table></div></details>
     </div>
+    <div class="card" data-sub="report" id="rpCard"></div>
+    <div class="card" data-sub="report" id="fxdCard"></div>
     <div class="card" data-sub="save">
       <details class="more" open><summary>🗂️ 월말 잔액 기록</summary><div class="list" id="nwList" style="margin-top:6px"></div></details>
     </div>
@@ -652,6 +666,17 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     <form class="card" id="setBudget"></form>
     <form class="card" id="setFixed"></form>
     <form class="card" id="setLoans"></form>
+    <div class="card" id="setQuick">
+      <h2>📱 뒷면 탭으로 빠른 기록</h2>
+      <p class="small">아이폰 뒷면을 두 번 톡톡 치면 기록 창이 바로 열려요.</p>
+      <ol class="small" style="margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px">
+        <li><b>단축어</b> 앱 › ＋ › <b>URL 열기</b> 추가</li>
+        <li>URL에 아래 링크 붙여넣기 · 이름 "머니플랜 기록"</li>
+        <li><b>설정 › 손쉬운 사용 › 터치 › 뒷면 탭 › 이중 탭</b> › "머니플랜 기록"</li>
+      </ol>
+      <div class="row" style="gap:8px;margin-top:8px"><code id="qkLink" style="flex:1;min-width:0;overflow-wrap:anywhere;font-size:.78rem;user-select:all">https://claude.ai/artifact/ARaBL6enkxP2o2vfosGJmi#add</code><button type="button" class="btn ghost" id="qkCopy">복사</button></div>
+      <p class="tiny muted">사파리로 열려요. 사파리에서 claude.ai에 로그인돼 있어야 저장돼요. 키보드가 안 올라오면 입력칸을 한 번 눌러 주세요.</p>
+    </div>
   </section>
 </div>
 
@@ -1431,6 +1456,44 @@ function renderSavings(){const box=$("svCard"),ps=SAVINGS().map(savePlan);box.da
     <div class="chips" style="margin-top:10px">${runs.map(r=>`<span class="chip plain">${ymShort(r.from)}${r.n>1?`~${ymShort(r.to)}`:""} 월 ${man1(r.amt)} × ${r.n}</span>`).join("")}</div>
     <p class="tiny muted" style="margin-top:8px">해지 전엔 꺼내 쓸 수 없는 돈이라 '수중 돈'과 따로 보여요. 순자산에는 낸 돈만 넣고, 기여금은 만기 달에 더해요.</p>`}).join("");
 }
+/* ---------- 📊 소비 리포트: 지난 주기 같은 날까지와 비교, 돈 샌 곳, 주기말 예측, TOP3, 요일 패턴, 주기별 흐름 ---------- */
+function renderReport(){const el=$("rpCard");if(!el||!S.settings)return;
+  const P=payYmOf(TODAY),cur=cycleOf(P),prev=cycleOf(ymAdd(P,-1)),k=dayDiff(cur.start,TODAY)+1,len=dayDiff(cur.start,cur.end)+1;
+  const now=entriesIn({start:cur.start,end:TODAY}),pv=entriesIn({start:prev.start,end:addDays(prev.start,k-1)});
+  const sN=sum(now,e=>e.amount),sP=sum(pv,e=>e.amount),B=cycleBudgetFor(P),big=sum(now.filter(e=>e.amount>=50000),e=>e.amount),proj=Math.round(sN+(sN-big)/k*(len-k)), /* one-off big spends (5만+) are not projected forward */hasPrev=S.entries.some(e=>e.date<=addDays(prev.start,3));
+  const diff=sP?Math.round((sN-sP)/sP*100):null;
+  const by=(list)=>{const m={};list.forEach(e=>m[e.cat]=(m[e.cat]||0)+e.amount);return m},cN=by(now),cP=by(pv);
+  const name=id=>`${look(id)[0]} ${esc(SHORT[id]||catName(id))}`;
+  const top=Object.entries(cN).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,3),mx=top.length?top[0][1]:1;
+  const leak=Object.keys(cN).map(id=>({id,d:cN[id]-(cP[id]||0),p:cP[id]?Math.round((cN[id]-cP[id])/cP[id]*100):null})).filter(x=>x.d>=5000).sort((a,b)=>b.d-a.d)[0];
+  /* 요일: the last 4 full weeks, so one big day doesn't define the pattern */
+  const w0=addDays(TODAY,-27),wk=[0,0,0,0,0,0,0];entriesIn({start:w0,end:TODAY}).forEach(e=>{wk[parse(bDate(e)).getDay()]+=e.amount});const wmx=Math.max(...wk,1),wi=wk.indexOf(Math.max(...wk));
+  /* 주기별 흐름: up to 6 cycles that have records */
+  const first=S.entries.reduce((m,e)=>e.date<m?e.date:m,TODAY),cyc=[];for(let i=5;i>=0;i--){const p=ymAdd(P,-i),c=cycleOf(p);if(c.end<first)continue;cyc.push({p,v:sum(entriesIn(i?c:{start:c.start,end:TODAY}),e=>e.amount),b:cycleBudgetFor(p),cur:!i})}const cmx=Math.max(...cyc.map(c=>Math.max(c.v,c.b)),1);
+  el.innerHTML=`<div class="row"><div class="title"><span class="em">📊</span><h2>이번 주기 소비</h2></div><span class="muted small">${md(cur.start)}~${md(cur.end)} · ${k}일째</span></div>
+  <div class="rp-hero"><span class="small muted">${md(cur.start)}부터 쓴 생활비</span><span class="big">${won(sN)}</span>
+   ${hasPrev&&sP?`<span class="small ${diff<=0?"good-t":"bad-t"}">지난 주기 같은 날(${k}일째)보다 ${diff<=0?`${Math.abs(diff)}% 덜 쓰고 있어요 (${signed(sN-sP)})`:`${diff}% 더 쓰고 있어요 (${signed(sN-sP)})`}</span>`:'<span class="small muted">지난 주기 기록이 쌓이면 같은 날짜끼리 비교해 드려요</span>'}
+   <div class="bar thin" style="margin-top:6px"><i style="width:${Math.min(100,B?sN/B*100:0)}%"></i><b style="left:${Math.min(100,k/len*100)}%"></b></div><span class="tiny muted">예산 ${won(B)} 중 ${B?Math.round(sN/B*100):0}% · 기간 ${Math.round(k/len*100)}% 지남</span></div>
+  <div class="rp-two" style="margin-top:12px"><div><span class="tiny muted">💸 돈 샌 곳</span>${leak?`<b class="small">${name(leak.id)}</b><span class="tiny ${"bad-t"}">지난 주기 같은 기간보다 ${leak.p!=null?`${leak.p}% `:""}늘었어요 (+${man1(leak.d)})</span>`:'<span class="small good-t">지난 주기보다 크게 는 곳이 없어요 👍</span>'}</div>
+   <div><span class="tiny muted">🔮 주기말 예측</span><b class="small">${man1(proj)}</b><span class="tiny ${proj>B?"bad-t":"good-t"}">이 속도면 ${md(cur.end)}에 ${proj>B?`예산보다 ${man1(proj-B)} 넘어요`:`${man1(B-proj)} 남아요`}${big?" · 5만 원 넘는 큰 지출은 한 번으로 봐요":""}</span></div></div>
+  <div class="rp-sec"><h3>🏆 카테고리 TOP 3</h3>${top.map(([id,v],i)=>`<div class="hbar"><span>${i+1}. ${name(id)}</span><span class="tr"><i style="width:${v/mx*100}%"></i></span><span class="v">${num(v)}원</span></div>`).join("")||'<p class="small muted">아직 기록이 없어요.</p>'}</div>
+  <div class="rp-sec"><h3>📅 요일별 패턴 <span class="tiny muted" style="font-weight:400">최근 4주</span></h3>
+   <div class="vbars" style="grid-template-columns:repeat(7,1fr)">${wk.map((v,i)=>`<div class="${i===wi&&v>0?"hi":""}"><b>${v?manC(v):""}</b><i style="height:${Math.max(2,v/wmx*70)}px"></i><span>${DOW[i]}</span></div>`).join("")}</div>
+   <p class="small">${wk[wi]>0?`<b>${DOW[wi]}요일</b>에 지출이 가장 많았어요 (4주 합계 ${man1(wk[wi])})`:"최근 4주 기록이 없어요"}</p></div>
+  ${cyc.length>1?`<div class="rp-sec"><h3>📈 주기별 생활비 흐름</h3><div class="vbars" style="grid-template-columns:repeat(${cyc.length},1fr)">${cyc.map(c=>`<div class="${c.cur?"hi":""}"><b>${manC(c.v)}</b><i style="height:${Math.max(2,c.v/cmx*70)}px"></i><span>${ymShort(c.p)}${c.cur?" (진행)":""}</span></div>`).join("")}</div>
+   <p class="tiny muted">결제월 기준 · 생활비(예산 제외 지출·경조사 통장 지출 빼고)</p></div>`:""}`;
+  renderFixedDday();
+}
+/* 고정비·구독 D-day: every fixed cost with a day, by the next date it leaves */
+function renderFixedDday(){const el=$("fxdCard");if(!el)return;const M=ymOf(TODAY),rows=[];
+  ((S.fixed&&S.fixed.items)||[]).forEach(it=>{if(!it.day||it.acct==="급여 공제")return;for(let i=0;i<3;i++){const ym=ymAdd(M,i),d=ymDay(ym,it.day),x=fixedAt(ym).find(y=>y.id===it.id);if(d>=TODAY&&x&&x.amount>0){rows.push({x,d,n:dayDiff(TODAY,d)});break}}});
+  rows.sort((a,b)=>a.d<b.d?-1:1);const nod=fixedAt(M).filter(x=>!x.day&&x.amount>0&&x.acct!=="급여 공제");
+  const subRe=/구독|와우|아이클라우드|넷플|유튜브|멜론|스포티파이|디즈니|티빙|웨이브|쿠팡/,subs=fixedAt(M).filter(x=>subRe.test(x.name+" "+x.note)&&x.amount>0),sm=sum(subs,x=>x.amount);
+  el.innerHTML=`<div class="row"><div class="title"><span class="em">📌</span><h2>고정비 · 구독 결제일</h2></div><span class="muted small">이번 달 ${man1(fixedTotal(M))}</span></div>
+   ${sm?`<p class="small">🔁 구독 월 <b>${won(sm)}</b> · 연 ${won(sm*12)} <span class="tiny muted">(${subs.map(x=>esc(x.name)).join(", ")})</span></p>`:""}
+   <div class="list">${rows.map(r=>`<div class="li"><span class="av">${r.x.saving?"🌱":r.x.card?"💳":"🏦"}</span><div><div class="t">${esc(r.x.name)}</div><div class="s">매달 ${r.x.day}일 · ${fxWhere(r.x)} · 다음 ${mdw(r.d)}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="a">${num(r.x.amount)}</span><span class="dd ${r.n<=3?"soon":""}">${r.n?`D-${r.n}`:"오늘"}</span></div></div>`).join("")}</div>
+   ${nod.length?`<p class="tiny muted" style="margin-top:8px">날짜 미정: ${nod.map(x=>`${esc(x.name)} ${man1(x.amount)}`).join(" · ")} · 설정 › 고정비에서 나가는 날을 넣으면 여기·달력에 떠요</p>`:""}`;
+}
 function renderDash(){
   const st=ST(),T=totalDebt(),start=st.startDebt||T,pr=start>0?Math.max(0,Math.min(1,(start-T)/start)):0,sim=simulate();
   $("dbFree").textContent=`남은 빚 ${man(T)} · `+(sim.free?`이대로면 유이자 카드 할부는 ${ymKo(sim.cardDone)}, 모든 빚은 ${ymKo(sim.free)}에 끝나요.`:"지금 숫자로는 완납 시점을 계산할 수 없어요.");
@@ -1441,7 +1504,7 @@ function renderDash(){
   $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div>${(GL.length?GL:[{net:target}]).map((g,i)=>`<div class="mk lo" style="left:${pos(g.net)}%"><b>🏁</b>${GL.length>1?`${i+1}차 `:""}${man(g.net)}</div>`).join("")}${GL.some(g=>g.net===fin)?"":`<div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div>`}<div class="me" style="left:${pos(now)}%">🐷</div>`;
   const yNow=(S.accounts&&S.accounts.youth)||0,chips=[`<span class="chip plain">보증금 ${man(st.deposit||0)} + 통장·증권 ${man((lastCash||0)-yNow)}${yNow?` + 적금 ${man(yNow)}`:""} − 빚 ${man(T)}</span>`];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip plain">통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
   if(snaps.length){const sYm=snaps[0].ym,tYm=goalYm,sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
-  $("nwChips").innerHTML=chips.join("");renderSavings();
+  $("nwChips").innerHTML=chips.join("");renderSavings();renderReport();
   renderProjection(sim,now,target);
   drawChart(snaps,snaps.length?snaps[0].ym:ymOf(TODAY),goalYm,snaps.length?startNet:null,snaps.length?target:null,sim.path);
   const order=cardOrder(TODAY).sort((a,b)=>b.save-a.save),open=ITEMS().filter(x=>itemBal(x)>0),done=ITEMS().filter(x=>itemBal(x)<=0),free=open.filter(x=>x.fee===0),nx=ymAdd(lastPassed(),1);
@@ -1772,20 +1835,36 @@ function qkParse(text){return String(text||"").split(/\n+/).map(l=>l.trim()).fil
   if(amt==null){const m=l.match(/^(.*?)([\d][\d,.]*\s*(?:만|천)?[\d,]*\s*원?)$/);if(m){amt=korAmount(m[2]);memo=m[1].trim()}}
   return{memo,amount:amt,cat:amt?qkGuess(memo):null}}).filter(x=>x.amount)}
 let QK=[];const QKO={}; /* categories picked by hand while typing, by memo */
-function qkRender(){const box=$("qkPrev");QK=qkParse($("qkText").value).map(x=>x.memo in QKO?{...x,cat:QKO[x.memo]}:x);box.hidden=!QK.length;if(!QK.length){box.innerHTML="";return}
+let QKI=[]; /* rows read from a card-app screenshot */
+function qkRender(){const box=$("qkPrev");QK=qkParse($("qkText").value).concat(QKI.filter(x=>!x.off)).map(x=>x.memo in QKO?{...x,cat:QKO[x.memo]}:x);box.hidden=!QK.length;if(!QK.length){box.innerHTML="";return}
   const opts=c=>`<option value="">분류 선택</option>`+CATS().filter(x=>!x.fund).map(x=>`<option value="${esc(x.id)}" ${x.id===c?"selected":""}>${look(x.id)[0]} ${esc(SHORT[x.id]||x.name)}</option>`).join("");
-  box.innerHTML=QK.map((x,i)=>`<div class="qk-row ${x.cat?"":"need"}"><span class="m">${esc(x.memo||"(메모 없음)")}</span><b>${num(x.amount)}원</b><select data-qkcat="${i}" aria-label="분류">${opts(x.cat)}</select></div>`).join("")+
-    `<div class="btns" style="margin-top:6px"><button type="button" class="btn" id="qkSave" style="flex:1">💳 롯데 일시불로 ${QK.length}건 기록 · ${md($("enDate").value||TODAY)}</button></div>`}
+  box.innerHTML=QK.map((x,i)=>`<div class="qk-row ${x.cat?"":"need"}"><span class="m">${x.date?`<span class="muted">${md(x.date)}</span> `:""}${esc(x.memo||"(메모 없음)")}${x.src?` <button type="button" class="link tiny muted" data-qkoff="${x.src}" aria-label="빼기">✕</button>`:""}</span><b>${num(x.amount)}원</b><select data-qkcat="${i}" aria-label="분류">${opts(x.cat)}</select></div>`).join("")+
+    `<div class="btns" style="margin-top:6px"><button type="button" class="btn" id="qkSave" style="flex:1">💳 롯데 일시불로 ${QK.length}건 기록${QK.some(x=>x.date)?"":` · ${md($("enDate").value||TODAY)}`}</button></div>`}
 async function qkSave(){if(!QK.length)return;if(QK.some(x=>!x.cat)){toast("분류를 골라 주세요");return}const date=$("enDate").value||TODAY,b=$("qkSave");if(b)b.disabled=true;
-  try{for(const x of QK)await put("entries/"+newId(),{date,cat:x.cat,amount:x.amount,method:"lotte",memo:x.memo,createdAt:new Date().toISOString()});
-    toast(`⚡ ${QK.length}건 ${won(sum(QK,x=>x.amount))} 기록!`);$("qkText").value="";qkRender();cancelEdit();closeSheet();selDate=date;calYm=ymOf(date);renderToday()}catch(_){if(b)b.disabled=false}}
+  try{for(const x of QK)await put("entries/"+newId(),{date:x.date||date,cat:x.cat,amount:x.amount,method:"lotte",memo:x.memo,createdAt:new Date().toISOString()});
+    toast(`⚡ ${QK.length}건 ${won(sum(QK,x=>x.amount))} 기록!`);$("qkText").value="";QKI=[];$("qkShotMsg").textContent="이용내역 화면 캡처 → 날짜·가맹점·금액만 읽어요";qkRender();cancelEdit();closeSheet();selDate=date;calYm=ymOf(date);renderToday()}catch(_){if(b)b.disabled=false}}
 $("qkText").addEventListener("input",()=>{clearTimeout(qkRender.t);qkRender.t=setTimeout(qkRender,200)});
 $("qkPrev").addEventListener("change",e=>{const i=e.target.dataset.qkcat;if(i!=null){QK[i].cat=e.target.value||null;QKO[QK[i].memo]=QK[i].cat;e.target.closest(".qk-row").classList.toggle("need",!QK[i].cat)}});
-$("qkPrev").addEventListener("click",e=>{if(e.target.id==="qkSave")qkSave()});
+$("qkPrev").addEventListener("click",e=>{if(e.target.id==="qkSave")qkSave();const o=e.target.dataset.qkoff;if(o){const r=QKI.find(x=>x.src===o);if(r)r.off=true;qkRender()}});
+/* 카드 앱 이용내역 캡처 → Claude가 날짜·가맹점·금액만 읽어 빠른 입력 미리보기에 넣어요. 이미 적은 건(같은 날·같은 금액)은 빼 둬요. 이미지는 저장하지 않아요 */
+async function qkShotInit(){if(!sample||qkShotInit.done)return;qkShotInit.done=true;const c=await Promise.resolve().then(()=>sample.limits()).catch(()=>null);if(!c||!c.images)return;$("qkShot").accept=c.images.mediaTypes.join(",");$("qkShotRow").hidden=false;qkShotInit.max=c.images.maxCount}
+$("qkShot").addEventListener("change",async e=>{const fs=[...e.target.files].slice(0,qkShotInit.max||4);e.target.value="";if(!fs.length||!sample)return;const msg=$("qkShotMsg");msg.textContent="⏳ 캡처 읽는 중…";
+  const prompt=`이미지는 한국 카드사·은행 앱의 이용내역 캡처예요. 오늘은 ${TODAY}이에요. 결제(지출) 건만 골라 JSON으로 답하세요: {"rows":[{"date":"YYYY-MM-DD","memo":"가맹점 이름","amount":숫자,"cancel":true|false}]}.
+- 연도가 안 보이면 오늘 기준 가장 가까운 과거 날짜로.
+- amount는 원 단위 양수 정수. 할부면 결제 총액.
+- 취소·환불 건은 cancel:true. 입금·이체 받은 돈은 빼기.
+- 카드번호·계좌번호·승인번호 같은 번호는 절대 적지 마세요. memo에는 가맹점 이름만.`;
+  try{const r=await sample.json(prompt,{images:fs,modelTier:"default"}),rows=(Array.isArray(r&&r.rows)?r.rows:[]).filter(x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&Number(x.amount)>0);
+    let dup=0,cx=0;rows.forEach((x,i)=>{if(x.cancel){cx++;return}const a=Math.round(Number(x.amount)),memo=String(x.memo||"").replace(/[\d*]{4,}/g,"").replace(/[\s\-–·*()]+$/,"").trim().slice(0,40);
+      if(S.entries.some(e=>e.date===x.date&&Math.abs(e.amount)===a)||QKI.some(q=>q.date===x.date&&q.amount===a)){dup++;return}
+      QKI.push({src:"s"+Date.now()+i,date:x.date,memo,amount:a,cat:qkGuess(memo)})});
+    msg.textContent=`✅ ${rows.length-cx-dup}건 가져옴${dup?` · 이미 적은 ${dup}건 뺐어요`:""}${cx?` · 취소 ${cx}건은 '결제 취소'로 따로 적어 주세요`:""}`;qkRender()}
+  catch(err){msg.textContent=err&&err.code==="not_granted"?"Claude 사용을 허용해야 캡처를 읽을 수 있어요":"캡처를 읽지 못했어요. 다시 시도해 주세요"}});
+$("qkCopy")&&$("qkCopy").addEventListener("click",()=>{const t=$("qkLink").textContent;navigator.clipboard.writeText(t).then(()=>toast("링크를 복사했어요"),()=>{const r=document.createRange();r.selectNodeContents($("qkLink"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("길게 눌러 복사해 주세요")})});
 /* 아이폰 뒷면 탭 → 단축어 'URL 열기'로 이 앱 링크 뒤에 #add 를 붙여 열면 바로 빠른 입력이 열려요 */
 function qkDeep(){if(location.hash==="#add"){go("today");if(editingId)cancelEdit();openSheet();setTimeout(()=>$("qkText").focus(),150)}}
 window.addEventListener("hashchange",qkDeep);
-function openSheet(){$("sheet").hidden=false;document.body.classList.add("sheet-on");setTimeout(()=>{if(!editingId&&!parseNum($("enAmount").value))$("enAmount").focus()},60)}
+function openSheet(){qkShotInit();$("sheet").hidden=false;document.body.classList.add("sheet-on");setTimeout(()=>{if(!editingId&&!parseNum($("enAmount").value))$("enAmount").focus()},60)}
 function closeSheet(){$("sheet").hidden=true;document.body.classList.remove("sheet-on")}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("sheet").hidden){if(editingId||refundOf)cancelEdit();closeSheet();renderToday()}});
 let orKind="lump";
