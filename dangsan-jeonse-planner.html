@@ -295,6 +295,9 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .obbtns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .hero-btn.soft { background: rgba(255,255,255,.18); color: #fff; margin-top: 8px; }
 
+.verdict { font-size: 14.5px; margin: 6px 0 10px; line-height: 1.65; }
+.verdict b { font-weight: 800; color: var(--accent); }
+
 /* tabbar */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
 .tabbar .in2 { max-width: 600px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
@@ -334,19 +337,25 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
       <div class="card hero" id="hero">
         <div class="hero-k" id="hKicker">입주 목표</div>
-        <div class="hero-l">입주 때까지 반드시 모아야 할 돈 (필수 저축액)</div>
+        <div class="hero-l">둘이 모을 돈으로 찾아볼 전세가</div>
         <div class="hero-v" id="hNeed">–</div>
         <div class="hero-s" id="hSub">역산 탭에 연소득과 목표 전세가를 넣어 보세요</div>
         <div class="bar"><i id="hBar"></i></div>
         <div class="hero-bartext" id="hBarText"></div>
         <div class="hero-row">
-          <div><span>목표 전세가</span><b id="hDep">–</b></div>
-          <div><span>대출로 채울 돈</span><b id="hLoan">–</b></div>
-          <div><span>둘이 모을 수 있는 돈</span><b id="hMon">–</b></div>
+          <div><span>입주 때까지 모을 돈</span><b id="hDep">–</b></div>
+          <div><span>대출 활용</span><b id="hLoan">–</b></div>
+          <div><span>월급 대비 이자</span><b id="hMon">–</b></div>
           <div><span>월 대출 이자</span><b id="hInt">–</b></div>
         </div>
         <button type="button" class="hero-btn" data-tab-go="calc">역산 계산기 열기</button>
         <button type="button" class="hero-btn soft" id="heroCopy">요약 복사해서 보내기</button>
+      </div>
+
+      <div class="card" id="nextCard">
+        <h3>그래서 지금 해야 할 일</h3>
+        <p class="verdict" id="verdict"></p>
+        <div id="nextList"></div>
       </div>
 
       <div class="card" id="monthly">
@@ -910,8 +919,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     ];
   }
   function calcCore() {
-    var income = num('incomeA') + num('incomeB'), N = num('netA') + num('netB'), est = false;
-    if (!N && income) { N = income * 0.8 / 12; est = true; }
+    var income = num('incomeA') + num('incomeB'), est = false, nA = num('netA'), nB = num('netB');
+    if (!nA && num('incomeA')) { nA = num('incomeA') * 0.8 / 12; est = true; }
+    if (!nB && num('incomeB')) { nB = num('incomeB') * 0.8 / 12; est = true; }
+    var N = nA + nB;
     var cur = idx(ymNow()), tgt = idx(targetYm()), mo = Math.max(0, tgt - cur);
     var budget = N * STANCE[stanceKey()].r, canTotal = num('canA') + num('canB');
     var progs = programsFor(income, plan.babyPlan || '');
@@ -1044,25 +1055,68 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
 
   /* ---------- hero ---------- */
+  function fl500(v) { return Math.floor(v / 500) * 500; }
+  function capacityAt(c, r) {
+    var U = Math.max(0, c.canTotal - c.costs), best = null;
+    c.progs.forEach(function (p) {
+      if (!p.elig) return;
+      var Lb = p.rate > 0 ? c.N * r * 12 / (p.rate / 100) : 1e9, L = Math.max(0, Math.min(p.cap, Lb, 4 * U)), D = U + L;
+      if (!best || D > best.D + 1e-6 || (Math.abs(D - best.D) < 1e-6 && p.rate < best.p.rate)) best = { p: p, L: L, D: D, U: U };
+    });
+    return best;
+  }
   function renderHero() {
-    var c = core, D = num('deposit'), t = targetYm().split('-');
+    var c = core, st = STANCE[stanceKey()], t = targetYm().split('-');
     $('#hKicker').textContent = '입주 목표 ' + t[0] + '.' + t[1] + ' · ' + c.mo + '개월 남음';
-    var b = c.ready && D > 0 ? bestFor(c, D) : null;
-    if (!b) {
-      $('#hNeed').textContent = '–'; $('#hSub').textContent = c.ready ? '역산 탭에서 찾고 싶은 전세가를 넣어 보세요' : '역산 탭에 연소득과 목표 전세가를 넣어 보세요';
-      $('#hDep').textContent = D > 0 ? fmt(D) : '–'; $('#hLoan').textContent = '–'; $('#hInt').textContent = '–';
-      $('#hMon').textContent = c.canTotal > 0 ? fmt(c.canTotal) : '–';
-      $('#hBar').style.width = '0%'; $('#hBarText').textContent = '';
-      return;
+    var lo = c.ready && c.canTotal > 0 ? capacityAt(c, st.r) : null, hi = lo ? capacityAt(c, STANCE.loose.r) : null;
+    if (!lo) {
+      $('#hNeed').textContent = '–'; $('#hSub').textContent = c.ready ? '역산 탭에서 둘이 모을 수 있는 금액을 입력하세요' : '역산 탭에 연소득과 저축 가능 금액을 넣어 보세요';
+      ['#hDep', '#hLoan', '#hMon', '#hInt'].forEach(function (x) { $(x).textContent = '–'; }); $('#hBar').style.width = '0%'; $('#hBarText').textContent = ''; return;
     }
-    var need = needFor(c, D, b.L), gap = c.canTotal - need;
-    $('#hNeed').textContent = fmt(need);
-    $('#hSub').textContent = b.p.full + ' 활용 기준 · 이 금액은 최소로 모여 있어야 해요';
-    $('#hDep').textContent = fmt(D); $('#hLoan').textContent = fmt(b.L); $('#hInt').textContent = fmt(interestOf(b.p, b.L));
-    $('#hMon').textContent = c.canTotal > 0 ? fmt(c.canTotal) : '–';
-    var pct = need > 0 && c.canTotal > 0 ? clamp(c.canTotal / need * 100, 0, 100) : 0;
-    $('#hBar').style.width = pct + '%';
-    $('#hBarText').textContent = c.canTotal > 0 ? '모을 수 있는 금액이 필수 저축액의 ' + Math.round(c.canTotal / need * 100) + '% · ' + (gap >= 0 ? '여유 ' : '부족 ') + fmt(Math.abs(gap)) : '각자 모을 수 있는 금액을 입력하면 비교해 드려요';
+    var dl = fl500(lo.D), dh = fl500(hi.D);
+    $('#hNeed').textContent = dh - dl >= 500 ? fmtS(dl) + ' ~ ' + fmt(dh) : fmt(dl);
+    var inte = interestOf(lo.p, lo.L);
+    $('#hSub').textContent = lo.p.full + ' 기준 · 이자 부담 ' + st.l + '(' + Math.round(st.r * 100) + '%)' + (dh - dl >= 500 ? '부터 여유(20%)까지의 범위' : '');
+    $('#hDep').textContent = fmt(c.canTotal); $('#hLoan').textContent = fmt(lo.L); $('#hInt').textContent = fmt(inte);
+    $('#hMon').textContent = c.N > 0 ? (inte / c.N * 100).toFixed(1) + '%' : '–';
+    var D = num('deposit'), b = D > 0 ? bestFor(c, D) : null;
+    if (b) {
+      var need = needFor(c, D, b.L), gap = c.canTotal - need;
+      $('#hBar').style.width = (need > 0 ? clamp(c.canTotal / need * 100, 0, 100) : 100) + '%';
+      $('#hBarText').textContent = '목표 전세가 ' + fmt(D) + ' → 필수 저축액 ' + fmt(need) + ' · ' + (gap >= 0 ? '여유 ' : '부족 ') + fmt(Math.abs(gap));
+    } else { $('#hBar').style.width = '0%'; $('#hBarText').textContent = '목표 전세가를 정하면 여유·부족을 보여 드려요'; }
+  }
+  function refreshNext() {
+    var c = core, st = STANCE[stanceKey()], box = $('#nextList'), vd = $('#verdict'); box.textContent = ''; vd.textContent = '';
+    function B(t) { return el('b', null, t); }
+    function item(icon, title, sub, done, btn, open) {
+      var q = el('div', 'quest' + (done ? ' done' : '')); q.appendChild(el('span', 'qi', icon));
+      var m = el('div'); m.appendChild(el('b', null, title)); if (sub) m.appendChild(el('small', null, sub)); q.appendChild(m);
+      if (btn) { var bt = el('button', 'ghost', btn[0]); bt.type = 'button'; if (btn[1] === 'task') bt.dataset.goTask = btn[2]; else { bt.dataset.tabGo = btn[1]; if (open) bt.dataset.open = open; } q.appendChild(bt); } else q.appendChild(el('span'));
+      box.appendChild(q);
+    }
+    var lo = c.ready && c.canTotal > 0 ? capacityAt(c, st.r) : null, hi = lo ? capacityAt(c, STANCE.loose.r) : null;
+    if (!lo) {
+      vd.textContent = '아직 계산할 정보가 부족해요. 연소득과 둘이 모을 수 있는 금액을 입력하면 “얼마짜리 전세를 찾으면 되는지”를 알려 드려요.';
+      item('🧮', '연소득과 저축 가능 금액 입력', '역산 탭 맨 위에 있어요.', false, ['입력', 'calc']); return;
+    }
+    var dl = fl500(lo.D), dh = fl500(hi.D), range = dh - dl >= 500 ? fmtS(dl) + ' ~ ' + fmt(dh) : fmt(dl);
+    vd.appendChild(document.createTextNode('합산 연소득 ' + fmt(c.income) + ', 입주 때까지 둘이 ' + fmt(c.canTotal) + '을 모으면 전세 '));
+    vd.appendChild(B(range)); vd.appendChild(document.createTextNode('대를 찾으면 돼요. '));
+    var i1 = interestOf(lo.p, lo.L), i2 = interestOf(hi.p, hi.L);
+    vd.appendChild(document.createTextNode('이 범위에서 대출은 약 ' + (hi.L - lo.L >= 500 ? fmtS(lo.L) + ' ~ ' + fmt(hi.L) : fmt(lo.L)) + ', 월 이자는 약 ' + (Math.abs(i2 - i1) >= 1 ? fmtS(i1) + ' ~ ' + fmt(i2) : fmt(i1)) + '이에요.'));
+    if ((plan.babyPlan || '') !== 'soon' && c.income > 0 && c.income <= A('asmIncNewborn')) vd.appendChild(document.createTextNode(' 출산 계획이 있다면 신생아 특례(연 ' + A('asmRateNewborn') + '% 가정, 한도 ' + fmt(A('asmCapNewborn')) + ')로 이자를 크게 줄일 수 있어요. 역산 탭에서 출산 계획을 골라 보세요.'));
+    item('🔎', '전세가 ' + fmtS(dl) + '~' + fmt(dh) + ' 매물 찾기', '네이버 부동산에서 전세·아파트·전용 60㎡ 이하·보증금 ' + fmt(dh) + ' 이하로 필터하세요.', false, ['찾는 법', 'homes'], '#guide');
+    var n = cxData.size; item('🏢', '후보 단지 5곳 추가하기', n + ' / 5곳 추가됨', n >= 5, ['추가', 'homes']);
+    var lastD = null; cxData.forEach(function (d, id) { seriesOf(id).forEach(function (x) { if (!lastD || x.d > lastD) lastD = x.d; }); });
+    var ago = lastD ? dayNum(todayStr()) - dayNum(lastD) : null;
+    item('📈', '주 1회 시세 기록하기', lastD ? '마지막 기록 ' + Math.max(0, ago) + '일 전 · 4주 쌓이면 추세 분석이 의미 있어요' : '아직 기록이 없어요. 같은 요일에 단지별 최저 호가를 넣어요.', ago != null && ago <= 8, ['기록', 'homes']);
+    if (!plan.babyPlan) item('👶', '출산 계획 정하기', '신생아 특례를 쓸 수 있는지에 따라 이자가 크게 달라져요.', false, ['정하기', 'calc']);
+    var me = getMe(), tasks = allTasks(), cur = currentPhase(), pick = null;
+    function star(x, y) { return (y.star ? 1 : 0) - (x.star ? 1 : 0); }
+    if (me) pick = tasks.filter(function (t) { return t.who === 'each' && t.ph === cur && personSteps(t, me.toLowerCase()) < t.steps.length; }).sort(star)[0];
+    if (!pick) pick = tasks.filter(function (t) { return t.who === 'both' && t.ph === cur && !isDone(t); }).sort(star)[0];
+    if (pick) item('📚', '숙제: ' + pick.t, pick.who === 'each' ? '내가 할 숙제' : '같이 할 숙제', false, ['보기', 'task', pick.id]);
   }
 
   /* ---------- complexes and prices ---------- */
@@ -1596,7 +1650,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var cb = $('#moPolicy'); if (cb.checked !== polDone) cb.checked = polDone;
     var left = allTasks().filter(function (t) { return t.ph === cur && !isDone(t); });
     mark('tk', left.length === 0); $('#moTkSub').textContent = left.length === 0 ? '이 단계 숙제를 모두 끝냈어요.' : left.length + '개 남음';
-    $('#moProg').textContent = n + ' / 3'; refreshOnboard();
+    $('#moProg').textContent = n + ' / 3'; refreshOnboard(); refreshNext();
   }
   function refreshOnboard() {
     var rows = { me: !!getMe(), inc: has('incomeA') && has('incomeB') && has('canA') && has('canB'), dep: has('deposit'), cx: cxData.size > 0 }, n = 0;
@@ -1641,7 +1695,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   document.addEventListener('click', function (e) {
     var m = e.target.closest('[data-me]'); if (m) { setMe(m.dataset.me); updateMeSel(); refreshBoard(); refreshHomework(); return; }
     var g = e.target.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
-    var tg = e.target.closest('[data-tab-go]'); if (tg) { showTab(tg.dataset.tabGo); return; }
+    var tg = e.target.closest('[data-tab-go]'); if (tg) { showTab(tg.dataset.tabGo); if (tg.dataset.open) { var od = $(tg.dataset.open); if (od) { od.open = true; setTimeout(function () { go(tg.dataset.open); }, 60); } } return; }
     var t = e.target.closest('[data-go-task]');
     if (t) {
       showTab('study', true); $$('#studySeg button')[0].click();
