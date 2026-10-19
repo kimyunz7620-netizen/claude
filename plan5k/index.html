@@ -639,6 +639,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     <div class="card" data-sub="save">
       <div class="row"><div class="title"><span class="em">🐷</span><h2>순자산 여정</h2></div><span class="disp" id="nwNow">-</span></div>
       <div class="road" id="road"></div>
+      <p class="small" id="nwNext" style="margin:4px 0 10px"></p>
       <div class="chips" id="nwChips"></div>
     </div>
     <div class="card" data-sub="save" id="svCard" hidden></div>
@@ -1526,10 +1527,14 @@ function renderDash(){
   $("nwNow").textContent=won(now);
   const startNet=goalBase(),GL=GOALS(),lastG=GL[GL.length-1],target=lastG?lastG.net:startNet+(st.targetGain||0),gain=target-startNet,fin=st.finalTarget||1e8,goalYm=lastG?lastG.ym:st.targetYm||"2027-12";
   const lo=Math.min(startNet,now,0),span=Math.max(1,fin-lo),pos=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
-  $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div>${(GL.length?GL:[{net:target}]).map((g,i)=>`<div class="mk lo" style="left:${pos(g.net)}%"><b>🏁</b>${GL.length>1?`${i+1}차 `:""}${man(g.net)}</div>`).join("")}${GL.some(g=>g.net===fin)?"":`<div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div>`}<div class="me" style="left:${pos(now)}%">🐷</div>`;
+  $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div>${(GL.length?GL:[{net:target}]).map((g,i)=>`<div class="mk lo" style="left:${pos(g.net)}%"><b>🏁</b>${GL.length>1?`${i+1}차 `:""}${man(g.net)}</div>`).join("")}${GL.some(g=>g.net>=fin-1e6)?"":`<div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div>`}<div class="me" style="left:${pos(now)}%">🐷</div>`;
   const yNow=(S.accounts&&S.accounts.youth)||0,chips=[`<span class="chip plain">보증금 ${man(st.deposit||0)} + 통장·증권 ${man((lastCash||0)-yNow)}${yNow?` + 적금 ${man(yNow)}`:""} − 빚 ${man(T)}</span>`];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip plain">통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
   if(snaps.length){const sYm=snaps[0].ym,tYm=goalYm,sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
-  $("nwChips").innerHTML=chips.join("");renderSavings();renderReport();
+  $("nwChips").innerHTML=chips.join("");
+  /* the next flag on the road, how far it is and when this plan gets there */
+  {const flags=[{v:0,t:"🚩 순자산 0원 (빚보다 가진 게 많아지는 날)"},...GL.map((g,i)=>({v:g.net,t:`🏁 ${GL.length>1?`${i+1}차 `:""}목표 ${man(g.net)}`}))],nx=flags.find(x=>x.v>now),hit=nx&&sim.path.find(p=>p.net>=nx.v);
+   $("nwNext").innerHTML=nx?`다음 깃발 <b>${nx.t}</b>까지 <b>${man(nx.v-now)}</b>${hit?` · 이대로면 <b>${ymKo(hit.ym)}</b> 도착`:""}`:"🎉 모든 깃발을 지났어요"}
+  renderSavings();renderReport();
   renderProjection(sim,now,target);
   drawChart(snaps,snaps.length?snaps[0].ym:ymOf(TODAY),goalYm,snaps.length?startNet:null,snaps.length?target:null,sim.path);
   const order=cardOrder(TODAY).sort((a,b)=>b.save-a.save),open=ITEMS().filter(x=>itemBal(x)>0),done=ITEMS().filter(x=>itemBal(x)<=0),free=open.filter(x=>x.fee===0),nx=ymAdd(lastPassed(),1);
