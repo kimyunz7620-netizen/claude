@@ -361,9 +361,10 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .hs .verdict2 b { font-size: 14.5px; }
 .hs .cth { margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--coral-ink); }
 .hs .verdict2 b { line-height: 1.5; }
-.cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.cat { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 20px 16px; border-radius: 20px; border: 0; background: var(--surface); box-shadow: 0 10px 30px -24px rgba(30,34,53,.35); text-align: left; cursor: pointer; font: inherit; color: var(--ink); min-height: 120px; }
-.cat .ce { font-size: 34px; line-height: 1; } .cat b { font-size: 18px; font-weight: 800; } .cat small { color: var(--muted); font-size: 12.5px; }
+.cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cat { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px 14px; border-radius: 18px; border: 0; background: var(--bg); text-align: left; cursor: pointer; font: inherit; color: var(--ink);  }
+.cat .ce { font-size: 28px; line-height: 1; } .cat b { font-size: 18px; font-weight: 800; } .cat small { color: var(--muted); font-size: 12.5px; }
+.phase .ph-head h3 { display: none; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -389,7 +390,7 @@ details.fold > .fbody { margin-top: 12px; }
 
 /* tabbar */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
-.tabbar .in2 { max-width: 600px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+.tabbar .in2 { max-width: 600px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
 .tabbar button { background: transparent; color: var(--muted); height: 60px; border-radius: 0; display: flex; flex-direction: column; gap: 1px; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; padding: 0; }
 .tabbar button span.e { font-size: 21px; line-height: 1.2; filter: grayscale(1); opacity: .55; }
 .tabbar button[aria-selected="true"] { color: var(--accent); }
@@ -443,6 +444,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </details>
       </div>
 
+      <div class="card" id="catCard"><div class="mhead"><h3>우리가 할 4가지</h3><span class="chip" id="catAll"></span></div><div class="cats" id="cats"></div></div>
+
       <div class="card" id="subsHome">
         <div class="mhead"><h3>청약 공고</h3><span class="chip" id="subsHomeCount">0건</span></div>
         <div id="subsHomeList"></div>
@@ -478,7 +481,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </div>
       </details>
 
-      <details class="card fold" id="homework">
+      <details class="card fold" id="homework" hidden>
         <summary>숙제 현황</summary>
         <div class="fbody">
           <p class="hsub" id="hwPhase"></p>
@@ -508,8 +511,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
   <!-- 역산 -->
   <section class="pane" id="tab-calc" data-tab="calc" hidden>
-    <h2 class="vtitle">역산 계산기</h2>
-    <p class="vsub">연소득을 넣으면 받을 수 있는 대출과 필수 저축액을 거꾸로 계산해요</p>
+    <h2 class="vtitle">💰 모으기</h2>
+    <p class="vsub">얼마를 모아야 하는지 거꾸로 계산해요</p>
+    <div class="stack" id="hw-c1" style="margin-bottom:14px"></div>
     <div class="stack">
       <div class="card">
         <h3>우리 조건</h3>
@@ -597,8 +601,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
   <!-- 매물 -->
   <section class="pane" id="tab-homes" data-tab="homes" hidden>
-    <h2 class="vtitle">매물</h2>
+    <h2 class="vtitle">👟 발품팔기</h2>
     <p class="vsub">후보를 넣고, 같은 조건으로 꾸준히 시세를 기록해요</p>
+    <div class="stack" id="hw-c2" style="margin-bottom:14px"></div>
     <div class="stack">
       <details class="card guide" id="guide">
         <summary>매물 찾는 법과 기록 루틴</summary>
@@ -687,7 +692,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
   <!-- 숙제 -->
   <section class="pane" id="tab-subs" data-tab="subs" hidden>
-    <button type="button" class="ghost" data-tab-go="home" style="margin:4px 0 12px">← 홈으로</button>
+    <h2 class="vtitle">🏠 청약</h2>
+    <p class="vsub">공고를 보고, 내 자격을 확인해요</p>
+    <div class="stack" id="hw-c3" style="margin-bottom:14px"></div>
       <div class="card" id="subsCard" style="margin-bottom:18px">
         <div class="mhead"><h3>청약 공고 리스트</h3><span class="chip" id="subsCount">0건</span></div>
         <p class="hsub" id="subsMeta">아직 가져온 공고가 없어요.</p>
@@ -702,27 +709,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <p class="note" id="subsImportMsg" style="margin-top:8px"></p>
         </details>
       </div>
-  </section>
-  <section class="pane" id="tab-study" data-tab="study" hidden>
-    <h2 class="vtitle">숙제</h2>
-    <p class="vsub">네 가지만 하면 돼요.</p>
-    <div class="seg" id="studySeg" role="group" aria-label="숙제 종류" hidden>
-      <button type="button" data-pane="board" aria-pressed="true">시기별 숙제</button>
-      <button type="button" data-pane="pol" aria-pressed="false">정책</button>
-    </div>
-    <div id="paneBoard">
-      <div class="boardbar">
-        <span id="bdText">0 / 0</span>
-        <div class="bar"><i id="bdBar"></i></div>
-        <label hidden><input type="checkbox" id="onlyOpen"> 남은 것만</label>
-      </div>
-      <div class="cats" id="cats"></div>
-      <div id="polLinkRow" style="margin-top:14px"><button type="button" class="ghost" id="polLink" style="width:100%">📋 정부 대출·지원 제도 모아보기</button></div>
-      <div id="catBack" hidden style="margin-bottom:10px"><button type="button" class="ghost" id="catBackBtn">← 숙제 전체</button></div>
-      <div class="stack" id="phases"></div>
-    </div>
-    <div id="panePol" hidden>
-      <button type="button" class="ghost" id="polBack" style="margin-bottom:10px">← 숙제 전체</button>
+    <details class="card fold" id="polFold">
+      <summary>📋 정부 대출·지원 제도</summary>
+      <div class="fbody">
       <p class="vsub" style="margin-top:0">우리에게 맞을 만한 제도예요. 아래 기준은 인터넷 자료를 요약한 것이라 틀릴 수 있어요. 링크의 공식 사이트에서 꼭 확인하세요.</p>
       <div class="tabs" id="polTabs" role="group" aria-label="분류">
         <button type="button" data-kind="" aria-pressed="true">전체</button>
@@ -732,7 +721,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <button type="button" data-kind="지원·세제" aria-pressed="false">지원·세제</button>
       </div>
       <div class="stack" id="pollist"></div>
-    </div>
+
+      </div>
+    </details>
+  </section>
+  <section class="pane" id="tab-study" data-tab="study" hidden>
+    <h2 class="vtitle">📚 부동산 공부</h2>
+    <p class="vsub">전세 구조와 시세 읽는 법을 익혀요</p>
+    <div class="stack" id="hw-c4"></div>
   </section>
 
   <footer>대출·세금·청약 조건은 자주 바뀝니다. 이 페이지의 기준 수치는 참고용이고, 신청 직전에 주택도시기금, 청약홈, 서울주거포털, 마이홈포털, 국세청 홈택스에서 다시 확인하세요.</footer>
@@ -741,9 +737,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 <nav class="tabbar" aria-label="탭">
   <div class="in2" role="tablist">
     <button type="button" role="tab" data-tab-go="home" aria-selected="true"><span class="e">🏠</span>홈</button>
-    <button type="button" role="tab" data-tab-go="calc" aria-selected="false"><span class="e">🧮</span>역산</button>
-    <button type="button" role="tab" data-tab-go="homes" aria-selected="false"><span class="e">🏢</span>매물</button>
-    <button type="button" role="tab" data-tab-go="study" aria-selected="false"><span class="e">📚</span>숙제</button>
+    <button type="button" role="tab" data-tab-go="calc" aria-selected="false"><span class="e">💰</span>모으기</button>
+    <button type="button" role="tab" data-tab-go="homes" aria-selected="false"><span class="e">👟</span>발품</button>
+    <button type="button" role="tab" data-tab-go="subs" aria-selected="false"><span class="e">📋</span>청약</button>
+    <button type="button" role="tab" data-tab-go="study" aria-selected="false"><span class="e">📚</span>공부</button>
   </div>
 </nav>
 
@@ -997,7 +994,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function showTab(name, noScroll) {
     if (TABS.indexOf(name) < 0) name = 'home';
     $$('.pane').forEach(function (p) { p.hidden = p.dataset.tab !== name; });
-    $$('.tabbar button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tabGo === (name === 'subs' ? 'home' : name) ? 'true' : 'false'); });
+    $$('.tabbar button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tabGo === name ? 'true' : 'false'); });
     try { localStorage.setItem('ttk-tab', name); } catch (e) {}
     try { history.replaceState(null, '', '#' + name); } catch (e) {}
     if (!noScroll) window.scrollTo(0, 0);
@@ -1556,7 +1553,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     item('📈', '주 1회 시세 기록하기', lastD ? '마지막 기록 ' + Math.max(0, ago) + '일 전 · 4주 쌓이면 추세 분석이 의미 있어요' : '아직 기록이 없어요. 같은 요일에 단지별 최저 호가를 넣어요.', ago != null && ago <= 8, ['기록', 'homes']);
     if (!plan.babyPlan) item('👶', '출산 계획 정하기', '신생아 특례를 쓸 수 있는지에 따라 이자가 크게 달라져요.', false, ['정하기', 'calc']);
     var me0 = getMe(), nSub = Object.keys(subsState).filter(function (id) { return subTodo(subsState[id], me0 ? me0.toUpperCase() : null); }).length;
-    if (nSub) item('📣', '청약 공고 ' + nSub + '건 확인하기', '마감이 가까운 순으로 정렬돼 있어요.', false, ['보기', 'study'], null, 'pol');
+    if (nSub) item('📣', '청약 공고 ' + nSub + '건 확인하기', '마감이 가까운 순으로 정렬돼 있어요.', false, ['보기', 'subs'], null);
     var me = getMe(), tasks = allTasks(), cur = currentPhase(), pick = null;
     function star(x, y) { return (y.star ? 1 : 0) - (x.star ? 1 : 0); }
     if (me) pick = tasks.filter(function (t) { return t.who === 'each' && true && personSteps(t, me.toLowerCase()) < t.steps.length; }).sort(star)[0];
@@ -1915,11 +1912,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     $$('#polTabs button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
     $$('.pol').forEach(function (c) { c.hidden = !!b.dataset.kind && c.dataset.kind !== b.dataset.kind; });
   });
-  $('#studySeg').addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-pane]'); if (!b) return;
-    $$('#studySeg button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
-    $('#paneBoard').hidden = b.dataset.pane !== 'board'; $('#panePol').hidden = b.dataset.pane !== 'pol';
-  });
 
   /* ---------- board ---------- */
   function makeTaskRow(t) {
@@ -1956,21 +1948,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     body.appendChild(meta); d.appendChild(body);
     return d;
   }
-  function setCat(id) {
-    $('#cats').hidden = !!id; $('#polLinkRow').hidden = !!id; $('#catBack').hidden = !id;
-    $$('.phase').forEach(function (p) { p.hidden = p.dataset.ph !== id; });
-    if (id) window.scrollTo(0, 0);
-  }
-  document.addEventListener('click', function (e) {
-    var c = e.target.closest('[data-cat]'); if (c) { setCat(c.dataset.cat); return; }
-    if (e.target.closest('#catBackBtn')) { setCat(null); return; }
-    if (e.target.closest('#polLink')) { $('#studySeg [data-pane="pol"]').click(); window.scrollTo(0, 0); return; }
-    if (e.target.closest('#polBack')) { $('#studySeg [data-pane="board"]').click(); window.scrollTo(0, 0); }
-  });
   function buildBoard() {
-    var root = $('#phases'), cur = currentPhase(), cats = $('#cats');
+    var cur = currentPhase(), cats = $('#cats'), TABOF = { c1: 'calc', c2: 'homes', c3: 'subs', c4: 'study' };
     PHASES.forEach(function (p) {
-      var b = el('button', 'cat'); b.type = 'button'; b.dataset.cat = p.id;
+      var b = el('button', 'cat'); b.type = 'button'; b.dataset.cat = p.id; b.dataset.tabGo = TABOF[p.id];
       b.appendChild(el('span', 'ce', p.e)); b.appendChild(el('b', null, p.t)); var cp = el('small', null, ''); cp.dataset.cp = '1'; b.appendChild(cp); cats.appendChild(b);
     });
     PHASES.forEach(function (p) {
@@ -1992,9 +1973,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var form = el('form', 'addtask'); form.dataset.ph = p.id;
       var ws = el('select'); ws.setAttribute('aria-label', '종류'); ws.innerHTML = '<option value="both">같이</option><option value="each">각자</option>';
       var inp = el('input'); inp.placeholder = '우리 숙제 추가'; inp.maxLength = 80; inp.setAttribute('aria-label', p.t + ' 숙제 추가');
-      var btn = el('button', null, '추가'); btn.type = 'submit'; form.appendChild(ws); form.appendChild(inp); form.appendChild(btn); sec.appendChild(form); root.appendChild(sec);
+      var btn = el('button', null, '추가'); btn.type = 'submit'; form.appendChild(ws); form.appendChild(inp); form.appendChild(btn); sec.appendChild(form); $('#hw-' + p.id).appendChild(sec);
     });
-    setCat(null);
   }
   function refreshBoard() {
     var cur = currentPhase(), seen = {}, tasks = allTasks(), byId = {}, me = getMe();
@@ -2031,8 +2011,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       sec.querySelector('[data-gp="both"]').textContent = '';
       ['each', 'both'].forEach(function (g) { var grp = sec.querySelector('[data-grp="' + g + '"]'); grp.hidden = !grp.querySelector('.task'); });
     });
-    $('#bdText').textContent = '전체 ' + doneTasks + ' / ' + totalTasks + ' 완료';
-    $('#bdBar').style.width = (totalSteps ? doneSteps / totalSteps * 100 : 0) + '%';
+    $('#catAll').textContent = doneTasks + ' / ' + totalTasks + ' 완료';
   }
   function saveTask(id, patch, ms) {
     if (!db) return;
@@ -2041,23 +2020,23 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     taskState[id] = next; refreshBoard(); refreshMonthly(); refreshHomework();
     addPending('tasks/' + id, patch); flushWrite('tasks/' + id, 'tk:' + id + Object.keys(patch).join(), ms || 0, function () { return upsert('tasks/' + id, pending['tasks/' + id] ? pending['tasks/' + id].patch : patch); });
   }
-  $('#phases').addEventListener('change', function (e) {
+  document.body.addEventListener('change', function (e) {
     var row = e.target.closest('.task'); if (!row) return; var id = row.dataset.id;
     if (e.target.classList.contains('st-cb')) { var t = allTasks().filter(function (x) { return x.id === id; })[0]; if (!t) return; var p = { steps: {} }; p.steps[stepKey(t, +e.target.dataset.i, e.target.dataset.w)] = e.target.checked; saveTask(id, p); }
     else if (e.target.dataset.k === 'assignee') saveTask(id, { assignee: e.target.value });
   });
-  $('#phases').addEventListener('input', function (e) { var row = e.target.closest('.task'); if (row && e.target.dataset.k === 'note') saveTask(row.dataset.id, { note: e.target.value }, 500); });
-  $('#phases').addEventListener('click', function (e) {
+  document.body.addEventListener('input', function (e) { var row = e.target.closest('.task'); if (row && e.target.dataset.k === 'note') saveTask(row.dataset.id, { note: e.target.value }, 500); });
+  document.body.addEventListener('click', function (e) {
     var b = e.target.closest('[data-tdel]'); if (!b || !db) return; var id = b.closest('.task').dataset.id;
     if (b.classList.contains('confirm')) { delete taskState[id]; refreshBoard(); refreshMonthly(); refreshHomework(); write('tasks/' + id, function () { return db.doc('tasks/' + id).delete(); }); return; }
     b.classList.add('confirm'); b.textContent = '정말 삭제'; setTimeout(function () { b.classList.remove('confirm'); b.textContent = '삭제'; }, 3000);
   });
-  $('#phases').addEventListener('submit', function (e) {
+  document.body.addEventListener('submit', function (e) {
     var f = e.target.closest('.addtask'); if (!f) return; e.preventDefault();
     var inp = f.querySelector('input'), title = inp.value.trim(), who = f.querySelector('select').value === 'each' ? 'each' : 'both'; if (!title || !db) return; inp.value = '';
     write('tasks/new', function () { return db.collection('tasks').add({ custom: true, title: title, phase: f.dataset.ph, who: who, assignee: '', note: '', createdAt: Date.now() }); });
   });
-  $('#onlyOpen').addEventListener('change', function (e) { $('#phases').classList.toggle('only-open', e.target.checked); });
+  
 
   /* ---------- me selector ---------- */
   function initMeSel() {
@@ -2131,10 +2110,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var hb = e.target.closest('[data-hideob]'); if (hb) { setPref('hideOb', 'true'); refreshOnboard(); return; }
     var m = e.target.closest('[data-me]'); if (m) { setMe(m.dataset.me); updateMeSel(); refreshBoard(); refreshHomework(); return; }
     var g = e.target.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
-    var tg = e.target.closest('[data-tab-go]'); if (tg) { showTab(tg.dataset.tabGo); if (tg.dataset.pane) { var pb = $$('#studySeg button').filter(function (x) { return x.dataset.pane === tg.dataset.pane; })[0]; if (pb) pb.click(); } if (tg.dataset.open) { var od = $(tg.dataset.open); if (od) { od.open = true; setTimeout(function () { go(tg.dataset.open); }, 60); } } return; }
+    var tg = e.target.closest('[data-tab-go]'); if (tg) { showTab(tg.dataset.tabGo); if (tg.dataset.open) { var od = $(tg.dataset.open); if (od) { od.open = true; setTimeout(function () { go(tg.dataset.open); }, 60); } } return; }
     var t = e.target.closest('[data-go-task]');
     if (t) {
-      showTab('study', true); $$('#studySeg button')[0].click(); var tk0 = allTasks().filter(function (x) { return x.id === t.dataset.goTask; })[0]; if (tk0) setCat(tk0.ph);
+      var tk0 = allTasks().filter(function (x) { return x.id === t.dataset.goTask; })[0]; showTab({ c1: 'calc', c2: 'homes', c3: 'subs', c4: 'study' }[tk0 ? tk0.ph : 'c1'] || 'study', true);
       var row = $('.task[data-id="' + t.dataset.goTask + '"]'); if (row) { row.open = true; row.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' }); }
     }
     var ed = e.target.closest('[data-evdel]');
@@ -2213,7 +2192,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
   function lockInputs() {
     canWrite = false;
-    $$('input, select, button').forEach(function (x) { if (x.closest('.tabbar') || x.closest('#studySeg') || x.closest('#polTabs') || x.hasAttribute('data-go') || x.hasAttribute('data-tab-go') || x.id === 'aiBtn' || x.id === 'aiStop' || x.id === 'btnBackup' || x.id === 'pxDate' || x.id === 'meSel' || x.id === 'onlyOpen') return; x.disabled = true; });
+    $$('input, select, button').forEach(function (x) { if (x.closest('.tabbar') || x.closest('#polTabs') || x.hasAttribute('data-go') || x.hasAttribute('data-tab-go') || x.id === 'aiBtn' || x.id === 'aiStop' || x.id === 'btnBackup' || x.id === 'pxDate' || x.id === 'meSel' || x.id === 'onlyOpen') return; x.disabled = true; });
   }
   async function init() {
     var claude = window.claude;
