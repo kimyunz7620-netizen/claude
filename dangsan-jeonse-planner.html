@@ -430,6 +430,8 @@ body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .sub .sbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .sub .sbar .links { flex: 1 1 auto; } .sub .sbar select { width: 112px; height: 40px; font-size: 14px; flex: none; }
 .sub .more2 > summary { color: var(--muted); }
 .sub .cprow { gap: 5px; } .hs .cpchip { padding: 5px 10px; font-size: 12.5px; }
+.hs .cpchip.xtra { display: none; } .hs .cpwrap.showx .cpchip.xtra { display: inline-block; }
+.hs .cpmore { height: auto; padding: 5px 10px; border-radius: 999px; background: transparent; color: var(--accent); border: 1px dashed var(--line); font-size: 12.5px; font-weight: 700; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -1229,6 +1231,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     return 'ℹ️ ' + t.split(/[ .]/)[0];
   }
   document.addEventListener('click', function (e) {
+    var mo = e.target.closest('.cpmore'); if (mo) { var w0 = mo.closest('.cpwrap'); w0.classList.toggle('showx'); mo.textContent = w0.classList.contains('showx') ? '접기' : mo.dataset.t; return; }
     var c = e.target.closest('.cpchip'); if (!c) return;
     var wrap = c.closest('.cpwrap'), say = wrap.querySelector('.cpsay'), was = c.classList.contains('on');
     $$('.cpchip', wrap).forEach(function (x) { x.classList.remove('on'); });
@@ -1251,13 +1254,16 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 5);
       var must = ev.el.chips.filter(function (c) { return /통장 필요|무주택 필요/.test(c.label); }), mst = must.some(function (c) { return c.st === 'bad'; }) ? 'bad' : must.some(function (c) { return c.st === 'warn'; }) ? 'warn' : 'ok';
       var ech = ev.el.chips.filter(function (c) { return !/통장 필요|무주택 필요|소득·자산/.test(c.label); });
-      var wrap = el('div', 'cpwrap'); wrap.appendChild(el('div', 'cth', '자격·주의 · 눌러서 설명 보기'));
-      var row = el('div', 'cprow'), say = el('div', 'cpsay'); say.hidden = true;
-      function addChip(cls, label, text) { var b = el('button', 'cpchip ' + cls, label); b.type = 'button'; b.dataset.say = text; row.appendChild(b); }
-      addChip(mst, (mst === 'ok' ? '✅ ' : mst === 'bad' ? '❌ ' : '⚠️ ') + '통장·무주택', must.map(function (c) { return c.say; }).join('\n\n'));
-      ech.forEach(function (c) { addChip(c.st, c.label, c.say); });
-      var inc = ev.el.chips.filter(function (c) { return /소득·자산/.test(c.label); })[0]; if (inc) addChip('warn', inc.label, inc.say);
-      cps.forEach(function (c) { addChip(c.b ? 'b' : '', shortCau(c.t), c.t); });
+      var wrap = el('div', 'cpwrap'); wrap.appendChild(el('div', 'cth', '확인할 것 · 눌러서 설명 보기'));
+      var row = el('div', 'cprow'), say = el('div', 'cpsay'); say.hidden = true; var all = [];
+      function addChip(pri, cls, label, text) { all.push({ p: pri, cls: cls, label: label, text: text }); }
+      addChip(mst === 'bad' ? 0 : mst === 'warn' ? 1 : 3, mst, (mst === 'ok' ? '✅ ' : mst === 'bad' ? '❌ ' : '⚠️ ') + '통장·무주택', must.map(function (c) { return c.say; }).join('\n\n'));
+      ech.forEach(function (c) { addChip(c.st === 'bad' ? 0 : c.st === 'warn' ? 1 : 3, c.st, c.label, c.say); });
+      var inc = ev.el.chips.filter(function (c) { return /소득·자산/.test(c.label); })[0]; if (inc) addChip(4, 'warn', inc.label, inc.say);
+      cps.forEach(function (c) { addChip(c.b ? 0 : 2, c.b ? 'b' : '', shortCau(c.t), c.t); });
+      all.sort(function (p, q) { return p.p - q.p; });
+      all.forEach(function (c, i) { var bt = el('button', 'cpchip ' + c.cls + (i >= 4 ? ' xtra' : ''), c.label); bt.type = 'button'; bt.dataset.say = c.text; row.appendChild(bt); });
+      if (all.length > 4) { var mo = el('button', 'cpmore', '＋' + (all.length - 4) + '개 더보기'); mo.dataset.t = mo.textContent; mo.type = 'button'; row.appendChild(mo); }
       wrap.appendChild(row); wrap.appendChild(say); box2.appendChild(wrap);
       return box2;
   }
