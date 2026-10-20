@@ -736,6 +736,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
             <label class="f" style="grid-column:1/-1"><span class="lbl">청약통장</span><select id="f-accHas" data-f="accHas" data-t="text"><option value="">아직 입력 안 했어요</option><option value="yes">있어요 (아래에 적어 주세요)</option><option value="none">둘 다 없어요</option></select></label>
             <label class="f"><span class="lbl">가입 기간 · <b data-nm="A"></b></span><span class="in"><input id="f-accA" data-f="accA" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>개월</em></span></label>
             <label class="f"><span class="lbl">가입 기간 · <b data-nm="B"></b></span><span class="in"><input id="f-accB" data-f="accB" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>개월</em></span></label>
+            <label class="f"><span class="lbl">납입 횟수 · <b data-nm="A"></b></span><span class="in"><input id="f-accCntA" data-f="accCntA" type="number" inputmode="numeric" min="0" step="1" placeholder="가입 개월과 같게"><em>회</em></span></label>
+            <label class="f"><span class="lbl">납입 횟수 · <b data-nm="B"></b></span><span class="in"><input id="f-accCntB" data-f="accCntB" type="number" inputmode="numeric" min="0" step="1" placeholder="가입 개월과 같게"><em>회</em></span></label>
             <label class="f"><span class="lbl">총 납입액 · <b data-nm="A"></b></span><span class="in"><input id="f-accTotA" data-f="accTotA" type="number" inputmode="numeric" min="0" step="10" placeholder="모름"><em>만원</em></span></label>
             <label class="f"><span class="lbl">총 납입액 · <b data-nm="B"></b></span><span class="in"><input id="f-accTotB" data-f="accTotB" type="number" inputmode="numeric" min="0" step="10" placeholder="모름"><em>만원</em></span></label>
             <label class="f"><span class="lbl">매달 납입 · <b data-nm="A"></b></span><span class="in"><input id="f-accMonA" data-f="accMonA" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>만원</em></span></label>
@@ -1183,7 +1185,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var notes = (Array.isArray(x.notes) ? x.notes : []).join(' '), hot = /투기과열/.test(notes), pub = /국민|공공/.test(x.kind || '') || /공공택지/.test(notes);
     var none = plan.accHas === 'none';
     function pn(k) { return plan[k] != null && plan[k] !== '' && isFinite(Number(plan[k])) ? Number(plan[k]) : null; }
-    var accA = none ? 0 : pn('accA'), accB = none ? 0 : pn('accB'), totA = none ? 0 : pn('accTotA'), totB = none ? 0 : pn('accTotB'), monA = pn('accMonA'), monB = pn('accMonB');
+    var rawA = none ? 0 : pn('accA'), rawB = none ? 0 : pn('accB'), cntA = none ? 0 : pn('accCntA'), cntB = none ? 0 : pn('accCntB');
+    var accA = rawA == null ? null : Math.min(rawA, cntA == null ? rawA : cntA), accB = rawB == null ? null : Math.min(rawB, cntB == null ? rawB : cntB), totA = none ? 0 : pn('accTotA'), totB = none ? 0 : pn('accTotB'), monA = pn('accMonA'), monB = pn('accMonB');
     var known = none || accA != null || accB != null, acc = Math.max(accA == null ? 0 : accA, accB == null ? 0 : accB);
     var bestB = (accB != null && (accA == null || accB > accA)), tot = bestB ? totB : totA, mon = bestB ? monB : monA;
     var hope = (function () { var ar = areaRange(), h = T.filter(function (t) { return t.a >= ar[0] - 0.5 && t.a <= ar[1] + 0.5; }); return h.length ? h : T; })();
@@ -1192,7 +1195,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var reqGen = hot ? 24 : 12, hl = plan.homeless || '', fh = plan.firstHome || '', baby = plan.babyPlan || '';
     var chips = [], paths = [], me = validYm(plan.marriageDate) ? plan.marriageDate : '';
     function chip(st, label, say, isPath) { var o = { st: st, label: label, say: say }; chips.push(o); if (isPath) paths.push(o); return o; }
-    var accTxt = known ? ' 지금 입력한 내 통장은 최대 ' + acc + '개월이에요.' : ' 청약통장 가입 개월을 아직 안 적었어요.';
+    var accTxt = known ? ' 지금 입력한 내 통장은 가입 기간·납입 횟수 중 짧은 쪽 기준 ' + acc + '(개월·회)예요.' : ' 청약통장 가입 개월을 아직 안 적었어요.';
     var minReq = n + b + f > 0 ? 6 : reqGen;
     if (rent) chip('warn', '🏦 통장은 공고마다 달라요', '공공임대는 청약통장 대신 소득·자산·거주 요건이 중심이고, 일부 유형(장기전세 등)은 통장 순위를 보기도 해요. 공고문에서 확인하세요.');
     else if (noAcc) chip('ok', '🏦 통장 없이도 돼요', '무순위·잔여세대 청약은 보통 청약통장 없이 신청할 수 있어요(공고문 확인). 대신 무주택 같은 다른 조건과, 공공이면 소득·자산 기준이 있어요.');
@@ -1360,7 +1363,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     return keep.sort(function (a, b) { return a - b; }).map(function (i) { return '[' + (i + 1) + '쪽] ' + pages[i]; }).join('\n');
   }
   function profileText(x, ev) {
-    var c = core || {}, ac = [plan.accA, plan.accB].map(function (v, i) { return v != null && v !== '' ? (i ? nameB() : nameA()) + ' ' + v + '개월' : ''; }).filter(Boolean).join(', ');
+    var c = core || {}, ac = [plan.accA, plan.accB].map(function (v, i) { return v != null && v !== '' ? (i ? nameB() : nameA()) + ' ' + v + '개월' + ((i ? plan.accCntB : plan.accCntA) != null && (i ? plan.accCntB : plan.accCntA) !== '' ? ' ' + (i ? plan.accCntB : plan.accCntA) + '회 납입' : '') : ''; }).filter(Boolean).join(', ');
     return ['- 합산 연소득 ' + (c.income > 0 ? fmt(c.income) : '미입력') + ' (맞벌이 신혼부부)', '- 입주 때까지 모을 수 있는 현금 ' + (c.canTotal > 0 ? fmt(c.canTotal) : '미입력'), '- 청약통장 가입기간: ' + (ac || '미입력'),
       '- 무주택: ' + (plan.homeless === 'yes' ? '둘 다 무주택' : plan.homeless === 'no' ? '집이 있음' : '미입력'), '- 생애최초: ' + (plan.firstHome === 'yes' ? '해당' : plan.firstHome === 'no' ? '비해당' : '미입력'),
       '- 사는 곳: ' + ((plan.resid || '미입력') + (plan.residGu ? ' ' + plan.residGu : '')) + ' · 최근 10년 내 당첨 이력: ' + (plan.winPast === 'yes' ? '있음' : plan.winPast === 'no' ? '없음' : '미입력'),
@@ -1475,7 +1478,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (es) {
       var pv = function (k) { return plan[k] != null && plan[k] !== '' ? Number(plan[k]) : null; }, parts = [];
       if (plan.accHas === 'none') parts.push('청약통장 없음');
-      else { if (pv('accA') != null) parts.push(nameA() + ' ' + pv('accA') + '개월' + (pv('accTotA') != null ? '·' + pv('accTotA') + '만원' : '')); if (pv('accB') != null) parts.push(nameB() + ' ' + pv('accB') + '개월' + (pv('accTotB') != null ? '·' + pv('accTotB') + '만원' : '')); }
+      else { if (pv('accA') != null) parts.push(nameA() + ' ' + pv('accA') + '개월' + (pv('accCntA') != null ? '·' + pv('accCntA') + '회' : '') + (pv('accTotA') != null ? '·' + pv('accTotA') + '만원' : '')); if (pv('accB') != null) parts.push(nameB() + ' ' + pv('accB') + '개월' + (pv('accCntB') != null ? '·' + pv('accCntB') + '회' : '') + (pv('accTotB') != null ? '·' + pv('accTotB') + '만원' : '')); }
       if (plan.homeless === 'yes') parts.push('무주택'); else if (plan.homeless === 'no') parts.push('집 있음');
       es.textContent = '🧾 내 자격 · ' + (parts.length ? parts.join(' · ') : '입력하면 자격에 안 맞는 공고를 걸러요');
     }
