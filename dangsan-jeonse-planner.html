@@ -385,6 +385,12 @@ button.cat { display: flex; flex-direction: column; align-items: flex-start; jus
 .more2 { margin: 8px 0 0; } .more2 > summary { color: var(--accent); font-weight: 700; font-size: 13px; cursor: pointer; }
 .chg { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 9px 0; border-top: 1px dashed var(--line); } .chg:first-child { border-top: 0; }
 .chg b { font-size: 14.5px; } .chg span { font-weight: 800; font-size: 14.5px; } .chg span.up { color: var(--coral-ink); } .chg span.down { color: var(--mint-ink); } .chg small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+.cx-head { flex-wrap: nowrap; } .cx-head .cx-name { flex: 1 1 0; min-width: 0; }
+.cx3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }
+.cx3 .lbl { font-size: 11.5px; } .cx3 input { padding-inline: 8px; }
+.cxmore { margin-top: 2px; } .cxmore > summary { color: var(--muted); font-weight: 700; font-size: 13px; cursor: pointer; padding: 4px 0; }
+.cxmore > .cx-grid, .cxmore > details, .cxmore > input, .cxmore > div { margin-top: 10px; }
+.cx { gap: 10px; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -637,6 +643,31 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <div id="cmpBody"><div class="empty">후보 단지에 전세가를 넣으면 비교 그림이 나와요.</div></div>
       </div>
 
+
+
+
+      <div class="card">
+        <h3>📝 시세 기록 · 단지 추가</h3>
+        <p class="hsub">기록할 날짜를 고르고, 아래 단지 카드에 그 날의 가격을 넣어요.</p>
+        <div class="toolrow">
+          <label class="f"><span class="lbl">기록 날짜</span><input id="pxDate" type="date"></label>
+          <form class="addrow" id="addForm">
+            <input id="addName" placeholder="단지명 (예: 래미안당산1차)" maxlength="40" autocomplete="off" aria-label="추가할 단지명">
+            <button type="submit" id="addBtn">추가</button>
+          </form>
+        </div>
+      </div>
+      <div id="cxlist" class="stack"><div class="empty">아직 후보 단지가 없어요. 위에 단지명을 적고 추가하면 시세를 적을 카드가 생겨요.</div></div>
+      <div class="card" id="rank">
+        <h3>AI 추이 분석</h3>
+        <p class="hsub">저축 부담 30 · 월 이자 20 · 보증금 안전 25 · 시세 추세 15 · 면적 10점으로 합쳐요. 기록 날짜에 가격이 없으면 가장 최근 기록을 써요.</p>
+        <div id="ranklist"><div class="empty">전세가를 입력한 후보 단지가 있으면 순위가 나와요.</div></div>
+        <div class="ai-acts" id="aiActs" hidden>
+          <button type="button" class="ai-btn" id="aiBtn">AI로 추이 분석·추천 순서 받기</button>
+          <button type="button" class="ghost" id="aiStop" hidden>취소</button>
+        </div>
+        <div class="ai-out" id="aiOut" hidden></div>
+      </div>
       <details class="card guide" id="guide">
         <summary>매물 찾는 법과 기록 루틴</summary>
         <p class="hsub" style="margin-top:6px">처음이면 읽어 보세요. 사이트마다 보는 것이 달라요.</p>
@@ -694,31 +725,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           </ul>
         </div>
       </details>
-
-      <div class="card">
-        <h3>시세 기록 & 단지 추가</h3>
-        <p class="hsub">기록할 날짜를 고르고, 아래 단지 카드에 그 날의 가격을 넣어요.</p>
-        <div class="toolrow">
-          <label class="f"><span class="lbl">기록 날짜</span><input id="pxDate" type="date"></label>
-          <form class="addrow" id="addForm">
-            <input id="addName" placeholder="단지명 (예: 래미안당산1차)" maxlength="40" autocomplete="off" aria-label="추가할 단지명">
-            <button type="submit" id="addBtn">추가</button>
-          </form>
-        </div>
-      </div>
-
-      <div class="card" id="rank">
-        <h3>AI 추이 분석</h3>
-        <p class="hsub">저축 부담 30 · 월 이자 20 · 보증금 안전 25 · 시세 추세 15 · 면적 10점으로 합쳐요. 기록 날짜에 가격이 없으면 가장 최근 기록을 써요.</p>
-        <div id="ranklist"><div class="empty">전세가를 입력한 후보 단지가 있으면 순위가 나와요.</div></div>
-        <div class="ai-acts" id="aiActs" hidden>
-          <button type="button" class="ai-btn" id="aiBtn">AI로 추이 분석·추천 순서 받기</button>
-          <button type="button" class="ghost" id="aiStop" hidden>취소</button>
-        </div>
-        <div class="ai-out" id="aiOut" hidden></div>
-      </div>
-
-      <div id="cxlist" class="stack"><div class="empty">아직 후보 단지가 없어요. 위에 단지명을 적고 추가하면 시세를 적을 카드가 생겨요.</div></div>
     </div>
   </section>
 
@@ -1666,20 +1672,23 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   var VISIT = ['역에서 걸어서 10분 안쪽', '밤에도 조용함', '채광·환기 좋음', '주차 여유', '엘리베이터 대기 짧음', '단지·복도 관리 상태 좋음', '곰팡이·결로 없음', '수압·배수 정상', '주변 편의시설(마트·병원)'];
   function cardHTML() {
     return '<div class="cx-head"><input class="cx-name" data-k="name" placeholder="단지명" aria-label="단지명" maxlength="40">' +
-      '<select data-k="status" aria-label="진행 상태">' + STATUS.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select>' +
-      '<button type="button" class="ghost" data-del>삭제</button></div>' +
+      '<select data-k="status" aria-label="진행 상태">' + STATUS.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div>' +
+      '<div class="cx-grid cx3">' +
+      '<label class="f"><span class="lbl">전세 호가 (만원)</span><input data-pk="jeonse" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hj></span></label>' +
+      '<label class="f"><span class="lbl">매매가 (만원)</span><input data-pk="sale" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hs></span></label>' +
+      '<label class="f"><span class="lbl">매물 수</span><span class="in"><input data-pk="cnt" type="number" inputmode="numeric" min="0" step="1"><em>개</em></span></label>' +
+      '</div><div class="chips" data-chips></div>' +
+      '<details class="cxmore"><summary>면적 · 임장 · 메모 · 삭제</summary>' +
       '<div class="cx-grid">' +
       '<label class="f"><span class="lbl">전용면적</span><span class="in"><input data-k="area" type="number" inputmode="decimal" min="0" step="0.01"><em>㎡</em></span><span class="hint" data-ha></span></label>' +
-      '<label class="f"><span class="lbl">전세 매물 수</span><span class="in"><input data-pk="cnt" type="number" inputmode="numeric" min="0" step="1"><em>개</em></span></label>' +
-      '<label class="f"><span class="lbl">최저 전세 호가 (만원)</span><input data-pk="jeonse" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hj></span></label>' +
-      '<label class="f"><span class="lbl">매매가 (만원)</span><input data-pk="sale" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hs></span></label>' +
-      '<label class="f"><span class="lbl">희망 전세가 (만원)</span><input data-k="want" type="number" inputmode="decimal" min="0" step="500"></label>' +
       '<label class="f"><span class="lbl">공급 평형 (네이버 표기)</span><span class="in"><input data-k="py" type="number" inputmode="decimal" min="0" step="1"><em>평</em></span></label>' +
-      '</div><div class="cx-last" data-last></div><div class="spark" data-spark></div><div class="chips" data-chips></div><div class="mini" data-mini></div>' +
+      '<label class="f"><span class="lbl">희망 전세가 (만원)</span><input data-k="want" type="number" inputmode="decimal" min="0" step="500"></label>' +
+      '</div><div class="cx-last" data-last></div><div class="spark" data-spark></div><div class="mini" data-mini></div>' +
       '<details class="visit"><summary>본 매물 <span class="chip plain" data-sn>0</span></summary><div class="seenlist" data-seen></div></details>' +
       '<details class="visit"><summary>임장 체크 <span class="chip plain" data-vc>0/' + VISIT.length + '</span></summary><div class="vlist">' +
       VISIT.map(function (v, i) { return '<label class="vi"><input type="checkbox" data-vk="' + i + '"><span>' + v + '</span></label>'; }).join('') + '</div></details>' +
-      '<input data-k="memo" placeholder="메모 (층·향·소음·실거래·보증보험 등)" aria-label="메모" maxlength="300">';
+      '<input data-k="memo" placeholder="메모 (층·향·소음·실거래·보증보험 등)" aria-label="메모" maxlength="300">' +
+      '<button type="button" class="ghost" data-del style="align-self:flex-start">단지 삭제</button></details>';
   }
   function refreshCard(card) {
     var id = card.dataset.id, d = cxData.get(id) || {}, dt = pxDate(), c = core;
