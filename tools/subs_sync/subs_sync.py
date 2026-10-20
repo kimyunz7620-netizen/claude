@@ -273,7 +273,7 @@ def _sh_dates(text):
 def fetch_sh(chrome_path=None, days=45, max_items=12):
     """SH(서울주택도시개발공사) 공고 목록에서 최근 모집 공고를 읽는다(읽기만). 실패하면 빈 목록."""
     from playwright.sync_api import sync_playwright
-    today = dt.date.today(); out = []; seen = set()
+    today = dt.date.today(); out = []; seen = set(); stat = {"rows": 0, "skip_title": 0, "skip_old": 0, "skip_end": 0}; sample = []
     with sync_playwright() as p:
         kw = {"headless": True}
         if chrome_path:
@@ -287,15 +287,21 @@ def fetch_sh(chrome_path=None, days=45, max_items=12):
             for kind, url in SH_LISTS:
                 try:
                     pg.goto(url, wait_until="domcontentloaded", timeout=45000); pg.wait_for_timeout(1500)
-                    rows = pg.eval_on_selector_all("tr, li", """els => els.map(e => { const a = e.querySelector('a[href*="view.do"]'); return a ? [a.innerText.trim().replace(/\\s+/g,' '), a.href, e.innerText] : null; }).filter(Boolean)""")
+                    rows = pg.eval_on_selector_all("a", """els => els.filter(a => /view\\.do|[?&]seq=/.test(a.href || '') || /view|seq/i.test(a.getAttribute('onclick') || '')).map(a => { const r = a.closest('tr, li') || a.parentElement; return [a.innerText.trim().replace(/\\s+/g,' '), a.href, r ? r.innerText : '']; }).filter(x => x[0])""")
+                    stat["rows"] += len(rows)
+                    sample += [f"{r[0][:40]} | {r[1][-40:]}" for r in rows[:4]]
+                    if not rows:
+                        print(f"SH {kind} 목록에서 공고 줄을 못 찾았어요(페이지 제목: {pg.title()[:30]})")
                 except Exception as e:  # noqa: BLE001
                     print(f"SH 목록을 못 읽었어요({kind}): {str(e)[:100]}"); continue
                 for title, href, rowtext in rows:
                     dm = re.search(r"(20\d{2})[.\-](\d{2})[.\-](\d{2})", rowtext or "")
                     posted = f"{dm.group(1)}-{dm.group(2)}-{dm.group(3)}" if dm else ""
                     if not title or href in seen or not SH_WANT.search(title) or SH_SKIP.search(title):
+                        stat["skip_title"] += 1
                         continue
                     if posted and (today - dt.date.fromisoformat(posted)).days > days:
+                        stat["skip_old"] += 1
                         continue
                     seen.add(href); cands.append((kind, title, href, posted))
             for kind, title, href, posted in cands[:max_items]:
@@ -306,6 +312,7 @@ def fetch_sh(chrome_path=None, days=45, max_items=12):
                 except Exception:  # noqa: BLE001
                     pass
                 if en and en < today.isoformat():
+                    stat["skip_end"] += 1
                     continue
                 seq = re.search(r"seq=(\d+)", href)
                 priority = any(g in title for g in PRIORITY)
@@ -319,6 +326,9 @@ def fetch_sh(chrome_path=None, days=45, max_items=12):
                 })
         finally:
             br.close()
+    print(f"SH 읽은 줄 {stat['rows']}개 → 제목 조건 탈락 {stat['skip_title']}, 45일 지남 {stat['skip_old']}, 접수 끝남 {stat['skip_end']}, 남은 공고 {len(out)}건")
+    if not out and sample:
+        print("  읽은 제목 예시:"); [print("   -", x) for x in sample[:8]]
     return out
 
 
