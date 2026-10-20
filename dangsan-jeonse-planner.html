@@ -1150,7 +1150,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   var SUBSTATUS = [['', '상태 선택'], ['interest', '관심'], ['plan', '신청 예정'], ['pass', '패스']];
   function safeUrl(u) { u = String(u || ''); return /^https:\/\/[^\s]+$/.test(u) ? u : null; }
   function subShown(x) { var e = evalSub(x), all = $('#subsAll') && $('#subsAll').checked; return all || (e.aOk !== 'no' && !(e.el.known && e.el.allBad)); }
-  function subActive(x) { return !validD(x.applyEnd) || dayNum(x.applyEnd) >= dayNum(todayStr()); }
+  function subActive(x) { if (!validD(x.applyEnd)) return !validD(x.posted) || dayNum(todayStr()) - dayNum(x.posted) <= 45; return dayNum(x.applyEnd) >= dayNum(todayStr()); }
   function subTodo(x, me) { return subActive(x) && subShown(x) && x.fit !== 'no' && !x.status; }
   function subCap() {
     if (has('subsMax')) return [num('subsMax'), false];
@@ -1179,7 +1179,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
   function eligOf(x, T) {
     var n = 0, b = 0, f = 0, u = 0; T.forEach(function (t) { n += t.n || 0; b += t.b || 0; f += t.f || 0; u += t.u || 0; });
-    var noAcc = /무순위|잔여|임의|오피스텔|도시형|민간임대/.test((x.kind || '') + ' ' + (x.name || '')); if (noAcc) { n = 0; b = 0; f = 0; }
+    var noAcc = /무순위|잔여|임의|오피스텔|도시형|민간임대/.test((x.kind || '') + ' ' + (x.name || '')), rent = !noAcc && /SH임대|LH임대|공공임대/.test(x.kind || ''); if (noAcc || rent) { n = 0; b = 0; f = 0; }
     var notes = (Array.isArray(x.notes) ? x.notes : []).join(' '), hot = /투기과열/.test(notes), pub = /국민|공공/.test(x.kind || '') || /공공택지/.test(notes);
     var none = plan.accHas === 'none';
     function pn(k) { return plan[k] != null && plan[k] !== '' && isFinite(Number(plan[k])) ? Number(plan[k]) : null; }
@@ -1194,10 +1194,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     function chip(st, label, say, isPath) { var o = { st: st, label: label, say: say }; chips.push(o); if (isPath) paths.push(o); return o; }
     var accTxt = known ? ' 지금 입력한 내 통장은 최대 ' + acc + '개월이에요.' : ' 청약통장 가입 개월을 아직 안 적었어요.';
     var minReq = n + b + f > 0 ? 6 : reqGen;
-    if (noAcc) chip('ok', '🏦 통장 없이도 돼요', '무순위·잔여세대 청약은 보통 청약통장 없이 신청할 수 있어요(공고문 확인). 대신 무주택 같은 다른 조건과, 공공이면 소득·자산 기준이 있어요.');
+    if (rent) chip('warn', '🏦 통장은 공고마다 달라요', '공공임대는 청약통장 대신 소득·자산·거주 요건이 중심이고, 일부 유형(장기전세 등)은 통장 순위를 보기도 해요. 공고문에서 확인하세요.');
+    else if (noAcc) chip('ok', '🏦 통장 없이도 돼요', '무순위·잔여세대 청약은 보통 청약통장 없이 신청할 수 있어요(공고문 확인). 대신 무주택 같은 다른 조건과, 공공이면 소득·자산 기준이 있어요.');
     else chip(!known ? 'warn' : acc >= minReq ? 'ok' : 'bad', '🏦 청약통장 필요',
       '청약통장이 있어야 신청할 수 있어요. 신혼 특별공급은 보통 가입 6개월·납입 6회 이상, 일반공급 1순위는 이 지역 기준 가입 ' + reqGen + '개월·납입 ' + reqGen + '회 이상이 일반적이에요(공고문 확인).' + accTxt);
-    var priv = !pub && !noAcc, depSt = !priv ? 'ok' : tot == null ? 'warn' : tot >= depReq ? 'ok' : 'warn';
+    var priv = !pub && !noAcc && !rent, depSt = !priv ? 'ok' : tot == null ? 'warn' : tot >= depReq ? 'ok' : 'warn';
     if (priv && known && depSt !== 'ok' || priv && known && tot == null) {
       var lack = tot == null ? 0 : depReq - tot;
       chip('warn', '📒 예치금 ' + depReq + '만원', '민영 분양은 청약통장에 지역·면적별 예치금이 있어야 해요. 이 공고(' + (loc0.slice(0, 6) || '이 지역') + ', 전용 ' + Math.min.apply(null, hope.map(function (t) { return t.a; })) + '㎡ 안팎)는 보통 ' + depReq + '만원이에요(공고문 확인). ' + (tot == null ? '내 총 납입액을 아직 안 적었어요.' : '지금 총 납입액은 ' + tot + '만원이라 ' + lack + '만원이 모자라요.' + (mon ? ' 지금 월 ' + mon + '만원씩 넣으면 약 ' + Math.ceil(lack / mon) + '개월 걸려요. 접수 전에 한 번에 입금해도 돼요.' : ' 접수 마감 전까지 ' + lack + '만원을 더 입금하면 돼요.')));
@@ -1218,7 +1219,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       chip(sf, (sf === 'ok' ? '✅ ' : sf === 'bad' ? '❌ ' : '⚠️ ') + '생애최초 ' + f + '세대', '지금까지 집을 가져 본 적이 없어야 해요. 소득 기준과 5년 이상 납세 이력이 보통 붙어요. ' + (fh === 'yes' ? '둘 다 집을 가진 적 없다고 입력돼 있어요.' : fh === 'no' ? '집을 가진 적이 있다고 입력돼 있어요.' : '생애최초 여부를 아직 안 적었어요.'), true);
     }
     var gen = u;
-    if (noAcc) {
+    if (rent) {
+      var sr2 = hl === 'no' ? 'bad' : 'warn', rsd = plan.resid === '서울';
+      chip(sr2, (sr2 === 'bad' ? '❌ ' : '⚠️ ') + '임대 신청 자격 확인', '공공임대는 무주택, 소득(도시근로자 월평균소득 비율)·자산 기준과 거주 요건을 봐요. 신혼부부 유형은 혼인 기간 요건도 있어요. ' + (hl === 'no' ? '집이 있다고 입력돼 있어서 어려워요.' : '우리 합산 연소득은 ' + (core && core.income > 0 ? fmt(core.income) : '미입력') + '이에요. 공고문의 소득 기준표와 비교하세요.'), true);
+      chip(rsd ? 'ok' : 'warn', rsd ? '📍 서울 거주' : '📍 서울 거주 확인', 'SH 공고는 서울 거주자 조건이 있는 경우가 많아요. ' + (rsd ? '서울에 산다고 입력돼 있어요.' : '사는 곳을 서울로 입력하지 않았어요. 공고문의 거주 요건을 확인하세요.'));
+    } else if (noAcc) {
       var sn = hl === 'no' ? 'bad' : hl === 'yes' ? 'ok' : 'warn';
       chip(sn, (sn === 'ok' ? '✅ ' : sn === 'bad' ? '❌ ' : '⚠️ ') + '무순위 · 통장 없이 신청', '남은 집을 다시 파는 무순위(잔여세대) 청약이에요. 청약통장 없이 신청하는 경우가 많고, 보통 무주택이어야 해요. ' + (hl === 'yes' ? '둘 다 무주택으로 입력돼 있어요.' : hl === 'no' ? '집이 있다고 입력돼 있어서 어려워요.' : '무주택 여부를 아직 안 적었어요.') + ' 거주지·소득 요건은 공고문에서 꼭 확인하세요.', true);
     } else if (gen > 0 || !T.length) {
@@ -1232,7 +1237,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var specOk = paths.some(function (p) { return p.st === 'ok' && /특공|생애최초/.test(p.label); });
     var anyOk = paths.some(function (p) { return p.st === 'ok'; });
     var allBad = paths.length > 0 && paths.every(function (p) { return p.st === 'bad'; });
-    return { noAcc: noAcc, depReq: depReq, chips: chips, specOk: specOk, anyOk: anyOk, allBad: allBad, known: known, acc: acc, reqGen: reqGen };
+    return { rent: rent, noAcc: noAcc, depReq: depReq, chips: chips, specOk: specOk, anyOk: anyOk, allBad: allBad, known: known, acc: acc, reqGen: reqGen };
   }
   function evalSub(x) {
     var ar = areaRange(), cap = subCap()[0], T = subTypes(x), br = [], cau = [], sc = 0;
@@ -1248,7 +1253,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var land = (Array.isArray(x.notes) ? x.notes : []).some(function (n) { return /토지임대/.test(n); });
     if (pmin && cap > 0 && !land) { if (pmin <= cap) { pOk = 'yes'; ps = 35; } else if (pmin <= cap * 1.3) { pOk = 'near'; ps = 12; } else { pOk = 'no'; ps = 0; } }
     sc += ps; br.push('금액 ' + ps + '/35');
-    var sp = T.reduce(function (n, t) { return n + (t.n || 0) + (t.b || 0); }, 0), el0 = eligOf(x, T), ss = sp > 0 ? (el0.specOk ? 10 : 4) : 0; sc += ss - (el0.allBad ? 20 : 0) + (el0.noAcc && el0.known && el0.acc < 6 ? 40 : 0); br.push('신혼·신생아 특공 ' + ss + '/10');
+    var sp = T.reduce(function (n, t) { return n + (t.n || 0) + (t.b || 0); }, 0), el0 = eligOf(x, T), ss = sp > 0 ? (el0.specOk ? 10 : 4) : 0; sc += ss - (el0.allBad ? 20 : 0) + (el0.noAcc && el0.known && el0.acc < 6 ? 40 : 0) + (el0.rent && el0.known && el0.acc < 6 ? 15 : 0); br.push('신혼·신생아 특공 ' + ss + '/10');
     var mv = 5, my = /^\d{4}-\d{2}$/.test(x.moveIn || '') ? x.moveIn : '';
     if (my) { var gap = Math.abs((+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5)))); mv = gap <= 6 ? 10 : gap <= 12 ? 5 : 0; }
     sc += mv; br.push('입주시기 ' + mv + '/10');
@@ -1555,6 +1560,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (Array.isArray(it.types)) rec.types = it.types.slice(0, 40).map(function (t) { if (!t || typeof t !== 'object') return null; var N = function (v) { v = Number(v); return isFinite(v) && v >= 0 ? v : 0; }; return isFinite(Number(t.a)) ? { a: N(t.a), u: N(t.u), n: N(t.n), b: N(t.b), f: N(t.f), pmin: N(t.pmin), pmax: N(t.pmax) } : null; }).filter(Boolean);
       if (/^\d{4}-(0[1-9]|1[0-2])$/.test(String(it.moveIn || ''))) rec.moveIn = it.moveIn;
       if (it.kind) rec.kind = T(it.kind, 10);
+      if (validD(it.posted)) rec.posted = it.posted;
       if (it.sched && typeof it.sched === 'object') { var sch = {}; ['sp', 'r1', 'r1g', 'r1e', 'r2', 'ct'].forEach(function (k) { var v = it.sched[k]; if (Array.isArray(v) && validD(v[0]) && validD(v[1])) sch[k] = [v[0], v[1]]; }); rec.sched = sch; }
       if (Array.isArray(it.notes)) rec.notes = it.notes.slice(0, 6).map(function (n) { return T(n, 80); }).filter(Boolean);
       var existed = !!subsState[id];

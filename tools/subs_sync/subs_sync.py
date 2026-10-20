@@ -244,6 +244,95 @@ def build_items(details, models, area_min, area_max, regions):
     return items
 
 
+
+# ---------------------------------------------------------------- SH ----
+SH_LISTS = [
+    ("SH분양", "https://www.i-sh.co.kr/main/lay2/program/S1T294C296/www/brd/m_244/list.do?multi_itm_seq=1"),
+    ("SH임대", "https://www.i-sh.co.kr/main/lay2/program/S1T294C297/www/brd/m_247/list.do?multi_itm_seq=2"),
+]
+SH_WANT = re.compile(r"모집|입주자|신청")
+SH_SKIP = re.compile(r"당첨자|결과|계약|예비|서류|심사|철거민|정정|취소|순번|발표|연장 안내|오류")
+
+
+def _sh_dates(text):
+    """공고 본문에서 '접수/신청 기간'처럼 보이는 날짜 범위를 찾는다. 못 찾으면 ('','')."""
+    m = re.search(r"(?:접수|신청)\s*(?:기간|일정|일)?[^0-9]{0,20}(20\d{2})[.\-년\s]+(\d{1,2})[.\-월\s]+(\d{1,2})[^0-9]{1,30}?(?:(20\d{2})[.\-년\s]+)?(\d{1,2})[.\-월\s]+(\d{1,2})", text)
+    if not m:
+        return "", ""
+    y1, m1, d1, y2, m2, d2 = m.groups()
+    y2 = y2 or y1
+    try:
+        a = dt.date(int(y1), int(m1), int(d1)); b = dt.date(int(y2), int(m2), int(d2))
+    except ValueError:
+        return "", ""
+    if b < a:
+        b = b.replace(year=b.year + 1)
+    return a.isoformat(), b.isoformat()
+
+
+def fetch_sh(chrome_path=None, days=45, max_items=12):
+    """SH(서울주택도시개발공사) 공고 목록에서 최근 모집 공고를 읽는다(읽기만). 실패하면 빈 목록."""
+    from playwright.sync_api import sync_playwright
+    today = dt.date.today(); out = []; seen = set()
+    with sync_playwright() as p:
+        kw = {"headless": True}
+        if chrome_path:
+            kw["executable_path"] = chrome_path
+        else:
+            kw["channel"] = "chrome"
+        br = p.chromium.launch(**kw)
+        try:
+            pg = br.new_page(viewport={"width": 1100, "height": 900})
+            cands = []
+            for kind, url in SH_LISTS:
+                try:
+                    pg.goto(url, wait_until="domcontentloaded", timeout=45000); pg.wait_for_timeout(1500)
+                    rows = pg.eval_on_selector_all("tr, li", """els => els.map(e => { const a = e.querySelector('a[href*="view.do"]'); return a ? [a.innerText.trim().replace(/\\s+/g,' '), a.href, e.innerText] : null; }).filter(Boolean)""")
+                except Exception as e:  # noqa: BLE001
+                    print(f"SH 목록을 못 읽었어요({kind}): {str(e)[:100]}"); continue
+                for title, href, rowtext in rows:
+                    dm = re.search(r"(20\d{2})[.\-](\d{2})[.\-](\d{2})", rowtext or "")
+                    posted = f"{dm.group(1)}-{dm.group(2)}-{dm.group(3)}" if dm else ""
+                    if not title or href in seen or not SH_WANT.search(title) or SH_SKIP.search(title):
+                        continue
+                    if posted and (today - dt.date.fromisoformat(posted)).days > days:
+                        continue
+                    seen.add(href); cands.append((kind, title, href, posted))
+            for kind, title, href, posted in cands[:max_items]:
+                st = en = ""
+                try:
+                    pg.goto(href, wait_until="domcontentloaded", timeout=45000); pg.wait_for_timeout(1000)
+                    st, en = _sh_dates(pg.inner_text("body"))
+                except Exception:  # noqa: BLE001
+                    pass
+                if en and en < today.isoformat():
+                    continue
+                seq = re.search(r"seq=(\d+)", href)
+                priority = any(g in title for g in PRIORITY)
+                clean = re.sub(r"^(수요|재개|sh)\s*", "", title).strip()
+                out.append({
+                    "no": "SH" + (seq.group(1) if seq else hash36(title)), "name": clean[:80], "location": "서울 (SH 공고)", "supply": "", "areas": "", "price": "",
+                    "applyStart": st, "applyEnd": en, "winnerDate": "", "link": href if href.startswith("https://") else "",
+                    "fit": "check", "fitReason": "SH 공고 (자격·접수일은 공고문 확인)", "areaFit": "", "regionFit": "yes" if priority else "",
+                    "source": "SH 공고", "types": [], "moveIn": "", "notes": ["SH 임대·분양 공고예요. 임대는 소득·자산·거주 요건이 중심이고 청약통장은 공고마다 달라요."],
+                    "kind": kind, "sched": {}, "posted": posted,
+                })
+        finally:
+            br.close()
+    return out
+
+
+def hash36(t):
+    h = 5381
+    for ch in t:
+        h = ((h << 5) + h + ord(ch)) & 0xFFFFFFFF
+    n, digits = h, "0123456789abcdefghijklmnopqrstuvwxyz"
+    s = ""
+    while n:
+        n, r = divmod(n, 36); s = digits[r] + s
+    return s or "0"
+
+
 # ------------------------------------------------------------- browser ----
 def find_chrome():
     cands = {
@@ -398,6 +487,7 @@ def main():
     ap.add_argument("--headless", action="store_true", help="창 없이 실행(로그인이 풀릴 수 있어요)")
     ap.add_argument("--hour", type=int, default=8, help="schedule: 자동 실행 시(0~23)")
     ap.add_argument("--minute", type=int, default=30, help="schedule: 자동 실행 분")
+    ap.add_argument("--no-sh", action="store_true", help="SH 공고를 가져오지 않기")
     ap.add_argument("--raw", action="store_true", help="API 응답의 첫 항목 필드를 출력(필드 이름이 안 맞을 때 확인용)")
     args = ap.parse_args()
 
@@ -428,6 +518,17 @@ def main():
             else:
                 print("주택형을 한 건도 못 읽었어요.")
         items = build_items(details, models, args.area_min, args.area_max, regions)
+        if not args.no_sh and (not regions or any(r in ("서울", "경기") for r in regions)):
+            try:
+                sh_items = fetch_sh(args.chrome)
+                def nm(t):
+                    return re.sub(r"[\s()\[\]·\-]", "", t)
+                have = [nm(i["name"]) for i in items]
+                sh_items = [i for i in sh_items if not any(len(nm(i["name"])) >= 5 and (nm(i["name"]) in h or h in nm(i["name"])) for h in have if len(h) >= 5)]
+                print(f"SH 공고 {len(sh_items)}건")
+                items += sh_items
+            except Exception as e:  # noqa: BLE001
+                print(f"SH 공고는 건너뛰었어요: {str(e)[:120]}")
         OUT_DIR.mkdir(exist_ok=True)
         out = OUT_DIR / f"subs_{today.isoformat()}.json"
         out.write_text(json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")
