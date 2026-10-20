@@ -53,17 +53,41 @@ def fetch_all(endpoint, key, params):
         page += 1
 
 
-def fetch_notices(key, today, horizon_days):
+def in_regions(d, regions):
+    if not regions:
+        return True
+    addr = (d.get("HSSPLY_ADRES") or "").strip()
+    region = (d.get("SUBSCRPT_AREA_CODE_NM") or "").strip()
+    return any(region.startswith(r) or addr.startswith(r) for r in regions)
+
+
+def fetch_models(key, details):
+    """공고마다 주택형(면적·세대수·분양가)을 따로 조회한다."""
+    models = {}
+    for d in details:
+        hm = str(d.get("HOUSE_MANAGE_NO") or "")
+        if not hm:
+            continue
+        pb = str(d.get("PBLANC_NO") or hm)
+        rows = []
+        for params in ({"cond[HOUSE_MANAGE_NO::EQ]": hm, "cond[PBLANC_NO::EQ]": pb}, {"cond[HOUSE_MANAGE_NO::EQ]": hm}):
+            try:
+                rows = fetch_all("getAPTLttotPblancMdl", key, params)
+            except SystemExit as e:
+                print(f"  주택형 조회 오류({hm}): {e}")
+                rows = []
+            if rows:
+                break
+        print(f"  {d.get('HOUSE_NM', hm)}: 주택형 {len(rows)}건")
+        models[hm] = rows
+    return models
+
+
+def fetch_notices(key, today, horizon_days, regions):
     details = fetch_all("getAPTLttotPblancDetail", key, {"cond[RCEPT_ENDDE::GTE]": today.isoformat()})
     limit = (today + dt.timedelta(days=horizon_days)).isoformat()
-    details = [d for d in details if not d.get("RCEPT_BGNDE") or d["RCEPT_BGNDE"] <= limit]
-    models = {}
-    ids = [str(d["HOUSE_MANAGE_NO"]) for d in details if d.get("HOUSE_MANAGE_NO")]
-    for i in range(0, len(ids), 30):
-        chunk = ids[i:i + 30]
-        for m in fetch_all("getAPTLttotPblancMdl", key, {"cond[HOUSE_MANAGE_NO::IN]": ",".join(chunk)}):
-            models.setdefault(str(m.get("HOUSE_MANAGE_NO")), []).append(m)
-    return details, models
+    details = [d for d in details if (not d.get("RCEPT_BGNDE") or d["RCEPT_BGNDE"] <= limit) and in_regions(d, regions)]
+    return details, fetch_models(key, details)
 
 
 # ------------------------------------------------------------ transform ----
@@ -224,7 +248,7 @@ def main():
     ap.add_argument("--url", default=os.environ.get("SUBS_ARTIFACT_URL", DEFAULT_ARTIFACT), help="땅콩집 플래너 주소")
     ap.add_argument("--area-min", type=float, default=40)
     ap.add_argument("--area-max", type=float, default=60)
-    ap.add_argument("--regions", default="서울", help="쉼표로 구분 (예: 서울,경기)")
+    ap.add_argument("--regions", default="서울,경기", help="쉼표로 구분 (기본 서울,경기)")
     ap.add_argument("--horizon", type=int, default=60, help="앞으로 며칠 안에 접수가 시작되는 공고까지 볼지")
     ap.add_argument("--profile", default=str(DEFAULT_PROFILE), help="로그인 정보를 저장할 크롬 프로필 폴더")
     ap.add_argument("--chrome", default=os.environ.get("CHROME_PATH"), help="크롬 실행 파일 경로(비워 두면 설치된 크롬 사용)")
@@ -242,17 +266,22 @@ def main():
         if not args.key:
             raise SystemExit("인증키가 없어요. --key 또는 환경변수 ODCLOUD_KEY 를 설정하세요.")
         today = dt.date.today()
-        details, models = fetch_notices(args.key, today, args.horizon)
+        regions = [r.strip() for r in args.regions.split(",") if r.strip()]
+        details, models = fetch_notices(args.key, today, args.horizon, regions)
         if args.raw and details:
             print("상세 필드:", sorted(details[0].keys()))
-            first = models.get(str(details[0].get("HOUSE_MANAGE_NO")), [])
+            first = next((rows for rows in models.values() if rows), [])
             if first:
                 print("주택형 필드:", sorted(first[0].keys()))
-        regions = [r.strip() for r in args.regions.split(",") if r.strip()]
+                print("주택형 예시:", json.dumps(first[0], ensure_ascii=False)[:900])
+            else:
+                print("주택형을 한 건도 못 읽었어요.")
         items = build_items(details, models, args.area_min, args.area_max, regions)
         OUT_DIR.mkdir(exist_ok=True)
         out = OUT_DIR / f"subs_{today.isoformat()}.json"
         out.write_text(json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")
+        if items and not any(models.values()):
+            print("주택형(평형·분양가)을 못 읽었어요. `python3 subs_sync.py fetch --raw` 결과를 알려 주세요.")
         good = sum(1 for i in items if i["fit"] == "good")
         print(f"공고 {len(details)}건을 읽고 {len(items)}건을 추렸어요 (적합 가능성 {good}건). 저장: {out}")
         if args.command == "fetch":
