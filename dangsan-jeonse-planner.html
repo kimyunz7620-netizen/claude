@@ -733,15 +733,20 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <p class="hsub" id="subsMeta">아직 가져온 공고가 없어요.</p>
         <details class="setbox" id="eligBox"><summary id="eligSum">🧾 내 청약 자격</summary>
           <div class="cx-grid">
-            <label class="f"><span class="lbl">청약통장 가입기간 · <b data-nm="A"></b></span><span class="in"><input id="f-accA" data-f="accA" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>개월</em></span></label>
-            <label class="f"><span class="lbl">청약통장 가입기간 · <b data-nm="B"></b></span><span class="in"><input id="f-accB" data-f="accB" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>개월</em></span></label>
+            <label class="f" style="grid-column:1/-1"><span class="lbl">청약통장</span><select id="f-accHas" data-f="accHas" data-t="text"><option value="">아직 입력 안 했어요</option><option value="yes">있어요 (아래에 적어 주세요)</option><option value="none">둘 다 없어요</option></select></label>
+            <label class="f"><span class="lbl">가입 기간 · <b data-nm="A"></b></span><span class="in"><input id="f-accA" data-f="accA" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>개월</em></span></label>
+            <label class="f"><span class="lbl">가입 기간 · <b data-nm="B"></b></span><span class="in"><input id="f-accB" data-f="accB" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>개월</em></span></label>
+            <label class="f"><span class="lbl">총 납입액 · <b data-nm="A"></b></span><span class="in"><input id="f-accTotA" data-f="accTotA" type="number" inputmode="numeric" min="0" step="10" placeholder="모름"><em>만원</em></span></label>
+            <label class="f"><span class="lbl">총 납입액 · <b data-nm="B"></b></span><span class="in"><input id="f-accTotB" data-f="accTotB" type="number" inputmode="numeric" min="0" step="10" placeholder="모름"><em>만원</em></span></label>
+            <label class="f"><span class="lbl">매달 납입 · <b data-nm="A"></b></span><span class="in"><input id="f-accMonA" data-f="accMonA" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>만원</em></span></label>
+            <label class="f"><span class="lbl">매달 납입 · <b data-nm="B"></b></span><span class="in"><input id="f-accMonB" data-f="accMonB" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>만원</em></span></label>
             <label class="f"><span class="lbl">무주택 여부</span><select id="f-homeless" data-f="homeless" data-t="text"><option value="">아직 몰라요</option><option value="yes">둘 다 무주택</option><option value="no">집이 있어요</option></select></label>
             <label class="f"><span class="lbl">생애최초 (집을 가진 적 없음)</span><select id="f-firstHome" data-f="firstHome" data-t="text"><option value="">아직 몰라요</option><option value="yes">둘 다 맞아요</option><option value="no">아니에요</option></select></label>
           </div>
-          <p class="note" style="margin:6px 0 0">혼인신고 예정월·출산 계획은 모으기 탭 설정에 있어요. 일반적인 기준으로 판단하니 공고문을 꼭 확인하세요.</p>
+          <p class="note" style="margin:6px 0 0">한 번만 적어 두면 돼요. 조건이 안 맞는 공고는 목록에서 숨겨요(“조건 안 맞는 공고도 보기”로 볼 수 있어요). 혼인신고 예정월·출산 계획은 모으기 탭 설정에 있어요. 일반적인 기준이라 공고문 확인은 꼭 필요해요.</p>
         </details>
         <details class="setbox"><summary id="setSum">⚙️ 내 기준</summary>
-        <div class="ai-acts"><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label></div>
+        <div class="ai-acts"><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label><label class="chkp"><input type="checkbox" id="subsAll"> 조건 안 맞는 공고도 보기</label></div>
         <div class="ai-acts" style="margin-top:8px"><label class="chkp">정렬 <select id="subsSort" style="height:32px;font-size:13px"><option value="fit">순위 순</option><option value="end">마감 빠른 순</option></select></label></div>
         <div class="subcap"><label class="f"><span class="lbl">💰 내 분양가 상한 (순위·초과 표시 기준)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="비우면 자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></div>
         </details>
@@ -1141,7 +1146,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   var SUBFIT = { good: ['신청 가능성 있음', 'ok'], check: ['확인 필요', 'warn'], no: ['해당 없음', 'bad'] };
   var SUBSTATUS = [['', '상태 선택'], ['interest', '관심'], ['plan', '신청 예정'], ['pass', '패스']];
   function safeUrl(u) { u = String(u || ''); return /^https:\/\/[^\s]+$/.test(u) ? u : null; }
-  function subShown(x) { return evalSub(x).aOk !== 'no'; }
+  function subShown(x) { var e = evalSub(x), all = $('#subsAll') && $('#subsAll').checked; return all || (e.aOk !== 'no' && !(e.el.known && e.el.allBad)); }
   function subActive(x) { return !validD(x.applyEnd) || dayNum(x.applyEnd) >= dayNum(todayStr()); }
   function subTodo(x, me) { return subActive(x) && subShown(x) && x.fit !== 'no' && !x.status; }
   function subCap() {
@@ -1152,8 +1157,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function eligOf(x, T) {
     var n = 0, b = 0, f = 0, u = 0; T.forEach(function (t) { n += t.n || 0; b += t.b || 0; f += t.f || 0; u += t.u || 0; });
     var notes = (Array.isArray(x.notes) ? x.notes : []).join(' '), hot = /투기과열/.test(notes), pub = /국민|공공/.test(x.kind || '') || /공공택지/.test(notes);
-    var accA = plan.accA != null && plan.accA !== '' ? Number(plan.accA) : null, accB = plan.accB != null && plan.accB !== '' ? Number(plan.accB) : null;
-    var known = accA != null || accB != null, acc = Math.max(accA == null ? 0 : accA, accB == null ? 0 : accB);
+    var none = plan.accHas === 'none';
+    function pn(k) { return plan[k] != null && plan[k] !== '' && isFinite(Number(plan[k])) ? Number(plan[k]) : null; }
+    var accA = none ? 0 : pn('accA'), accB = none ? 0 : pn('accB'), totA = none ? 0 : pn('accTotA'), totB = none ? 0 : pn('accTotB'), monA = pn('accMonA'), monB = pn('accMonB');
+    var known = none || accA != null || accB != null, acc = Math.max(accA == null ? 0 : accA, accB == null ? 0 : accB);
+    var bestB = (accB != null && (accA == null || accB > accA)), tot = bestB ? totB : totA, mon = bestB ? monB : monA;
+    var hope = (function () { var ar = areaRange(), h = T.filter(function (t) { return t.a >= ar[0] - 0.5 && t.a <= ar[1] + 0.5; }); return h.length ? h : T; })();
+    var loc0 = String(x.location || ''), tbl = /^서울|부산/.test(loc0) ? [300, 600, 1000, 1500] : /인천|대구|대전|광주|울산/.test(loc0) ? [250, 400, 700, 1000] : [200, 300, 400, 500];
+    var depReq = hope.length ? Math.min.apply(null, hope.map(function (t) { return t.a <= 85 ? tbl[0] : t.a <= 102 ? tbl[1] : t.a <= 135 ? tbl[2] : tbl[3]; })) : tbl[0];
     var reqGen = hot ? 24 : 12, hl = plan.homeless || '', fh = plan.firstHome || '', baby = plan.babyPlan || '';
     var chips = [], paths = [], me = validYm(plan.marriageDate) ? plan.marriageDate : '';
     function chip(st, label, say, isPath) { var o = { st: st, label: label, say: say }; chips.push(o); if (isPath) paths.push(o); return o; }
@@ -1161,30 +1172,36 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var minReq = n + b + f > 0 ? 6 : reqGen;
     chip(!known ? 'warn' : acc >= minReq ? 'ok' : 'bad', '🏦 청약통장 필요',
       '청약통장이 있어야 신청할 수 있어요. 신혼 특별공급은 보통 가입 6개월·납입 6회 이상, 일반공급 1순위는 이 지역 기준 가입 ' + reqGen + '개월·납입 ' + reqGen + '회 이상이 일반적이에요(공고문 확인).' + accTxt);
+    var priv = !pub, depSt = !priv ? 'ok' : tot == null ? 'warn' : tot >= depReq ? 'ok' : 'warn';
+    if (priv && known && depSt !== 'ok' || priv && known && tot == null) {
+      var lack = tot == null ? 0 : depReq - tot;
+      chip('warn', '📒 예치금 ' + depReq + '만원', '민영 분양은 청약통장에 지역·면적별 예치금이 있어야 해요. 이 공고(' + (loc0.slice(0, 6) || '이 지역') + ', 전용 ' + Math.min.apply(null, hope.map(function (t) { return t.a; })) + '㎡ 안팎)는 보통 ' + depReq + '만원이에요(공고문 확인). ' + (tot == null ? '내 총 납입액을 아직 안 적었어요.' : '지금 총 납입액은 ' + tot + '만원이라 ' + lack + '만원이 모자라요.' + (mon ? ' 지금 월 ' + mon + '만원씩 넣으면 약 ' + Math.ceil(lack / mon) + '개월 걸려요. 접수 전에 한 번에 입금해도 돼요.' : ' 접수 마감 전까지 ' + lack + '만원을 더 입금하면 돼요.')));
+    }
     chip(hl === 'no' ? 'bad' : hl === 'yes' ? 'ok' : 'warn', '🏠 무주택 필요', '세대원 전원이 집(분양권 포함)이 없어야 해요. ' + (hl === 'yes' ? '둘 다 무주택으로 입력돼 있어요.' : hl === 'no' ? '집이 있다고 입력돼 있어서 대부분 어려워요.' : '무주택 여부를 아직 안 적었어요.'));
     if (n > 0) {
       var st = hl === 'no' ? 'bad' : !me ? 'warn' : (validD(x.applyEnd) && me > String(x.applyEnd).slice(0, 7)) ? 'bad' : known && acc < 6 ? 'bad' : 'ok';
       var why = hl === 'no' ? '집이 있어서 어려워요.' : !me ? '혼인신고 예정월을 아직 안 적었어요(모으기 탭 설정).' : st === 'bad' && known && acc < 6 ? '통장 가입 6개월이 안 돼요.' : st === 'bad' ? '접수 시점(' + String(x.applyEnd).slice(0, 7) + ')에 아직 혼인신고 전이에요.' : '혼인 7년 이내·무주택·통장 요건은 맞아 보여요.';
+      if (st === 'ok' && depSt !== 'ok') st = 'warn';
       chip(st, (st === 'ok' ? '✅ ' : st === 'bad' ? '❌ ' : '⚠️ ') + '신혼 특공 ' + n + '세대', '신혼부부 특별공급은 혼인 7년 이내, 무주택, 통장 요건에 소득·자산 기준이 붙어요. ' + why + ' 소득·자산 기준은 공고문 표와 비교하세요(우리 합산 연소득 ' + (core && core.income > 0 ? fmt(core.income) : '미입력') + ').', true);
     }
     if (b > 0) {
-      var sb = baby === 'none' ? 'bad' : 'warn';
+      var sb = baby === 'none' || (known && acc < 6) ? 'bad' : 'warn';
       chip(sb, (sb === 'bad' ? '❌ ' : '⚠️ ') + '신생아 특공 ' + b + '세대', '2년 안에 출산한 자녀가 있어야 신청할 수 있어요. ' + (baby === 'none' ? '출산 계획이 없다고 입력돼 있어요.' : baby === 'soon' ? '아직 출산 전이면 아이가 태어난 뒤에 신청할 수 있어요.' : '출산 계획을 모으기 탭 설정에서 정해 주세요.'), true);
     }
     if (f > 0) {
-      var sf = hl === 'no' || fh === 'no' ? 'bad' : fh === 'yes' && hl === 'yes' ? 'ok' : 'warn';
+      var sf = hl === 'no' || fh === 'no' || (known && acc < 6) ? 'bad' : fh === 'yes' && hl === 'yes' ? 'ok' : 'warn';
       chip(sf, (sf === 'ok' ? '✅ ' : sf === 'bad' ? '❌ ' : '⚠️ ') + '생애최초 ' + f + '세대', '지금까지 집을 가져 본 적이 없어야 해요. 소득 기준과 5년 이상 납세 이력이 보통 붙어요. ' + (fh === 'yes' ? '둘 다 집을 가진 적 없다고 입력돼 있어요.' : fh === 'no' ? '집을 가진 적이 있다고 입력돼 있어요.' : '생애최초 여부를 아직 안 적었어요.'), true);
     }
     var gen = u;
     if (gen > 0 || !T.length) {
-      var sg = !known ? 'warn' : acc >= reqGen ? 'ok' : 'bad';
+      var sg = !known ? 'warn' : acc >= reqGen ? (depSt === 'ok' ? 'ok' : 'warn') : 'bad';
       chip(sg, (sg === 'ok' ? '✅ ' : sg === 'bad' ? '❌ ' : '⚠️ ') + '일반공급 1순위', '일반공급은 청약통장 가입 ' + reqGen + '개월·납입 ' + reqGen + '회 이상이면 1순위예요(이 지역 일반적 기준, 공고문 확인). 가점제는 무주택 기간·부양가족·통장 기간을 점수로 매겨서 신혼 초에는 점수가 낮은 편이에요.' + accTxt, true);
     }
     chip('warn', '💰 소득·자산 확인', (pub ? '공공 분양이라 ' : '') + '특별공급과 공공 분양은 소득(도시근로자 월평균소득 비율)과 자산(부동산·자동차) 기준이 있어요. 공고문의 표와 비교하세요. 우리 합산 연소득은 ' + (core && core.income > 0 ? fmt(core.income) : '아직 미입력') + '이에요.');
     var specOk = paths.some(function (p) { return p.st === 'ok' && /특공|생애최초/.test(p.label); });
     var anyOk = paths.some(function (p) { return p.st === 'ok'; });
     var allBad = paths.length > 0 && paths.every(function (p) { return p.st === 'bad'; });
-    return { chips: chips, specOk: specOk, anyOk: anyOk, allBad: allBad, known: known, acc: acc, reqGen: reqGen };
+    return { depReq: depReq, chips: chips, specOk: specOk, anyOk: anyOk, allBad: allBad, known: known, acc: acc, reqGen: reqGen };
   }
   function evalSub(x) {
     var ar = areaRange(), cap = subCap()[0], T = subTypes(x), br = [], cau = [], sc = 0;
@@ -1413,7 +1430,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var box = $('#subsList'), showPast = $('#subsPast').checked, me = getMe();
     var onlyMine = $('#subsMatch').checked;
     var es = $('#eligSum'), eb = $('#eligBox');
-    if (es) { var hasAcc = (plan.accA != null && plan.accA !== '') || (plan.accB != null && plan.accB !== ''); es.textContent = '🧾 내 청약 자격 · ' + (hasAcc ? '통장 ' + (plan.accA != null && plan.accA !== '' ? nameA() + ' ' + plan.accA + '개월' : '') + (plan.accA != null && plan.accA !== '' && plan.accB != null && plan.accB !== '' ? ' · ' : '') + (plan.accB != null && plan.accB !== '' ? nameB() + ' ' + plan.accB + '개월' : '') + ' · ' + (plan.homeless === 'yes' ? '무주택' : plan.homeless === 'no' ? '집 있음' : '무주택 미입력') : '입력하면 자격을 판단해요');  }
+    if (es) {
+      var pv = function (k) { return plan[k] != null && plan[k] !== '' ? Number(plan[k]) : null; }, parts = [];
+      if (plan.accHas === 'none') parts.push('청약통장 없음');
+      else { if (pv('accA') != null) parts.push(nameA() + ' ' + pv('accA') + '개월' + (pv('accTotA') != null ? '·' + pv('accTotA') + '만원' : '')); if (pv('accB') != null) parts.push(nameB() + ' ' + pv('accB') + '개월' + (pv('accTotB') != null ? '·' + pv('accTotB') + '만원' : '')); }
+      if (plan.homeless === 'yes') parts.push('무주택'); else if (plan.homeless === 'no') parts.push('집 있음');
+      es.textContent = '🧾 내 자격 · ' + (parts.length ? parts.join(' · ') : '입력하면 자격에 안 맞는 공고를 걸러요');
+    }
     var cp = subCap(), ch = $('#subsCapHint'); var ss0 = $('#setSum'); if (ss0) ss0.textContent = '💰 분양가 상한 ' + (cp[0] > 0 ? fmt(cp[0]) + (cp[1] ? ' (자동)' : '') : '미정') + ' · ' + ($('#subsSort').value === 'end' ? '마감 빠른 순' : '순위 순') + ' · 눌러서 바꾸기';
      if (ch) ch.textContent = cp[0] > 0 ? (cp[1] ? '지금은 “둘이 모을 수 있는 금액 ÷ 30%” 로 자동 계산한 ' + fmt(cp[0]) + '을 쓰고 있어요(분양가의 약 30%를 자기 돈으로 낸다는 가정). 정확히 알면 직접 입력하세요.' : '직접 입력한 상한 ' + fmt(cp[0]) + '을 쓰고 있어요.') : '저축 가능 금액을 입력하면 자동으로 분양가 상한을 계산해요.';
     var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; if (!(showPast || subActive(x)) || !subShown(x)) return false; if (!onlyMine) return true; return !!evalSub(x).rOk; });
@@ -1423,7 +1446,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     subSort(ids);
     var todo = Object.keys(subsState).filter(function (id) { return subTodo(subsState[id], me ? me.toUpperCase() : null); }).length;
     $('#subsCount').textContent = todo + '건 확인할 차례';
-    $('#subsMeta').textContent = subsMeta.updatedAt ? '마지막 업데이트 ' + String(subsMeta.updatedAt).slice(0, 10) + (subsMeta.summary ? ' · ' + subsMeta.summary : '') + (hid ? ' · 희망 평형이 없어 숨긴 공고 ' + hid + '건' : '') : '아직 가져온 공고가 없어요.';
+    $('#subsMeta').textContent = subsMeta.updatedAt ? '마지막 업데이트 ' + String(subsMeta.updatedAt).slice(0, 10) + (subsMeta.summary ? ' · ' + subsMeta.summary : '') + (hid ? ' · 조건(평형·자격)이 안 맞아 숨긴 공고 ' + hid + '건' : '') : '아직 가져온 공고가 없어요.';
     var seen = {};
     ids.forEach(function (id) { seen[id] = 1; var row = box.querySelector('.sub[data-id="' + id + '"]'); if (!row) { row = makeSubRow(id); box.appendChild(row); } fillSubRow(row, subsState[id]); });
     $$('.sub', box).forEach(function (r) { if (!seen[r.dataset.id]) r.remove(); });
@@ -1447,6 +1470,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   $('#subsList').addEventListener('input', function (e) { var row = e.target.closest('.sub'); if (row && e.target.dataset.sk === 'note') saveSub(row.dataset.id, { note: e.target.value }, 500); });
   $('#subsPast').addEventListener('change', renderSubs);
   $('#subsMatch').addEventListener('change', renderSubs);
+  $('#subsAll').addEventListener('change', renderSubs);
   $('#subsSort').addEventListener('change', renderSubs);
   function buildSubsPrompt() {
     var c = core, ar = areaRange();
