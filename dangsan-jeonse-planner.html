@@ -1123,7 +1123,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (sp > 0 && !validYm(plan.marriageDate)) cau.push({ t: '신혼부부 특별공급은 혼인 기간 요건이 있어요. 혼인신고 예정월을 아직 안 적었어요.' });
     if (pOk === 'no') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')을 넘어요. 가장 싼 평형이 ' + fmt(pmin) + '이에요.' });
     else if (pOk === 'near') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')보다 조금 높아요. 가장 싼 평형이 ' + fmt(pmin) + '이에요.' });
-    if (aOk === 'no') cau.push({ t: '희망 평형(' + ar[0] + '~' + ar[1] + '㎡)이 없어요. 있는 평형은 ' + T.map(function (t) { return t.a; }).join('·') + '㎡예요.' });
+    if (aOk === 'no') cau.push({ t: '희망 평형(' + ar[0] + '~' + ar[1] + '㎡)이 없어요.' + (T.length ? ' 있는 평형은 ' + T.map(function (t) { return t.a; }).join('·') + '㎡예요.' : '') });
     if (!rOk) cau.push({ t: '관심 지역(영등포·마포·강서·양천·동작)이 아니에요.' });
     if (my) { var g2 = (+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5))); if (Math.abs(g2) > 6) cau.push({ t: '입주는 ' + dotYm(my) + '이에요. 목표(' + dotYm(targetYm()) + ')보다 ' + Math.abs(g2) + '개월 ' + (g2 > 0 ? '늦어요.' : '빨라요.') }); }
     if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); if (dd >= 0 && dd <= 3) cau.push({ b: 1, t: '접수 마감이 ' + (dd === 0 ? '오늘' : dd + '일 뒤') + '예요.' }); }
@@ -1136,7 +1136,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     });
     var pos = [];
     if (pOk === 'yes') pos.push('금액이 상한(' + fmt(cap) + ') 안이에요');
-    if (aOk === 'yes') pos.push('희망 평형(' + inR.map(function (t) { return t.a + '㎡'; }).join('·') + ')이 있어요');
+    if (aOk === 'yes') pos.push(inR.length ? '희망 평형(' + inR.map(function (t) { return t.a + '㎡'; }).join('·') + ')이 있어요' : '희망 평형이 있어요');
     if (rOk) pos.push('관심 지역이에요');
     if (sp > 0) pos.push('신혼·신생아 특별공급 물량이 있어요');
     if (my) { var g3 = Math.abs((+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5)))); if (g3 <= 6) pos.push('입주 시기(' + dotYm(my) + ')가 목표와 맞아요'); }
