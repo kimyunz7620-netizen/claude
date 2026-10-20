@@ -443,7 +443,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       <div class="card" id="subsHome">
         <div class="mhead"><h3>청약 공고</h3><span class="chip" id="subsHomeCount">0건</span></div>
         <div id="subsHomeList"></div>
-        <div class="ai-acts"><button type="button" class="ghost" data-tab-go="study" data-pane="pol">전체 보기</button></div>
+        <div class="ai-acts"><button type="button" class="ghost" data-tab-go="subs">전체 보기</button></div>
       </div>
 
       <div class="card" id="regCard">
@@ -683,25 +683,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   </section>
 
   <!-- 숙제 -->
-  <section class="pane" id="tab-study" data-tab="study" hidden>
-    <h2 class="vtitle">숙제</h2>
-    <p class="vsub">왜 모으는지, 어떻게 쓰는지, 우리 조건에 맞는 집을 어떻게 찾는지 차근차근</p>
-    <div class="seg" id="studySeg" role="group" aria-label="숙제 종류">
-      <button type="button" data-pane="board" aria-pressed="true">시기별 숙제</button>
-      <button type="button" data-pane="pol" aria-pressed="false">정책·청약</button>
-    </div>
-    <div id="paneBoard">
-      <div class="boardbar">
-        <span id="bdText">0 / 0</span>
-        <div class="bar"><i id="bdBar"></i></div>
-        <label><input type="checkbox" id="onlyOpen"> 남은 것만</label>
-      </div>
-      <div class="stack" id="phases"></div>
-    </div>
-    <div id="panePol" hidden>
+  <section class="pane" id="tab-subs" data-tab="subs" hidden>
+    <button type="button" class="ghost" data-tab-go="home" style="margin:4px 0 12px">← 홈으로</button>
       <div class="card" id="subsCard" style="margin-bottom:18px">
         <div class="mhead"><h3>청약 공고 리스트</h3><span class="chip" id="subsCount">0건</span></div>
-        <p class="hsub" id="subsMeta">아직 공고를 찾지 않았어요.</p>
+        <p class="hsub" id="subsMeta">아직 가져온 공고가 없어요.</p>
         <div class="ai-acts"><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label></div>
         <div class="ai-acts" style="margin-top:8px"><label class="chkp">정렬 <select id="subsSort" style="height:32px;font-size:13px"><option value="fit">순위 순</option><option value="end">마감 빠른 순</option></select></label></div>
         <div class="subcap"><label class="f"><span class="lbl">💰 내 분양가 상한 (순위·초과 표시 기준)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="비우면 자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></div>
@@ -713,6 +699,23 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <p class="note" id="subsImportMsg" style="margin-top:8px"></p>
         </details>
       </div>
+  </section>
+  <section class="pane" id="tab-study" data-tab="study" hidden>
+    <h2 class="vtitle">숙제</h2>
+    <p class="vsub">왜 모으는지, 어떻게 쓰는지, 우리 조건에 맞는 집을 어떻게 찾는지 차근차근</p>
+    <div class="seg" id="studySeg" role="group" aria-label="숙제 종류">
+      <button type="button" data-pane="board" aria-pressed="true">시기별 숙제</button>
+      <button type="button" data-pane="pol" aria-pressed="false">정책</button>
+    </div>
+    <div id="paneBoard">
+      <div class="boardbar">
+        <span id="bdText">0 / 0</span>
+        <div class="bar"><i id="bdBar"></i></div>
+        <label><input type="checkbox" id="onlyOpen"> 남은 것만</label>
+      </div>
+      <div class="stack" id="phases"></div>
+    </div>
+    <div id="panePol" hidden>
       <p class="vsub" style="margin-top:0">우리에게 맞을 만한 제도예요. 아래 기준은 인터넷 자료를 요약한 것이라 틀릴 수 있어요. 링크의 공식 사이트에서 꼭 확인하세요.</p>
       <div class="tabs" id="polTabs" role="group" aria-label="분류">
         <button type="button" data-kind="" aria-pressed="true">전체</button>
@@ -980,11 +983,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
 
   /* ---------- tabs ---------- */
-  var TABS = ['home', 'calc', 'homes', 'study'];
+  var TABS = ['home', 'calc', 'homes', 'study', 'subs'];
   function showTab(name, noScroll) {
     if (TABS.indexOf(name) < 0) name = 'home';
     $$('.pane').forEach(function (p) { p.hidden = p.dataset.tab !== name; });
-    $$('.tabbar button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tabGo === name ? 'true' : 'false'); });
+    $$('.tabbar button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tabGo === (name === 'subs' ? 'home' : name) ? 'true' : 'false'); });
     try { localStorage.setItem('ttk-tab', name); } catch (e) {}
     try { history.replaceState(null, '', '#' + name); } catch (e) {}
     if (!noScroll) window.scrollTo(0, 0);
@@ -1206,7 +1209,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     subSort(ids);
     var todo = Object.keys(subsState).filter(function (id) { return subTodo(subsState[id], me ? me.toUpperCase() : null); }).length;
     $('#subsCount').textContent = todo + '건 확인할 차례';
-    $('#subsMeta').textContent = subsMeta.updatedAt ? '마지막 공고 찾기 ' + String(subsMeta.updatedAt).slice(0, 10) + (subsMeta.summary ? ' · ' + subsMeta.summary : '') + (hid ? ' · 희망 평형이 없어 숨긴 공고 ' + hid + '건' : '') : '아직 공고를 찾지 않았어요. “공고 찾기”를 눌러 안내를 따라 보세요.';
+    $('#subsMeta').textContent = subsMeta.updatedAt ? '마지막 업데이트 ' + String(subsMeta.updatedAt).slice(0, 10) + (subsMeta.summary ? ' · ' + subsMeta.summary : '') + (hid ? ' · 희망 평형이 없어 숨긴 공고 ' + hid + '건' : '') : '아직 가져온 공고가 없어요.';
     var seen = {};
     ids.forEach(function (id) { seen[id] = 1; var row = box.querySelector('.sub[data-id="' + id + '"]'); if (!row) { row = makeSubRow(id); box.appendChild(row); } fillSubRow(row, subsState[id]); });
     $$('.sub', box).forEach(function (r) { if (!seen[r.dataset.id]) r.remove(); });
