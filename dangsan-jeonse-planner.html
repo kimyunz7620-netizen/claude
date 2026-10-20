@@ -636,7 +636,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <label class="f"><span class="lbl">찾고 싶은 전세가 (대략)</span><span class="in"><input id="f-deposit" data-f="deposit" type="number" inputmode="decimal" min="0" step="500"><em>만원</em></span><span class="hint" data-h="deposit"></span></label>
           <label class="f"><span class="lbl">입주 목표 시기</span><input id="f-targetDate" data-f="targetDate" data-t="text" type="month" value="2028-05" placeholder="YYYY-MM"></label>
           <label class="f"><span class="lbl">혼인신고 예정월</span><input id="f-marriageDate" data-f="marriageDate" data-t="text" type="month" placeholder="YYYY-MM"></label>
-          <label class="f"><span class="lbl">출산 계획</span><select id="f-babyPlan" data-f="babyPlan" data-t="text"><option value="">아직 정하지 않음</option><option value="soon">입주 후 2년 안에 계획</option><option value="none">당분간 계획 없음</option></select></label>
           <label class="f"><span class="lbl">찾는 전용면적 최소</span><span class="in"><input id="f-areaMin" data-f="areaMin" type="number" inputmode="decimal" min="0" step="1" placeholder="40"><em>㎡</em></span><span class="hint" data-hp="areaMin"></span></label>
           <label class="f"><span class="lbl">찾는 전용면적 최대</span><span class="in"><input id="f-areaMax" data-f="areaMax" type="number" inputmode="decimal" min="0" step="1" placeholder="60"><em>㎡</em></span><span class="hint" data-hp="areaMax"></span></label>
           <label class="f wide"><span class="lbl">월 이자 부담 기준 (자가 전환을 생각해 타이트하게)</span><select id="f-stance" data-f="stance" data-t="text"><option value="tight">타이트 · 월 실수령의 10% 이하</option><option value="normal">보통 · 15% 이하</option><option value="loose">여유 · 20% 이하</option></select></label>
@@ -660,15 +659,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <p class="hsub" style="margin-top:8px">금리는 제가 둔 가정값이에요. 공식 금리표로 바꿔 넣으세요.</p>
           <div class="fields">
             <label class="f"><span class="lbl">버팀목 금리 (연)</span><span class="in"><input id="f-asmRateBeotim" data-f="asmRateBeotim" type="number" inputmode="decimal" min="0" step="0.1" placeholder="2.2"><em>%</em></span></label>
-            <label class="f"><span class="lbl">신생아 특례 금리 (연)</span><span class="in"><input id="f-asmRateNewborn" data-f="asmRateNewborn" type="number" inputmode="decimal" min="0" step="0.1" placeholder="2.0"><em>%</em></span></label>
             <label class="f"><span class="lbl">시중은행 금리 (연)</span><span class="in"><input id="f-asmRateBank" data-f="asmRateBank" type="number" inputmode="decimal" min="0" step="0.1" placeholder="3.8"><em>%</em></span></label>
             <label class="f"><span class="lbl">버팀목 대출 한도</span><span class="in"><input id="f-asmCapBeotim" data-f="asmCapBeotim" type="number" inputmode="decimal" min="0" step="500" placeholder="30000"><em>만원</em></span></label>
-            <label class="f"><span class="lbl">신생아 특례 대출 한도</span><span class="in"><input id="f-asmCapNewborn" data-f="asmCapNewborn" type="number" inputmode="decimal" min="0" step="500" placeholder="24000"><em>만원</em></span></label>
             <label class="f"><span class="lbl">버팀목 소득 상한(합산)</span><span class="in"><input id="f-asmIncBeotim" data-f="asmIncBeotim" type="number" inputmode="decimal" min="0" step="100" placeholder="7500"><em>만원</em></span></label>
-            <label class="f"><span class="lbl">신생아 특례 소득 상한(합산)</span><span class="in"><input id="f-asmIncNewborn" data-f="asmIncNewborn" type="number" inputmode="decimal" min="0" step="100" placeholder="20000"><em>만원</em></span></label>
             <label class="f"><span class="lbl">예금 금리 (기회비용용)</span><span class="in"><input id="f-asmSave" data-f="asmSave" type="number" inputmode="decimal" min="0" step="0.1" placeholder="3.0"><em>%</em></span></label>
           </div>
-          <p class="note">버팀목 금리는 자료의 연 1.5~2.7% 중간쯤, 신생아 특례와 시중은행 금리는 확인하지 못해 임의로 둔 값이에요. 한도는 자료마다 달라 보수적으로 잡았고, 시중은행은 전세가의 80%까지만 빌린다고 보고 DSR은 넣지 않았어요. 신청 직전에 공식 사이트로 확인하세요.</p>
+          <p class="note">버팀목 금리는 자료의 연 1.5~2.7% 중간쯤, 시중은행 금리는 확인하지 못해 임의로 둔 값이에요. 한도는 자료마다 달라 보수적으로 잡았고, 시중은행은 전세가의 80%까지만 빌린다고 보고 DSR은 넣지 않았어요. 신청 직전에 공식 사이트로 확인하세요.</p>
         </details>
       </div>
     </div>
@@ -756,7 +752,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
             <label class="f"><span class="lbl">무주택 여부</span><select id="f-homeless" data-f="homeless" data-t="text"><option value="">아직 몰라요</option><option value="yes">둘 다 무주택</option><option value="no">집이 있어요</option></select></label>
             <label class="f"><span class="lbl">생애최초 (집을 가진 적 없음)</span><select id="f-firstHome" data-f="firstHome" data-t="text"><option value="">아직 몰라요</option><option value="yes">둘 다 맞아요</option><option value="no">아니에요</option></select></label>
           </div>
-          <p class="note" style="margin:6px 0 0">한 번만 적어 두면 돼요. 조건이 안 맞는 공고는 목록에서 숨겨요(“조건 안 맞는 공고도 보기”로 볼 수 있어요). 혼인신고 예정월·출산 계획은 모으기 탭 설정에 있어요. 일반적인 기준이라 공고문 확인은 꼭 필요해요.</p>
+          <p class="note" style="margin:6px 0 0">한 번만 적어 두면 돼요. 조건이 안 맞는 공고는 목록에서 숨겨요(“조건 안 맞는 공고도 보기”로 볼 수 있어요). 혼인신고 예정월은 모으기 탭 설정에 있어요. 일반적인 기준이라 공고문 확인은 꼭 필요해요.</p>
         </details>
         <details class="setbox"><summary id="setSum">⚙️ 내 기준</summary>
         <div class="ai-acts"><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label><label class="chkp"><input type="checkbox" id="subsAll"> 조건 안 맞는 공고도 보기</label></div>
@@ -876,7 +872,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
     { id: 'policy', ph: 'p1', star: 1, who: 'both', t: '지원 제도 큰 그림 파악하기',
       why: '대출 종류에 따라 금리가 크게 달라서, 같은 보증금도 월 이자가 달라져요.',
-      steps: ['숙제 탭의 정책·청약 카드를 하나씩 읽고 상태 표시하기', '버팀목·신생아 특례·시중은행의 차이를 서로 말해 보기', '우리 합산 소득이 어느 기준에 걸리는지 확인', '혼인신고 시점을 언제로 잡으면 어떤 제도에 유리한지 정리', '출산 계획에 따라 달라지는 조건 이야기하기'], l: ['fund'] },
+      steps: ['숙제 탭의 정책·청약 카드를 하나씩 읽고 상태 표시하기', '버팀목·시중은행의 차이를 서로 말해 보기', '우리 합산 소득이 어느 기준에 걸리는지 확인', '혼인신고 시점을 언제로 잡으면 어떤 제도에 유리한지 정리'], l: ['fund'] },
     { id: 'sim', ph: 'p1', star: 1, who: 'both', t: '대출 모의심사 해 보기',
       why: '가정값이 아니라 공식 금리와 한도를 알아야 역산 결과가 정확해져요.',
       steps: ['기금e든든에서 버팀목 모의심사 해 보기', '시중은행 전세대출 한도·금리를 조회해 보기(조회가 신용에 영향을 주는지 먼저 확인)', '역산 탭의 가정값을 공식 값으로 바꿔 넣기', '바뀐 결과를 처음 결과와 비교하기'], l: ['fund'] },
@@ -940,10 +936,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       sum: '혼인 7년 이내 무주택 세대주가 받는 정책 전세대출이에요. 시중 금리보다 낮고, 한도는 보증금의 80% 이내로 제한돼요.',
       basis: '수도권 최대 3억 원, 부부합산 연소득 7,500만 원 이하, 순자산 3.45억 원 이하로 소개돼요. 한도는 자료마다 2.5억·3억으로 달라요.',
       chk: ['신청 시점의 소득·자산 기준과 금리표', '부부합산 소득을 어느 해 소득으로 보는지', '당산동 소형 전세 보증금이 한도 안에 들어오는지'], l: ['fund'] },
-    { id: 'newborn', n: '신생아 특례 버팀목 전세대출', k: '대출', star: 1,
-      sum: '2년 안에 출산한 가구를 위한 우대 전세대출이에요. 일반 신혼 상품보다 소득 문턱이 높고 금리가 낮은 편으로 소개돼요.',
-      basis: '부부합산 소득 2억 원 이하, 자산 3.37억 원 이하로 안내돼요. 한도는 2.4억·3억 등 자료마다 달라요. 2025년 6월 이후 계약부터 조정됐다는 설명도 있어요.',
-      chk: ['출산 시점과 신청 가능 기간', '한도와 금리의 공식 기준', '일반 신혼 버팀목과 중복 가능한지'], l: ['fund'] },
     { id: 'bank', n: '시중은행 전세대출 + 전세보증보험', k: '대출', star: 0,
       sum: '정책대출 소득 기준을 넘거나 한도가 모자랄 때 쓰는 방법이에요. HUG, HF, SGI 보증을 끼고 받아요.',
       basis: '스트레스 DSR 적용 단계와 영향은 자료마다 설명이 달라요. 한도와 금리는 은행마다 달라요.',
@@ -964,10 +956,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       sum: '혼인 7년 이내 무주택 세대에 분양 물량을 먼저 배정하는 제도예요. 전용 85㎡ 이하 주택이 대상이에요.',
       basis: '맞벌이 소득 상한이 1억 2천만 원에서 1억 6천만 원으로 완화됐다는 보도 인용이 있으나 2차 자료예요. 가점 산정은 공고문마다 확인이 필요해요.',
       chk: ['소득·자산 기준과 우리 부부 소득 비교', '청약통장 가입 기간과 납입 횟수 요건', '관심 지역(영등포·마포·강서)의 분양 일정'], l: ['apply'] },
-    { id: 'spbaby', n: '신생아 특별공급', k: '청약', star: 0,
-      sum: '출산 가구를 위한 특별공급이에요. 2026년 개편으로 민영 분양에도 생겼다는 설명이 있어요.',
-      basis: '세부 조건은 이번 조사에서 확인하지 못했어요.',
-      chk: ['신생아 특공이 적용되는 단지와 소득 기준', '출산 시점 기준(자녀 연령)'], l: ['apply'] },
     { id: 'general', n: '일반공급 청약 (가점제·추첨제)', k: '청약', star: 0,
       sum: '서울 인기 지역은 가점이 높아야 당첨돼요. 무주택 기간, 부양가족 수, 통장 가입 기간이 가점이에요.',
       basis: '가점 항목별 점수는 이번 조사에서 확인하지 못했어요. 청약홈 가점 계산기로 확인해요.',
@@ -1106,9 +1094,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     return [
       { id: 'beotim', n: '버팀목', full: '신혼부부 버팀목', rate: A('asmRateBeotim'), cap: A('asmCapBeotim'),
         elig: income > 0 && income <= incB, chip: income <= 0 ? ['연소득 입력', 'plain'] : income <= incB ? ['대상 가능', 'ok'] : ['소득 초과', 'bad'] },
-      { id: 'newborn', n: '신생아 특례', full: '신생아 특례 버팀목', rate: A('asmRateNewborn'), cap: A('asmCapNewborn'),
-        elig: baby === 'soon' && income > 0 && income <= incN,
-        chip: baby !== 'soon' ? ['출산 계획 필요', 'warn'] : income > incN ? ['소득 초과', 'bad'] : income <= 0 ? ['연소득 입력', 'plain'] : ['대상 가능', 'ok'] },
       { id: 'bank', n: '시중은행', full: '시중은행 전세대출', rate: A('asmRateBank'), cap: 1e9, elig: true, chip: ['누구나', 'plain'] }
     ];
   }
@@ -1193,7 +1178,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
   function eligOf(x, T) {
     var n = 0, b = 0, f = 0, u = 0; T.forEach(function (t) { n += t.n || 0; b += t.b || 0; f += t.f || 0; u += t.u || 0; });
-    var noAcc = /무순위|잔여|임의|오피스텔|도시형|민간임대/.test((x.kind || '') + ' ' + (x.name || '')), rent = !noAcc && /SH임대|LH임대|공공임대/.test(x.kind || ''); if (noAcc || rent) { n = 0; b = 0; f = 0; }
+    var noAcc = /무순위|잔여|임의|오피스텔|도시형|민간임대/.test((x.kind || '') + ' ' + (x.name || '')), rent = !noAcc && /SH임대|LH임대|공공임대/.test(x.kind || ''); b = 0; if (noAcc || rent) { n = 0; f = 0; }
     var notes = (Array.isArray(x.notes) ? x.notes : []).join(' '), hot = /투기과열/.test(notes), pub = /국민|공공/.test(x.kind || '') || /공공택지/.test(notes);
     var none = plan.accHas === 'none';
     function pn(k) { return plan[k] != null && plan[k] !== '' && isFinite(Number(plan[k])) ? Number(plan[k]) : null; }
@@ -1269,12 +1254,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var land = (Array.isArray(x.notes) ? x.notes : []).some(function (n) { return /토지임대/.test(n); });
     if (pmin && cap > 0 && !land) { if (pmin <= cap) { pOk = 'yes'; ps = 35; } else if (pmin <= cap * 1.3) { pOk = 'near'; ps = 12; } else { pOk = 'no'; ps = 0; } }
     sc += ps; br.push('금액 ' + ps + '/35');
-    var sp = T.reduce(function (n, t) { return n + (t.n || 0) + (t.b || 0); }, 0), el0 = eligOf(x, T), ss = sp > 0 ? (el0.specOk ? 10 : 4) : 0; sc += ss - (el0.allBad ? 20 : 0) + (el0.noAcc && el0.known && el0.acc < 6 ? 40 : 0) + (el0.rent && el0.known && el0.acc < 6 ? 15 : 0); br.push('신혼·신생아 특공 ' + ss + '/10');
+    var sp = T.reduce(function (n, t) { return n + (t.n || 0); }, 0), el0 = eligOf(x, T), ss = sp > 0 ? (el0.specOk ? 10 : 4) : 0; sc += ss - (el0.allBad ? 20 : 0) + (el0.noAcc && el0.known && el0.acc < 6 ? 40 : 0) + (el0.rent && el0.known && el0.acc < 6 ? 15 : 0); br.push('신혼·신생아 특공 ' + ss + '/10');
     var mv = 5, my = /^\d{4}-\d{2}$/.test(x.moveIn || '') ? x.moveIn : '';
     if (my) { var gap = Math.abs((+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5)))); mv = gap <= 6 ? 10 : gap <= 12 ? 5 : 0; }
     sc += mv; br.push('입주시기 ' + mv + '/10');
-    if (sp > 0) cau.push({ g: 1, t: '우리 같은 신혼 케이스에 맞아요 — 신혼부부 특별공급 ' + T.reduce(function (n, t) { return n + (t.n || 0); }, 0) + '세대, 신생아 특별공급 ' + T.reduce(function (n, t) { return n + (t.b || 0); }, 0) + '세대가 있어요.' });
-    else if (T.length) cau.push({ t: '신혼·신생아 특별공급 물량이 없어요. 일반공급만 노려볼 수 있어요.' });
+    if (sp > 0) cau.push({ g: 1, t: '우리 같은 신혼 케이스에 맞아요 — 신혼부부 특별공급 ' + T.reduce(function (n, t) { return n + (t.n || 0); }, 0) + '세대가 있어요.' });
+    else if (T.length) cau.push({ t: '신혼 특별공급 물량이 없어요. 일반공급만 노려볼 수 있어요.' });
     if (el0.allBad) cau.push({ b: 1, t: '지금 입력한 정보로는 신청 자격이 안 맞아 보여요. 아래 “내 자격”에서 어느 조건이 걸리는지 확인하세요.' });
     if (pOk === 'no') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')을 넘어요. 가장 싼 평형이 ' + fmt(pmin) + '이에요.' });
     else if (pOk === 'near') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')보다 조금 높아요. 가장 싼 평형이 ' + fmt(pmin) + '이에요.' });
@@ -1293,7 +1278,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (pOk === 'yes') pos.push('금액이 상한(' + fmt(cap) + ') 안이에요');
     if (aOk === 'yes') pos.push(inR.length ? '희망 평형(' + inR.map(function (t) { return t.a + '㎡'; }).join('·') + ')이 있어요' : '희망 평형이 있어요');
     if (rOk) pos.push('관심 지역이에요');
-    if (el0.specOk) pos.push('내 자격에 맞는 특별공급이 있어요'); else if (sp > 0) pos.push('신혼·신생아 특별공급 물량이 있어요');
+    if (el0.specOk) pos.push('내 자격에 맞는 특별공급이 있어요'); else if (sp > 0) pos.push('신혼 특별공급 물량이 있어요');
     if (my) { var g3 = Math.abs((+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5)))); if (g3 <= 6) pos.push('입주 시기(' + dotYm(my) + ')가 목표와 맞아요'); }
     return { land: land, el: el0, pos: pos, sp: sp, score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
   }
@@ -1380,7 +1365,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     return ['- 합산 연소득 ' + (c.income > 0 ? fmt(c.income) : '미입력') + ' (맞벌이 신혼부부)', '- 입주 때까지 모을 수 있는 현금 ' + (c.canTotal > 0 ? fmt(c.canTotal) : '미입력'), '- 청약통장 가입기간: ' + (ac || '미입력'),
       '- 무주택: ' + (plan.homeless === 'yes' ? '둘 다 무주택' : plan.homeless === 'no' ? '집이 있음' : '미입력'), '- 생애최초: ' + (plan.firstHome === 'yes' ? '해당' : plan.firstHome === 'no' ? '비해당' : '미입력'),
       '- 사는 곳: ' + ((plan.resid || '미입력') + (plan.residGu ? ' ' + plan.residGu : '')) + ' · 최근 10년 내 당첨 이력: ' + (plan.winPast === 'yes' ? '있음' : plan.winPast === 'no' ? '없음' : '미입력'),
-      '- 혼인신고 예정월: ' + (validYm(plan.marriageDate) ? plan.marriageDate : '미정'), '- 출산 계획: ' + (plan.babyPlan === 'soon' ? '입주 후 2년 안' : plan.babyPlan === 'none' ? '당분간 없음' : '미정'),
+      '- 혼인신고 예정월: ' + (validYm(plan.marriageDate) ? plan.marriageDate : '미정'),
       '- 찾는 전용면적: ' + areaRange()[0] + '~' + areaRange()[1] + '㎡',
       '- 감당 가능한 분양가 상한(모은 돈 + 대출, LTV ' + (has('subsLtv') ? num('subsLtv') : 50) + '% 가정): ' + (ev.cap > 0 ? fmt(ev.cap) : '미정')].join('\n');
   }
@@ -1537,7 +1522,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '너는 신혼부부 윤지·성빈이 청약 공고를 고르는 걸 돕는 도우미야. 아래 순서대로 해 줘.', '',
       '[우리 조건 — ' + todayStr() + ' 기준]',
       '- 합산 연소득 ' + (c.income > 0 ? fmt(c.income) : '미입력') + ' · 입주 때까지 둘이 모을 수 있는 돈 ' + (c.canTotal > 0 ? fmt(c.canTotal) : '미입력') + ' · 목표 전세가 ' + (num('deposit') > 0 ? fmt(num('deposit')) : '미정'),
-      '- 혼인신고 예정월 ' + (validYm(plan.marriageDate) ? plan.marriageDate : '미정') + ' · 출산 계획 ' + (plan.babyPlan === 'soon' ? '입주 후 2년 안에 있음' : plan.babyPlan === 'none' ? '당분간 없음' : '미정') + ' · 찾는 전용면적 ' + ar[0] + '~' + ar[1] + '㎡ · 입주 목표 ' + dotYm(targetYm()),
+      '- 혼인신고 예정월 ' + (validYm(plan.marriageDate) ? plan.marriageDate : '미정') + ' · 찾는 전용면적 ' + ar[0] + '~' + ar[1] + '㎡ · 입주 목표 ' + dotYm(targetYm()),
       '- 둘 다 무주택인 예비 신혼부부야. 청약통장 가입 기간·납입 횟수와 순자산은 아직 몰라(필요하면 “확인 필요”로 처리해).', '',
       '[1] 공고 찾기 (크롬, 읽기만)',
       '- 청약홈(applyhome.co.kr)의 분양정보에서 지금 접수 중이거나 앞으로 2개월 안에 접수가 시작되는 APT 공고를 찾아. LH청약플러스와 SH 공고도 같이 봐.',
@@ -1866,7 +1851,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       row.appendChild(el('div', 'l2', okd ? '최대 ' + fmt(p.Lmax) + ' · 월 이자 ' + fmt(interestOf(p, p.Lmax)) + ' · 연 ' + p.rate + '% 가정' : '연 ' + p.rate + '% 가정'));
       body.appendChild(row);
     });
-    $('#rvLoanNote').textContent = c.ready ? '월 이자 예산 ' + fmt(c.budget) + ' 안에서 받을 수 있는 대출이에요. 버팀목·신생아 특례는 대상이 아니면 시중은행만 해당돼요.' : '연소득을 입력하면 계산돼요.';
+    $('#rvLoanNote').textContent = c.ready ? '월 이자 예산 ' + fmt(c.budget) + ' 안에서 받을 수 있는 대출이에요. 버팀목은 소득이 넘으면 대상이 아니고, 그러면 시중은행만 해당돼요.' : '연소득을 입력하면 계산돼요.';
 
     var sb = $('#rvScenBody'); sb.textContent = '';
     var D = D0, list = SCEN.slice();
@@ -1964,13 +1949,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     vd.appendChild(B(range)); vd.appendChild(document.createTextNode('대를 찾으면 돼요. '));
     var i1 = interestOf(lo.p, lo.L), i2 = interestOf(hi.p, hi.L);
     vd.appendChild(document.createTextNode('이 범위에서 대출은 약 ' + (hi.L - lo.L >= 500 ? fmtS(lo.L) + ' ~ ' + fmt(hi.L) : fmt(lo.L)) + ', 월 이자는 약 ' + (Math.abs(i2 - i1) >= 1 ? fmtS(i1) + ' ~ ' + fmt(i2) : fmt(i1)) + '이에요.'));
-    if ((plan.babyPlan || '') !== 'soon' && c.income > 0 && c.income <= A('asmIncNewborn')) vd.appendChild(document.createTextNode(' 출산 계획이 있다면 신생아 특례(연 ' + A('asmRateNewborn') + '% 가정, 한도 ' + fmt(A('asmCapNewborn')) + ')로 이자를 크게 줄일 수 있어요. 역산 탭에서 출산 계획을 골라 보세요.'));
     item('🔎', '전세가 ' + fmtS(dl) + '~' + fmt(dh) + ' 매물 찾기', '네이버 부동산 필터 → 거래 전세 · 아파트 · 면적 최소 ' + areaRange()[0] + '㎡ ~ 최대 ' + areaRange()[1] + '㎡(약 ' + pyeong(areaRange()[0]) + '~' + pyeong(areaRange()[1]) + '평) · 보증금 최소 ' + fmtS(Math.max(0, fl500(dl * 0.7))) + ' ~ 최대 ' + fmt(dh), false, ['찾는 법', 'homes'], '#guide');
     var n = cxData.size; item('🏢', '후보 단지 5곳 추가하기', n + ' / 5곳 추가됨', n >= 5, ['추가', 'homes']);
     var lastD = null; cxData.forEach(function (d, id) { seriesOf(id).forEach(function (x) { if (!lastD || x.d > lastD) lastD = x.d; }); });
     var ago = lastD ? dayNum(todayStr()) - dayNum(lastD) : null;
     item('📈', '주 1회 시세 기록하기', lastD ? '마지막 기록 ' + Math.max(0, ago) + '일 전 · 4주 쌓이면 추세 분석이 의미 있어요' : '아직 기록이 없어요. 같은 요일에 단지별 최저 호가를 넣어요.', ago != null && ago <= 8, ['기록', 'homes']);
-    if (!plan.babyPlan) item('👶', '출산 계획 정하기', '신생아 특례를 쓸 수 있는지에 따라 이자가 크게 달라져요.', false, ['정하기', 'calc']);
     var me0 = getMe(), nSub = Object.keys(subsState).filter(function (id) { return subTodo(subsState[id], me0 ? me0.toUpperCase() : null); }).length;
     if (nSub) item('📣', '청약 공고 ' + nSub + '건 확인하기', '마감이 가까운 순으로 정렬돼 있어요.', false, ['보기', 'subs'], null);
     var me = getMe(), tasks = allTasks(), cur = currentPhase(), pick = null;
