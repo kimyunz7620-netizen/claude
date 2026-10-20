@@ -674,9 +674,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       <div class="card" id="subsCard" style="margin-bottom:18px">
         <div class="mhead"><h3>청약 공고 리스트</h3><span class="chip" id="subsCount">0건</span></div>
         <p class="hsub" id="subsMeta">아직 공고를 찾지 않았어요.</p>
-        <div class="ai-acts"><button type="button" id="subsFind">공고 찾기</button><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 내 평형·지역만 보기</label></div>
+        <div class="ai-acts"><button type="button" id="subsFind">공고 찾기</button><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label></div>
         <div class="ai-acts" style="margin-top:8px"><label class="chkp">정렬 <select id="subsSort" style="height:32px;font-size:13px"><option value="fit">적합도 높은 순</option><option value="end">마감 빠른 순</option></select></label></div>
-        <div class="subcap"><label class="f"><span class="lbl">살 수 있는 분양가 상한 (적합도 계산용)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></div>
+        <details class="more subcap"><summary>분양가 상한 설정 (순위 계산용)</summary><label class="f"><span class="lbl">살 수 있는 분양가 상한 (적합도 계산용)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></details>
         <div class="routine subs-how" id="subsHow" hidden>
           <b>공고 찾는 방법 (크롬의 Claude 확장 프로그램)</b>
           <ol>
@@ -1075,8 +1075,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   var SUBFIT = { good: ['신청 가능성 있음', 'ok'], check: ['확인 필요', 'warn'], no: ['해당 없음', 'bad'] };
   var SUBSTATUS = [['', '상태 선택'], ['interest', '관심'], ['plan', '신청 예정'], ['pass', '패스']];
   function safeUrl(u) { u = String(u || ''); return /^https:\/\/[^\s]+$/.test(u) ? u : null; }
+  function subShown(x) { return evalSub(x).aOk !== 'no'; }
   function subActive(x) { return !validD(x.applyEnd) || dayNum(x.applyEnd) >= dayNum(todayStr()); }
-  function subTodo(x, me) { return subActive(x) && x.fit !== 'no' && x.status !== 'pass' && !(me ? x['chk' + me] : (x.chkA && x.chkB)); }
+  function subTodo(x, me) { return subActive(x) && subShown(x) && x.fit !== 'no' && x.status !== 'pass' && !(me ? x['chk' + me] : (x.chkA && x.chkB)); }
   function subCap() {
     if (has('subsMax')) return [num('subsMax'), false];
     var c = core; return c && c.canTotal > 0 ? [Math.floor(c.canTotal / 0.3 / 100) * 100, true] : [0, true];
@@ -1101,7 +1102,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     sc += mv; br.push('입주시기 ' + mv + '/10');
     if (pOk === 'no') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')을 넘어요 — 최저 ' + fmt(pmin) });
     else if (pOk === 'near') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')보다 조금 높아요 — 최저 ' + fmt(pmin) });
-    else if (pOk === 'unknown') cau.push({ t: '분양가 정보가 없어서 금액 적합도는 확인이 필요해요' });
+    
     if (aOk === 'no') cau.push({ t: '희망 평형(' + ar[0] + '~' + ar[1] + '㎡)이 없어요 — 있는 평형 ' + T.map(function (t) { return t.a; }).join('·') + '㎡' });
     if (!rOk) cau.push({ t: '관심 지역(영등포·마포·강서·양천·동작)이 아니에요' });
     if (my) { var g2 = (+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5))); if (Math.abs(g2) > 6) cau.push({ t: '입주 ' + dotYm(my) + ' — 목표(' + dotYm(targetYm()) + ')보다 ' + Math.abs(g2) + '개월 ' + (g2 > 0 ? '늦어요' : '빨라요') }); }
@@ -1118,10 +1119,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var tiles = el('div', 'tiles'); tiles.dataset.tiles = '1'; row.appendChild(tiles);
     var tl = el('div', 'tl'); tl.dataset.tl = '1'; row.appendChild(tl);
     var cau = el('div', 'cau'); cau.dataset.cau = '1'; row.appendChild(cau);
-    var info = el('div', 'info'); info.dataset.info = '1'; row.appendChild(info);
-    var why = el('div', 'why'); why.dataset.why = '1'; row.appendChild(why);
-    var brk = el('div', 'brk'); brk.dataset.brk2 = '1'; row.appendChild(brk);
-    var links = el('div', 'links'); links.dataset.sl = '1'; row.appendChild(links);
+    var more = el('details', 'more'); more.appendChild(el('summary', null, '접수일·공급·링크 자세히'));
+    var info = el('div', 'info'); info.dataset.info = '1'; more.appendChild(info);
+    var why = el('div', 'why'); why.dataset.why = '1'; more.appendChild(why);
+    var brk = el('div', 'brk'); brk.dataset.brk2 = '1'; brk.hidden = true; more.appendChild(brk);
+    var links = el('div', 'links'); links.dataset.sl = '1'; more.appendChild(links); row.appendChild(more);
     var ctl = el('div', 'ctl');
     ['a', 'b'].forEach(function (w) { var l = el('label', 'ckl'), cb = el('input'); cb.type = 'checkbox'; cb.dataset.ck = w; var nm = el('b'); nm.dataset.cn = w; l.appendChild(cb); l.appendChild(nm); ctl.appendChild(l); });
     var sel = el('select'); sel.dataset.sk = 'status'; sel.setAttribute('aria-label', '상태'); SUBSTATUS.forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); }); ctl.appendChild(sel);
@@ -1141,11 +1143,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (validD(x.applyStart) && dayNum(x.applyStart) > dayNum(todayStr())) chips.appendChild(el('span', 'chip grape', '접수 시작 D-' + (dayNum(x.applyStart) - dayNum(todayStr()))));
     var st = row.querySelector('.st'); st.firstChild.textContent = x.name || '(이름 없음)'; st.lastChild.textContent = x.location || '';
     var ar = areaRange(), tiles = row.querySelector('[data-tiles]'); tiles.textContent = '';
-    function tile(lab, val, cls) { var t = el('div', 'tile ' + (cls || '')); t.appendChild(el('small', null, lab)); t.appendChild(el('b', null, val)); tiles.appendChild(t); }
-    tile('지역', (x.location || '–').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? 'ok' : 'warn');
-    tile('분양가', priceTxt(ev) || (x.price || '–'), ev.pOk === 'yes' ? 'ok' : ev.pOk === 'near' ? 'warn' : ev.pOk === 'no' ? 'bad' : '');
+    function tile(lab, val, cls) { if (!val || val === '–') return; var t = el('div', 'tile ' + (cls || '')); t.appendChild(el('small', null, lab)); t.appendChild(el('b', null, val)); tiles.appendChild(t); }
+    tile('지역', (x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? 'ok' : 'warn');
+    tile('분양가', priceTxt(ev) || String(x.price || '').slice(0, 24), ev.pOk === 'yes' ? 'ok' : ev.pOk === 'near' ? 'warn' : ev.pOk === 'no' ? 'bad' : '');
     var pyr = ev.T.length ? ev.T.map(function (t) { return t.a; }) : []; var pl = pyr.length ? Math.min.apply(null, pyr) : 0, ph = pyr.length ? Math.max.apply(null, pyr) : 0, rngTxt = pyr.length ? (pl === ph ? pl + '㎡ (' + pyeong(pl) + '평)' : pl + '~' + ph + '㎡ (' + pyeong(pl) + '~' + pyeong(ph) + '평)') : '–';
     tile('평형', rngTxt, ev.aOk === 'yes' ? 'ok' : ev.aOk === 'no' ? 'warn' : '');
+    tiles.hidden = !tiles.children.length; tiles.style.gridTemplateColumns = 'repeat(' + Math.max(1, tiles.children.length) + ', minmax(0, 1fr))';
     var tl = row.querySelector('[data-tl]'); tl.textContent = ''; tl.hidden = !ev.T.length;
     ev.T.forEach(function (t) {
       var ok = t.a >= ar[0] - 0.5 && t.a <= ar[1] + 0.5, pr = t.pmin ? (t.pmax && t.pmax !== t.pmin ? fmt(t.pmin) + '~' + fmt(t.pmax) : fmt(t.pmin)) : '분양가 미확인';
@@ -1179,13 +1182,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var box = $('#subsList'), showPast = $('#subsPast').checked, me = getMe();
     var onlyMine = $('#subsMatch').checked;
     var cp = subCap(), ch = $('#subsCapHint'); if (ch) ch.textContent = cp[0] > 0 ? (cp[1] ? '지금은 “둘이 모을 수 있는 금액 ÷ 30%” 로 자동 계산한 ' + fmt(cp[0]) + '을 쓰고 있어요(분양가의 약 30%를 자기 돈으로 낸다는 가정). 정확히 알면 직접 입력하세요.' : '직접 입력한 상한 ' + fmt(cp[0]) + '을 쓰고 있어요.') : '저축 가능 금액을 입력하면 자동으로 분양가 상한을 계산해요.';
-    var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; if (!(showPast || subActive(x))) return false; if (!onlyMine) return true; var e = evalSub(x); return e.aOk !== 'no' && e.rOk; });
-    var allr = Object.keys(subsState).filter(function (id) { return subActive(subsState[id]) && subsState[id].status !== 'pass'; }), fs = $('#subsSort').value; $('#subsSort').value = 'fit'; subSort(allr); $('#subsSort').value = fs;
+    var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; if (!(showPast || subActive(x)) || !subShown(x)) return false; if (!onlyMine) return true; return !!evalSub(x).rOk; });
+    var hid = Object.keys(subsState).filter(function (id) { return (showPast || subActive(subsState[id])) && !subShown(subsState[id]); }).length;
+    var allr = Object.keys(subsState).filter(function (id) { return subActive(subsState[id]) && subShown(subsState[id]) && subsState[id].status !== 'pass'; }), fs = $('#subsSort').value; $('#subsSort').value = 'fit'; subSort(allr); $('#subsSort').value = fs;
     subRank = {}; allr.forEach(function (id, i) { subRank[id] = i + 1; subsState[id]._id = id; });
     subSort(ids);
     var todo = Object.keys(subsState).filter(function (id) { return subTodo(subsState[id], me ? me.toUpperCase() : null); }).length;
     $('#subsCount').textContent = todo + '건 확인할 차례';
-    $('#subsMeta').textContent = subsMeta.updatedAt ? '마지막 공고 찾기 ' + String(subsMeta.updatedAt).slice(0, 10) + (subsMeta.summary ? ' · ' + subsMeta.summary : '') : '아직 공고를 찾지 않았어요. “공고 찾기”를 눌러 안내를 따라 보세요.';
+    $('#subsMeta').textContent = subsMeta.updatedAt ? '마지막 공고 찾기 ' + String(subsMeta.updatedAt).slice(0, 10) + (subsMeta.summary ? ' · ' + subsMeta.summary : '') + (hid ? ' · 희망 평형이 없어 숨긴 공고 ' + hid + '건' : '') : '아직 공고를 찾지 않았어요. “공고 찾기”를 눌러 안내를 따라 보세요.';
     var seen = {};
     ids.forEach(function (id) { seen[id] = 1; var row = box.querySelector('.sub[data-id="' + id + '"]'); if (!row) { row = makeSubRow(id); box.appendChild(row); } fillSubRow(row, subsState[id]); });
     $$('.sub', box).forEach(function (r) { if (!seen[r.dataset.id]) r.remove(); });
@@ -1370,7 +1374,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   });
   function renderSubsHome() {
     var box = $('#subsHomeList'); if (!box) return; box.textContent = '';
-    var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; return subActive(x) && x.status !== 'pass'; });
+    var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; return subActive(x) && subShown(x) && x.status !== 'pass'; });
     subSort(ids);
     $('#subsHomeCount').textContent = ids.length + '건';
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 가져온 공고가 없어요. “전체 보기 · 공고 찾기”에서 가져오세요.')); return; }
@@ -1379,7 +1383,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var sc = el('div', 'dd', (subRank[id] || '–') + '위'); sc.style.cssText = 'font-weight:800;min-width:40px;text-align:center'; row.appendChild(sc);
       var mid = el('div'); mid.appendChild(el('b', null, x.name || '(이름 없음)'));
       var ar = ev.T.map(function (t) { return t.a; });
-      mid.appendChild(el('small', null, (x.location || '') + ' · ' + (priceTxt(ev) || '분양가 미확인') + (ar.length ? ' · ' + (Math.min.apply(null, ar) === Math.max.apply(null, ar) ? Math.min.apply(null, ar) : Math.min.apply(null, ar) + '~' + Math.max.apply(null, ar)) + '㎡' : '')));
+      mid.appendChild(el('small', null, [x.location || '', priceTxt(ev)].filter(Boolean).join(' · ') + (ar.length ? ' · ' + (Math.min.apply(null, ar) === Math.max.apply(null, ar) ? Math.min.apply(null, ar) : Math.min.apply(null, ar) + '~' + Math.max.apply(null, ar)) + '㎡' : '')));
       var chips = el('div', 'chips'); chips.style.marginTop = '4px';
       if (dd != null) chips.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
       if (ev.pOk === 'no' || ev.pOk === 'near') chips.appendChild(el('span', 'chip bad', ev.pOk === 'no' ? '분양가 초과' : '분양가 조금 높음'));
