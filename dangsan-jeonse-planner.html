@@ -369,9 +369,9 @@ button.cat { display: flex; flex-direction: column; align-items: flex-start; jus
 .polread { display: flex; gap: 14px; align-items: center; margin: 8px 0 0; padding: 8px 12px; background: var(--bg); border-radius: 12px; font-size: 13.5px; }
 .polread label.who { display: flex; gap: 6px; align-items: center; cursor: pointer; font-weight: 700; }
 .cmp { padding: 12px 0; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; } .cmp:first-child { border-top: 0; }
-.cmp-h { display: flex; align-items: baseline; gap: 8px; } .cmp-h b { font-size: 16px; font-weight: 800; } .cmp-a { color: var(--muted); font-size: 12.5px; margin-left: auto; }
-.cmp-bar { position: relative; height: 26px; background: var(--bg); border-radius: 8px; overflow: hidden; } .cmp-bar i { display: block; height: 100%; background: var(--accent-soft, #dfe6ff); } .cmp-bar span { position: absolute; left: 10px; top: 0; line-height: 26px; font-weight: 800; font-size: 14px; }
-.cmp-s { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .cmp-s small { display: block; color: var(--muted); font-size: 11.5px; } .cmp-s b { font-size: 14px; }
+.cmp-h { display: flex; align-items: center; gap: 8px; } .cmp-h .chip { margin-left: auto; } .cmp-h b { font-size: 16px; font-weight: 800; } .cmp-a { color: var(--muted); font-size: 12.5px; margin: -4px 0 0 30px; }
+.cmp-bar { display: none; position: relative; height: 26px; background: var(--bg); border-radius: 8px; overflow: hidden; } .cmp-bar i { display: block; height: 100%; background: var(--accent-soft, #dfe6ff); } .cmp-bar span { position: absolute; left: 10px; top: 0; line-height: 26px; font-weight: 800; font-size: 14px; }
+.cmp-s { display: grid; grid-template-columns: 1.15fr .8fr 1.15fr; gap: 6px; } .cmp-s small { display: block; color: var(--muted); font-size: 11.5px; } .cmp-s { background: var(--bg); border-radius: 12px; padding: 10px 12px; } .cmp-s b { font-size: 13.5px; white-space: nowrap; }
 .cmp .spark { width: 100%; height: 36px; }
 #polWrap .pol { box-shadow: none; border: 1px solid var(--line); margin-top: 10px; }
 #hw-all .addtask, #hw-all .grp-h { display: none; }
@@ -383,6 +383,8 @@ button.cat { display: flex; flex-direction: column; align-items: flex-start; jus
 #hw-all .ph-sub, #hw-all .prog, #hw-all .badge { display: none; }
 #hw-all .ph-head h3 { font-size: 15px; color: var(--accent); }
 .more2 { margin: 8px 0 0; } .more2 > summary { color: var(--accent); font-weight: 700; font-size: 13px; cursor: pointer; }
+.chg { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 9px 0; border-top: 1px dashed var(--line); } .chg:first-child { border-top: 0; }
+.chg b { font-size: 14.5px; } .chg span { font-weight: 800; font-size: 14.5px; } .chg span.up { color: var(--coral-ink); } .chg span.down { color: var(--mint-ink); } .chg small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -462,7 +464,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </details>
       </div>
 
-      <div class="cats" id="cats"></div>
+      <div class="card" id="todayCard"><div class="mhead"><h3>오늘 할 일</h3><span class="chip" id="todayCount"></span></div><div id="todayList"></div></div>
+
+      <div class="card" id="chgCard" hidden><div class="mhead"><h3>시세 변동</h3><button type="button" class="ghost sm" data-tab-go="homes">보기</button></div><div id="chgList"></div></div>
 
       <div class="card" id="subsHome">
         <div class="mhead"><h3>청약 공고</h3><span class="chip" id="subsHomeCount">0건</span></div>
@@ -470,7 +474,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <div class="ai-acts"><button type="button" class="ghost" data-tab-go="subs">전체 보기</button></div>
       </div>
 
-      <div class="card" id="monthly">
+      <div class="card" id="homeProg"></div>
+
+      <div class="card" id="monthly" hidden>
         <div class="mhead"><h3>이번 달 할 일 · <span id="moLabel"></span></h3><span class="chip" id="moProg">0 / 3</span></div>
         <div id="moRows">
           <div class="quest" data-m="px"><span class="qi">🏢</span><div><b>후보 단지 시세 기록하기</b><small id="moPxSub"></small></div><button type="button" class="ghost" data-tab-go="homes">입력</button></div>
@@ -478,7 +484,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </div>
       </div>
 
-      <details class="card fold" id="nextCard">
+      <details class="card fold" id="nextCard" hidden>
         <summary>그래서 지금 해야 할 일</summary>
         <div class="fbody">
           <p class="verdict" id="verdict"></p>
@@ -500,7 +506,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </div>
       </details>
 
-      <details class="card fold" id="events">
+      <details class="card fold" id="events" open>
         <summary>일정 · D-day</summary>
         <div class="fbody">
           <p class="hsub">청약 접수일, 현재 집 계약 만료일, 상담 예약일 같은 날짜를 넣어 두세요.</p>
@@ -520,42 +526,15 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     <p class="vsub">얼마를 모아야 하는지 거꾸로 계산해요</p>
     <div class="stack">
       <div class="card">
-        <h3>우리 조건</h3>
-        <p class="hsub">지금 가진 돈은 넣지 않아요. 대출을 받고도 입주 때 최소 얼마가 모여 있어야 하는지(필수 저축액)를 보여 드려요.</p>
-        <div class="fields">
-          <label class="f"><span class="lbl">연소득 · <b data-nm="A">A</b></span><span class="in"><input id="f-incomeA" data-f="incomeA" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="incomeA"></span></label>
-          <label class="f"><span class="lbl">연소득 · <b data-nm="B">B</b></span><span class="in"><input id="f-incomeB" data-f="incomeB" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="incomeB"></span></label>
-          <label class="f"><span class="lbl">저축 가능 금액 · <b data-nm="A">A</b></span><span class="in"><input id="f-canA" data-f="canA" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="canA"></span></label>
-          <label class="f"><span class="lbl">저축 가능 금액 · <b data-nm="B">B</b></span><span class="in"><input id="f-canB" data-f="canB" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="canB"></span></label>
-        </div>
-        <p class="note" style="margin-top:8px">저축 가능 금액은 입주 때까지 각자 모을 수 있는 총액이에요.</p>
+        <h3>우리가 찾을 전세</h3>
         <div class="sumline">
           <div><span>합산 연소득</span><b id="sumInc">–</b></div>
           <div><span id="sumBudgetLabel">월 이자 예산</span><b id="sumBudget">–</b></div>
           <div><span>둘이 모을 수 있는 금액</span><b id="sumCan">–</b></div>
           <div><span>필수 저축액 (찾는 전세가 기준)</span><b id="sumNeed">–</b></div>
         </div>
-        <div class="fields">
-          <label class="f"><span class="lbl">찾고 싶은 전세가 (대략)</span><span class="in"><input id="f-deposit" data-f="deposit" type="number" inputmode="decimal" min="0" step="500"><em>만원</em></span><span class="hint" data-h="deposit"></span></label>
-          <label class="f"><span class="lbl">입주 목표 시기</span><input id="f-targetDate" data-f="targetDate" data-t="text" type="month" value="2028-05" placeholder="YYYY-MM"></label>
-          <label class="f"><span class="lbl">혼인신고 예정월</span><input id="f-marriageDate" data-f="marriageDate" data-t="text" type="month" placeholder="YYYY-MM"></label>
-          <label class="f"><span class="lbl">출산 계획</span><select id="f-babyPlan" data-f="babyPlan" data-t="text"><option value="">아직 정하지 않음</option><option value="soon">입주 후 2년 안에 계획</option><option value="none">당분간 계획 없음</option></select></label>
-          <label class="f"><span class="lbl">찾는 전용면적 최소</span><span class="in"><input id="f-areaMin" data-f="areaMin" type="number" inputmode="decimal" min="0" step="1" placeholder="40"><em>㎡</em></span><span class="hint" data-hp="areaMin"></span></label>
-          <label class="f"><span class="lbl">찾는 전용면적 최대</span><span class="in"><input id="f-areaMax" data-f="areaMax" type="number" inputmode="decimal" min="0" step="1" placeholder="60"><em>㎡</em></span><span class="hint" data-hp="areaMax"></span></label>
-          <label class="f wide"><span class="lbl">월 이자 부담 기준 (자가 전환을 생각해 타이트하게)</span><select id="f-stance" data-f="stance" data-t="text"><option value="tight">타이트 · 월 실수령의 10% 이하</option><option value="normal">보통 · 15% 이하</option><option value="loose">여유 · 20% 이하</option></select></label>
-        </div>
-        <details class="more">
-          <summary>이름과 자세한 입력 (선택)</summary>
-          <div class="fields">
-            <label class="f"><span class="lbl">첫 번째 사람 이름</span><input id="f-nameA" data-f="nameA" data-t="text" placeholder="윤지" maxlength="12"></label>
-            <label class="f"><span class="lbl">두 번째 사람 이름</span><input id="f-nameB" data-f="nameB" data-t="text" placeholder="성빈" maxlength="12"></label>
-            <label class="f"><span class="lbl">월 실수령 · <b data-nm="A">A</b></span><span class="in"><input id="f-netA" data-f="netA" type="number" inputmode="decimal" min="0" step="10"><em>만원</em></span><span class="hint" data-h="netA"></span></label>
-            <label class="f"><span class="lbl">월 실수령 · <b data-nm="B">B</b></span><span class="in"><input id="f-netB" data-f="netB" type="number" inputmode="decimal" min="0" step="10"><em>만원</em></span><span class="hint" data-h="netB"></span></label>
-            <label class="f"><span class="lbl">이사·중개·가전 등 부대비용</span><span class="in"><input id="f-costs" data-f="costs" type="number" inputmode="decimal" min="0" step="100" placeholder="0"><em>만원</em></span><span class="hint" data-h="costs"></span><span class="hint" data-brk></span></label>
-          </div>
-          <p class="note">월 실수령을 비워 두면 연소득의 80% ÷ 12로 추정해요. 이 값으로 월 이자 예산을 계산해요.</p>
-        </details>
       </div>
+
 
       <div class="card">
         <h3>받을 수 있는 대출 (소득 기준)</h3>
@@ -581,6 +560,39 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </div>
         <div class="rent-rows" id="rentOut"></div>
         <p class="note">묶인 돈의 이자는 그 돈을 예금에 넣었다면 받았을 이자예요(가정값 예금금리 기준). 집값 변화나 이사 비용은 넣지 않았어요.</p>
+      </div>
+
+      <div class="card">
+        <h3>⚙️ 우리 조건 (설정)</h3>
+        <p class="hsub">지금 가진 돈은 넣지 않아요. 대출을 받고도 입주 때 최소 얼마가 모여 있어야 하는지(필수 저축액)를 보여 드려요.</p>
+        <div class="fields">
+          <label class="f"><span class="lbl">연소득 · <b data-nm="A">A</b></span><span class="in"><input id="f-incomeA" data-f="incomeA" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="incomeA"></span></label>
+          <label class="f"><span class="lbl">연소득 · <b data-nm="B">B</b></span><span class="in"><input id="f-incomeB" data-f="incomeB" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="incomeB"></span></label>
+          <label class="f"><span class="lbl">저축 가능 금액 · <b data-nm="A">A</b></span><span class="in"><input id="f-canA" data-f="canA" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="canA"></span></label>
+          <label class="f"><span class="lbl">저축 가능 금액 · <b data-nm="B">B</b></span><span class="in"><input id="f-canB" data-f="canB" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="canB"></span></label>
+        </div>
+        <p class="note" style="margin-top:8px">저축 가능 금액은 입주 때까지 각자 모을 수 있는 총액이에요.</p>
+
+        <div class="fields">
+          <label class="f"><span class="lbl">찾고 싶은 전세가 (대략)</span><span class="in"><input id="f-deposit" data-f="deposit" type="number" inputmode="decimal" min="0" step="500"><em>만원</em></span><span class="hint" data-h="deposit"></span></label>
+          <label class="f"><span class="lbl">입주 목표 시기</span><input id="f-targetDate" data-f="targetDate" data-t="text" type="month" value="2028-05" placeholder="YYYY-MM"></label>
+          <label class="f"><span class="lbl">혼인신고 예정월</span><input id="f-marriageDate" data-f="marriageDate" data-t="text" type="month" placeholder="YYYY-MM"></label>
+          <label class="f"><span class="lbl">출산 계획</span><select id="f-babyPlan" data-f="babyPlan" data-t="text"><option value="">아직 정하지 않음</option><option value="soon">입주 후 2년 안에 계획</option><option value="none">당분간 계획 없음</option></select></label>
+          <label class="f"><span class="lbl">찾는 전용면적 최소</span><span class="in"><input id="f-areaMin" data-f="areaMin" type="number" inputmode="decimal" min="0" step="1" placeholder="40"><em>㎡</em></span><span class="hint" data-hp="areaMin"></span></label>
+          <label class="f"><span class="lbl">찾는 전용면적 최대</span><span class="in"><input id="f-areaMax" data-f="areaMax" type="number" inputmode="decimal" min="0" step="1" placeholder="60"><em>㎡</em></span><span class="hint" data-hp="areaMax"></span></label>
+          <label class="f wide"><span class="lbl">월 이자 부담 기준 (자가 전환을 생각해 타이트하게)</span><select id="f-stance" data-f="stance" data-t="text"><option value="tight">타이트 · 월 실수령의 10% 이하</option><option value="normal">보통 · 15% 이하</option><option value="loose">여유 · 20% 이하</option></select></label>
+        </div>
+        <details class="more">
+          <summary>이름과 자세한 입력 (선택)</summary>
+          <div class="fields">
+            <label class="f"><span class="lbl">첫 번째 사람 이름</span><input id="f-nameA" data-f="nameA" data-t="text" placeholder="윤지" maxlength="12"></label>
+            <label class="f"><span class="lbl">두 번째 사람 이름</span><input id="f-nameB" data-f="nameB" data-t="text" placeholder="성빈" maxlength="12"></label>
+            <label class="f"><span class="lbl">월 실수령 · <b data-nm="A">A</b></span><span class="in"><input id="f-netA" data-f="netA" type="number" inputmode="decimal" min="0" step="10"><em>만원</em></span><span class="hint" data-h="netA"></span></label>
+            <label class="f"><span class="lbl">월 실수령 · <b data-nm="B">B</b></span><span class="in"><input id="f-netB" data-f="netB" type="number" inputmode="decimal" min="0" step="10"><em>만원</em></span><span class="hint" data-h="netB"></span></label>
+            <label class="f"><span class="lbl">이사·중개·가전 등 부대비용</span><span class="in"><input id="f-costs" data-f="costs" type="number" inputmode="decimal" min="0" step="100" placeholder="0"><em>만원</em></span><span class="hint" data-h="costs"></span><span class="hint" data-brk></span></label>
+          </div>
+          <p class="note">월 실수령을 비워 두면 연소득의 80% ÷ 12로 추정해요. 이 값으로 월 이자 예산을 계산해요.</p>
+        </details>
       </div>
 
       <div class="card">
@@ -1414,11 +1426,47 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     subSort(ids);
     $('#subsHomeCount').textContent = ids.length + '건';
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 가져온 공고가 없어요. “전체 보기”에서 가져오세요.')); return; }
-    ids.slice(0, 12).forEach(function (id) {
+    ids.slice(0, 3).forEach(function (id) {
       box.appendChild(subSummary(subsState[id], id));
     });
   }
   function dDay(d) { var diff = dayNum(d) - dayNum(todayStr()); return diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : 'D+' + (-diff); }
+  function refreshToday() {
+    var box = $('#todayList'); if (!box) return; box.textContent = '';
+    var items = [], me = getMe(), today = dayNum(todayStr());
+    function add(pri, icon, title, sub, tab, label) { items.push({ p: pri, icon: icon, title: title, sub: sub, tab: tab, label: label }); }
+    if (!(core && core.ready && core.canTotal > 0)) add(0, '🧮', '연소득과 저축 가능 금액을 입력해요', '그래야 찾을 전세가가 계산돼요.', 'calc', '입력');
+    Object.keys(subsState).forEach(function (id) {
+      var x = subsState[id]; if (!subActive(x) || !subShown(x) || x.status === 'pass' || !validD(x.applyEnd)) return;
+      var d = dayNum(x.applyEnd) - today; if (d <= 3 && x.status !== 'plan') add(1, '🔥', (x.name || '청약') + ' 접수 마감 ' + (d === 0 ? '오늘' : 'D-' + d), '신청할지 정해요.', 'subs', '보기');
+    });
+    var nNew = Object.keys(subsState).filter(function (id) { return subTodo(subsState[id]); }).length;
+    if (nNew) add(2, '📣', '새 청약 공고 ' + nNew + '건', '관심·신청 예정·패스 중에서 골라 주세요.', 'subs', '보기');
+    Object.keys(eventsState).forEach(function (id) { var e = eventsState[id]; if (!validD(e.date)) return; var d = dayNum(e.date) - today; if (d >= 0 && d <= 14) add(1, '📅', (e.title || '일정') + ' ' + dDay(e.date), e.date, null, ''); });
+    var lastD = null; cxData.forEach(function (d, id) { seriesOf(id).forEach(function (x) { if (!lastD || x.d > lastD) lastD = x.d; }); });
+    if (cxData.size) { var ago = lastD ? today - dayNum(lastD) : null; if (ago == null || ago >= 7) add(3, '📈', ago == null ? '시세를 아직 기록하지 않았어요' : '시세를 기록한 지 ' + ago + '일 됐어요', '같은 요일에 단지별 최저 전세 호가를 넣어요.', 'homes', '기록'); }
+    else add(3, '🏢', '후보 단지를 추가해요', '단지 이름만 넣어도 돼요.', 'homes', '추가');
+    if (me) { var left = 0; allTasks().forEach(function (t) { left += t.steps.length - personSteps(t, me.toLowerCase()); }); POLICIES.forEach(function (p) { if (!(policyState[p.id] || {})['chk' + me]) left++; }); if (left > 0) add(4, '📚', '내가 안 읽은 공부 ' + left + '개', '읽고 체크해요.', 'study', '공부'); }
+    else add(4, '🙋', '이 기기에서 누구인지 골라요', '위쪽 “나는…”에서 고를 수 있어요.', null, '');
+    items.sort(function (a, b) { return a.p - b.p; });
+    $('#todayCount').textContent = items.length ? items.length + '개' : '';
+    if (!items.length) { box.appendChild(el('div', 'empty', '오늘은 할 일이 없어요 🎉')); }
+    items.slice(0, 6).forEach(function (it) {
+      var q = el('div', 'quest'); q.appendChild(el('span', 'qi', it.icon));
+      var m = el('div'); m.appendChild(el('b', null, it.title)); if (it.sub) m.appendChild(el('small', null, it.sub)); q.appendChild(m);
+      if (it.tab) { var bt = el('button', 'ghost', it.label); bt.type = 'button'; bt.dataset.tabGo = it.tab; q.appendChild(bt); } else q.appendChild(el('span'));
+      box.appendChild(q);
+    });
+    var cb = $('#chgList'), cc = $('#chgCard'); if (!cb) return; cb.textContent = ''; var ch = [];
+    cxData.forEach(function (d, id) { if (d.status === '탈락') return; var ser = seriesOf(id); if (ser.length < 2) return; var a = ser[ser.length - 2], b = ser[ser.length - 1]; ch.push({ name: d.name || '(이름 없음)', a: a, b: b, diff: b.j - a.j }); });
+    ch.sort(function (x, y) { return Math.abs(y.diff) - Math.abs(x.diff); });
+    cc.hidden = !ch.length;
+    ch.slice(0, 4).forEach(function (c) {
+      var row = el('div', 'chg'); row.appendChild(el('b', null, c.name));
+      var r = el('span', c.diff > 0 ? 'up' : c.diff < 0 ? 'down' : '', (c.diff > 0 ? '▲ ' : c.diff < 0 ? '▼ ' : '– ') + (c.diff ? fmt(Math.abs(c.diff)) : '변동 없음')); row.appendChild(r);
+      row.appendChild(el('small', null, '전세 ' + fmt(c.b.j) + ' · ' + dotD(c.a.d) + ' → ' + dotD(c.b.d))); cb.appendChild(row);
+    });
+  }
   function renderEvents() {
     var box = $('#evList'); box.textContent = '';
     var ids = Object.keys(eventsState).filter(function (id) { return validD(eventsState[id].date); }).sort(function (a, b) { return eventsState[a].date < eventsState[b].date ? -1 : 1; });
@@ -1834,33 +1882,29 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     r.scored.forEach(function (sc, i) {
       var ser = seriesOf(sc.id), tr = trendOf(ser), row = el('div', 'cmp');
       var head = el('div', 'cmp-h'); head.appendChild(el('span', 'rk-n', String(i + 1))); head.appendChild(el('b', null, sc.name));
-      head.appendChild(el('span', 'cmp-a', sc.area ? sc.area + '㎡ · ' + pyeong(sc.area) + '평' : '')); row.appendChild(head);
-      var bar = el('div', 'cmp-bar'), fi = el('i'); fi.style.width = (sc.lp.j / maxJ * 100) + '%'; bar.appendChild(fi); bar.appendChild(el('span', null, fmt(sc.lp.j))); row.appendChild(bar);
+      if (tr) head.appendChild(el('span', 'chip ' + (tr.pctMonth >= 0 ? 'warn' : 'ok'), (tr.pctMonth >= 0 ? '▲' : '▼') + Math.abs(tr.pctMonth).toFixed(1) + '%/월'));
+      row.appendChild(head);
+      if (sc.area) row.appendChild(el('div', 'cmp-a', '전용 ' + sc.area + '㎡ · ' + pyeong(sc.area) + '평'));
       var st = el('div', 'cmp-s');
-      [['월 이자', fmt(sc.interest)], ['필수 저축', fmt(sc.need)], ['추세', tr ? (tr.pctMonth >= 0 ? '▲ ' : '▼ ') + Math.abs(tr.pctMonth).toFixed(1) + '%/월' : '–']].forEach(function (p) { var d = el('div'); d.appendChild(el('small', null, p[0])); d.appendChild(el('b', null, p[1])); st.appendChild(d); });
+      [['전세가', fmt(sc.lp.j)], ['월 이자', fmt(sc.interest)], ['필수 저축', fmt(sc.need)]].forEach(function (p) { var d = el('div'); d.appendChild(el('small', null, p[0])); d.appendChild(el('b', null, p[1])); st.appendChild(d); });
       row.appendChild(st);
-      if (ser.length > 1) {
-        var W = 300, H = 36, lo = Math.min.apply(null, ser.map(function (x) { return x.j; })), hi = Math.max.apply(null, ser.map(function (x) { return x.j; })), sp = (hi - lo) || 1;
-        var pts = ser.map(function (x, k) { return (k / (ser.length - 1) * W).toFixed(1) + ',' + (H - 4 - (x.j - lo) / sp * (H - 8)).toFixed(1); }).join(' ');
-        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'spark'); svg.setAttribute('preserveAspectRatio', 'none');
-        var pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline'); pl.setAttribute('points', pts); pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', '#2f6bff'); pl.setAttribute('stroke-width', '2'); svg.appendChild(pl); row.appendChild(svg);
-      }
       box.appendChild(row);
-      cmpRows.push({ n: i + 1, name: sc.name, area: sc.area ? sc.area + '㎡ ' + pyeong(sc.area) + '평' : '', j: sc.lp.j, interest: sc.interest, need: sc.need, trend: tr ? (tr.pctMonth >= 0 ? '▲' : '▼') + Math.abs(tr.pctMonth).toFixed(1) + '%' : '-' });
+      cmpRows.push({ n: i + 1, name: sc.name, area: sc.area ? sc.area + '㎡ ' + pyeong(sc.area) + '평' : '', j: sc.lp.j, interest: sc.interest, need: sc.need, trend: tr ? (tr.pctMonth >= 0 ? '▲' : '▼') + Math.abs(tr.pctMonth).toFixed(1) + '%/월' : '' });
     });
     if (sv) sv.hidden = !dl;
   }
   $('#cmpSave').addEventListener('click', function () {
     if (!dl || !cmpRows.length) return;
-    var W = 900, RH = 120, H = 130 + cmpRows.length * RH, cv = document.createElement('canvas'); cv.width = W; cv.height = H; var g = cv.getContext('2d');
+    var W = 900, RH = 130, H = 130 + cmpRows.length * RH, cv = document.createElement('canvas'); cv.width = W; cv.height = H; var g = cv.getContext('2d');
     g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.fillStyle = '#1f2235'; g.font = '800 34px SUIT, sans-serif'; g.fillText('땅콩집 후보 비교 · ' + todayStr(), 36, 62);
     var maxJ = Math.max.apply(null, cmpRows.map(function (x) { return x.j; }));
     cmpRows.forEach(function (x, i) {
       var y = 100 + i * RH; g.fillStyle = '#f3f4fb'; g.fillRect(24, y, W - 48, RH - 14);
       g.fillStyle = '#2f6bff'; g.font = '800 30px SUIT, sans-serif'; g.fillText(String(x.n), 44, y + 44);
       g.fillStyle = '#1f2235'; g.fillText(x.name, 90, y + 44); g.font = '500 22px SUIT, sans-serif'; g.fillStyle = '#6b7088'; g.fillText(x.area, 90 + Math.min(420, g.measureText(x.name).width + 20) + 20, y + 44);
-      g.fillStyle = '#dfe6ff'; g.fillRect(44, y + 58, W - 96, 14); g.fillStyle = '#2f6bff'; g.fillRect(44, y + 58, (W - 96) * x.j / maxJ, 14);
-      g.fillStyle = '#1f2235'; g.font = '700 22px SUIT, sans-serif'; g.fillText('전세 ' + fmt(x.j) + '   월 이자 ' + fmt(x.interest) + '   필수 저축 ' + fmt(x.need) + '   추세 ' + x.trend, 44, y + 98);
+      g.fillStyle = '#6b7088'; g.font = '500 20px SUIT, sans-serif'; g.fillText('전세가', 90, y + 76); g.fillText('월 이자', 340, y + 76); g.fillText('필수 저축', 580, y + 76);
+      g.fillStyle = '#1f2235'; g.font = '800 26px SUIT, sans-serif'; g.fillText(fmt(x.j), 90, y + 106); g.fillText(fmt(x.interest), 340, y + 106); g.fillText(fmt(x.need), 580, y + 106);
+      if (x.trend) { g.font = '700 20px SUIT, sans-serif'; g.fillText(x.trend, W - 170, y + 44); }
     });
     cv.toBlob(function (bl) { if (bl) dl.save({ filename: '땅콩집-후보비교-' + todayStr() + '.png', data: bl }).catch(function () {}); }, 'image/png');
   });
@@ -1965,7 +2009,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var bar = el('div', 'bar2'), i = el('i'); i.style.width = (tot ? p[2] / tot * 100 : 0) + '%'; bar.appendChild(i); row.appendChild(bar);
       row.appendChild(el('span', null, p[2] + ' / ' + tot)); box.appendChild(row);
     });
-    var tp = $('[data-cat="study"] [data-cp]'); if (tp) tp.textContent = nameA() + ' ' + a + '/' + tot + ' · ' + nameB() + ' ' + b + '/' + tot;
+    var hp = $('#homeProg'); if (hp) { hp.textContent = ''; var hh = el('div', 'mhead'); hh.appendChild(el('h3', null, '공부 진도')); var gb = el('button', 'ghost sm', '공부하러 가기'); gb.type = 'button'; gb.dataset.tabGo = 'study'; hh.appendChild(gb); hp.appendChild(hh); Array.prototype.forEach.call(box.querySelectorAll('.pbar'), function (r) { hp.appendChild(r.cloneNode(true)); }); }
+    refreshToday();
   }
   function refreshPolicies() {
     $$('.pol').forEach(function (c) {
@@ -2030,11 +2075,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     return d;
   }
   function buildBoard() {
-    var cur = currentPhase(), cats = $('#cats');
-    [['calc', '💰', '모으기', '역산 계산기'], ['homes', '👟', '발품팔기', '매물·시세·사진 올리기'], ['subs', '📋', '청약찾기', '공고 리스트'], ['study', '📚', '부동산 공부', '']].forEach(function (c) {
-      var b = el('button', 'cat'); b.type = 'button'; b.dataset.cat = c[0]; b.dataset.tabGo = c[0];
-      b.appendChild(el('span', 'ce', c[1])); b.appendChild(el('b', null, c[2])); var cp = el('small', null, c[3]); if (c[0] === 'study') cp.dataset.cp = '1'; b.appendChild(cp); cats.appendChild(b);
-    });
+    var cur = currentPhase();
     PHASES.forEach(function (p) {
       var sec = el('div', 'card phase'); sec.dataset.ph = p.id;
       var head = el('div', 'ph-head'); head.appendChild(el('h3', null, p.t));
@@ -2145,7 +2186,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var cb = $('#moPolicy'); if (cb.checked !== polDone) cb.checked = polDone;
     var left = allTasks().filter(function (t) { return true && !isDone(t); });
     
-    $('#moProg').textContent = n + ' / 2'; refreshOnboard(); refreshNext();
+    $('#moProg').textContent = n + ' / 2'; refreshOnboard(); refreshNext(); refreshToday();
   }
   function refreshOnboard() {
     var rows = { me: !!getMe(), inc: has('incomeA') && has('incomeB') && has('canA') && has('canB'), dep: has('deposit'), cx: cxData.size > 0 }, n = 0;
