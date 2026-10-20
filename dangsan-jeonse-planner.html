@@ -337,6 +337,16 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .sub .cau li.b { font-weight: 700; color: var(--coral-ink); }
 .sub .brk { font-size: 11.5px; color: var(--muted); }
 .subcap { margin: 10px 0 0; display: grid; grid-template-columns: 1fr; gap: 6px; }
+
+.hs { padding: 12px 0; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 4px; }
+.hs:first-child { border-top: 0; padding-top: 2px; }
+.hs .hh { display: flex; align-items: center; gap: 8px; }
+.hs .hh b { flex: 1; font-size: 15.5px; font-weight: 800; min-width: 0; }
+.hs .hh .rk { flex: none; width: 24px; height: 24px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.hs .hh a { font-size: 12.5px; color: var(--accent); border: 1px solid var(--line); padding: 3px 10px; border-radius: 999px; text-decoration: none; }
+.hs .hl { display: flex; gap: 10px; font-size: 13.5px; } .hs .hl small { flex: none; width: 64px; white-space: nowrap; color: var(--muted); } .hs .hl span { font-weight: 700; } .hs .hl.mute span { color: var(--muted); font-weight: 500; }
+.hs .hcp { margin: 4px 0 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 1px; }
+.hs .hcp li.b { color: var(--coral-ink); font-weight: 700; } .hs .hcp li.g { color: var(--mint-ink); font-weight: 700; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -1390,21 +1400,20 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     subSort(ids);
     $('#subsHomeCount').textContent = ids.length + '건';
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 가져온 공고가 없어요. “전체 보기 · 공고 찾기”에서 가져오세요.')); return; }
-    ids.slice(0, 4).forEach(function (id) {
-      var x = subsState[id], ev = evalSub(x), row = el('div', 'evrow'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
-      var sc = el('div', 'dd', (subRank[id] || '–') + '위'); sc.style.cssText = 'font-weight:800;min-width:40px;text-align:center'; row.appendChild(sc);
-      var mid = el('div'); mid.appendChild(el('b', null, x.name || '(이름 없음)'));
-      var ar = ev.T.map(function (t) { return t.a; });
-      mid.appendChild(el('small', null, [x.location || '', priceTxt(ev)].filter(Boolean).join(' · ') + (ar.length ? ' · ' + (Math.min.apply(null, ar) === Math.max.apply(null, ar) ? Math.min.apply(null, ar) : Math.min.apply(null, ar) + '~' + Math.max.apply(null, ar)) + '㎡' : '')));
-      var chips = el('div', 'chips'); chips.style.marginTop = '4px';
-      if (dd != null) chips.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
-      if (ev.pOk === 'no' || ev.pOk === 'near') chips.appendChild(el('span', 'chip bad', ev.pOk === 'no' ? '분양가 초과' : '분양가 조금 높음'));
-      if (ev.aOk === 'no') chips.appendChild(el('span', 'chip warn', '희망 평형 없음'));
-      if (!ev.rOk) chips.appendChild(el('span', 'chip warn', '관심 지역 아님'));
-      (Array.isArray(x.notes) ? x.notes : []).filter(function (n) { return /토지임대|투기과열/.test(n); }).forEach(function (n) { chips.appendChild(el('span', 'chip bad', n.slice(0, 14))); });
-      mid.appendChild(chips); row.appendChild(mid);
-      var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.cssText = 'font-size:12.5px;color:var(--accent);border:1px solid var(--line);padding:3px 10px;border-radius:999px;text-decoration:none'; row.appendChild(a); } else row.appendChild(el('span'));
-      box.appendChild(row);
+    ids.slice(0, 12).forEach(function (id) {
+      var x = subsState[id], ev = evalSub(x), box2 = el('div', 'hs'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
+      var head = el('div', 'hh'); head.appendChild(el('span', 'rk', String(subRank[id] || '–')));
+      head.appendChild(el('b', null, x.name || '(이름 없음)'));
+      if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
+      var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
+      box2.appendChild(head);
+      function line(k, v, cls) { if (!v) return; var r = el('div', 'hl ' + (cls || '')); r.appendChild(el('small', null, k)); r.appendChild(el('span', null, v)); box2.appendChild(r); }
+      line('지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
+      if (ev.T.length) line('평형·금액', ev.T.slice().sort(function (p, q) { return p.a - q.a; }).map(function (t) { return t.a + '㎡(' + pyeong(t.a) + '평) ' + (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정'); }).join(' · '));
+      else line('금액', String(x.price || '').slice(0, 40));
+      var cps = ev.cau.slice().sort(function (p, q) { return (q.b ? 2 : q.g ? 1 : 0) - (p.b ? 2 : p.g ? 1 : 0); }).slice(0, 4);
+      if (cps.length) { var ul = el('ul', 'hcp'); cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
+      box.appendChild(box2);
     });
   }
   function dDay(d) { var diff = dayNum(d) - dayNum(todayStr()); return diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : 'D+' + (-diff); }
