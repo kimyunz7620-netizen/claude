@@ -1179,7 +1179,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
   function eligOf(x, T) {
     var n = 0, b = 0, f = 0, u = 0; T.forEach(function (t) { n += t.n || 0; b += t.b || 0; f += t.f || 0; u += t.u || 0; });
-    var noAcc = /무순위|잔여|임의/.test((x.kind || '') + ' ' + (x.name || '')); if (noAcc) { n = 0; b = 0; f = 0; }
+    var noAcc = /무순위|잔여|임의|오피스텔|도시형|민간임대/.test((x.kind || '') + ' ' + (x.name || '')); if (noAcc) { n = 0; b = 0; f = 0; }
     var notes = (Array.isArray(x.notes) ? x.notes : []).join(' '), hot = /투기과열/.test(notes), pub = /국민|공공/.test(x.kind || '') || /공공택지/.test(notes);
     var none = plan.accHas === 'none';
     function pn(k) { return plan[k] != null && plan[k] !== '' && isFinite(Number(plan[k])) ? Number(plan[k]) : null; }

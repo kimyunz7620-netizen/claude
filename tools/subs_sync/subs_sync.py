@@ -96,20 +96,24 @@ def fetch_notices(key, today, horizon_days, regions):
     limit = (today + dt.timedelta(days=horizon_days)).isoformat()
     details = [d for d in details if (not d_begin(d) or d_begin(d) <= limit) and in_regions(d, regions)]
     models = fetch_models(key, details)
-    # 무순위·잔여세대: 청약통장 없이 신청하는 경우가 많아서 따로 가져온다(실패해도 계속 진행)
-    try:
-        rem = fetch_all("getRemndrLttotPblancDetail", key, {})
-        rem = [d for d in rem if (not d_end(d) or d_end(d) >= today.isoformat()) and (not d_begin(d) or d_begin(d) <= limit) and in_regions(d, regions)]
-        for d in rem:
-            d["__kind"] = "무순위·잔여세대"
-        print(f"무순위·잔여세대 공고 {len(rem)}건")
-        rm = fetch_models(key, rem, "getRemndrLttotPblancMdl") if rem else {}
-        details += rem
-        models.update(rm)
-    except SystemExit as e:
-        print(f"무순위·잔여세대 조회는 건너뛰었어요: {e}")
-    except Exception as e:  # noqa: BLE001
-        print(f"무순위·잔여세대 조회 중 문제가 있었어요: {e}")
+    # 청약통장 없이 신청하는 경우가 많은 공급: 무순위·잔여세대, 오피스텔·도시형, 임의공급(실패해도 계속 진행)
+    extras = [("getRemndrLttotPblancDetail", "getRemndrLttotPblancMdl", "무순위·잔여세대"),
+              ("getUrbtyOfctlLttotPblancDetail", "getUrbtyOfctlLttotPblancMdl", "오피스텔·도시형"),
+              ("getOPTLttotPblancDetail", "getOPTLttotPblancMdl", "임의공급")]
+    for ep, mep, label in extras:
+        try:
+            rem = fetch_all(ep, key, {})
+            rem = [d for d in rem if (not d_end(d) or d_end(d) >= today.isoformat()) and (not d_begin(d) or d_begin(d) <= limit) and in_regions(d, regions)]
+            for d in rem:
+                d["__kind"] = label
+            print(f"{label} 공고 {len(rem)}건")
+            rm = fetch_models(key, rem, mep) if rem else {}
+            details += rem
+            models.update(rm)
+        except SystemExit as e:
+            print(f"{label} 조회는 건너뛰었어요: {str(e)[:120]}")
+        except Exception as e:  # noqa: BLE001
+            print(f"{label} 조회 중 문제가 있었어요: {e}")
     return details, models
 
 
@@ -304,6 +308,40 @@ def import_to_app(url, items, profile, headless=False, chrome_path=None, init_sc
             ctx.close()
 
 
+def cmd_probe(args):
+    """웹 페이지 구조를 확인용으로 읽어 온다(읽기만). 예: python3 subs_sync.py probe "https://..." """
+    from playwright.sync_api import sync_playwright
+    url = args.file
+    if not url or not (url.startswith("https://") or url.startswith("http://localhost")):
+        raise SystemExit('주소를 알려 주세요. 예: python3 subs_sync.py probe "https://www.i-sh.co.kr"')
+    OUT_DIR.mkdir(exist_ok=True)
+    with sync_playwright() as p:
+        kw = {"headless": True}
+        if args.chrome:
+            kw["executable_path"] = args.chrome
+        else:
+            kw["channel"] = "chrome"
+        br = p.chromium.launch(**kw)
+        try:
+            pg = br.new_page(viewport={"width": 1100, "height": 900})
+            pg.goto(url, wait_until="domcontentloaded", timeout=45000)
+            pg.wait_for_timeout(3000)
+            (OUT_DIR / "probe.html").write_text(pg.content(), encoding="utf-8")
+            print("제목:", pg.title()); print("주소:", pg.url)
+            text = re.sub(r"\n\s*\n+", "\n", pg.inner_text("body"))
+            print("---- 본문 앞부분 ----"); print(text[:2500])
+            print("---- 링크(공고·모집·임대 포함) ----")
+            links = pg.eval_on_selector_all("a", "els => els.map(e => [e.innerText.trim().replace(/\\s+/g,' '), e.href]).filter(x => x[0])")
+            n = 0
+            for t, h in links:
+                if re.search(r"공고|모집|임대|분양|신혼|미리내", t):
+                    print(f"- {t[:60]} | {h[:140]}"); n += 1
+                    if n >= 40:
+                        break
+        finally:
+            br.close()
+
+
 PLIST = Path.home() / "Library" / "LaunchAgents" / "com.ttangkong.subs.plist"
 
 
@@ -347,7 +385,7 @@ def cmd_unschedule(args):
 # ---------------------------------------------------------------- main ----
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["login", "fetch", "run", "import", "schedule", "unschedule"])
+    ap.add_argument("command", choices=["login", "fetch", "run", "import", "schedule", "unschedule", "probe"])
     ap.add_argument("file", nargs="?", help="import 할 JSON 파일")
     ap.add_argument("--key", default=os.environ.get("ODCLOUD_KEY"), help="공공데이터포털 일반 인증키(Decoding). 환경변수 ODCLOUD_KEY 도 가능")
     ap.add_argument("--url", default=os.environ.get("SUBS_ARTIFACT_URL", DEFAULT_ARTIFACT), help="땅콩집 플래너 주소")
@@ -365,6 +403,8 @@ def main():
 
     if args.command == "login":
         return cmd_login(args)
+    if args.command == "probe":
+        return cmd_probe(args)
     if args.command == "schedule":
         return cmd_schedule(args)
     if args.command == "unschedule":
