@@ -144,7 +144,7 @@ def build_item(d, models, area_min, area_max, regions):
     for t in types:
         if t["area"] is None:
             continue
-        g = groups.setdefault(round(t["area"]), {"a": round(t["area"]), "u": 0, "n": 0, "b": 0, "pmin": 0, "pmax": 0})
+        g = groups.setdefault(round(t["area"]), {"a": round(t["area"]), "u": 0, "n": 0, "b": 0, "f": 0, "pmin": 0, "pmax": 0})
         g["u"] += t["units"]; g["n"] += t["nwwds"]
         if t["price"]:
             g["pmin"] = t["price"] if not g["pmin"] else min(g["pmin"], t["price"])
@@ -153,6 +153,7 @@ def build_item(d, models, area_min, area_max, regions):
         a = parse_area(m.get("HOUSE_TY"))
         if a is not None and round(a) in groups:
             groups[round(a)]["b"] += to_int(m.get("NWBB_HSHLDCO"))
+            groups[round(a)]["f"] += to_int(m.get("LFE_FRST_HSHLDCO"))
     type_groups = [groups[k] for k in sorted(groups)]
     notes = []
     if "토지임대" in name:
@@ -182,6 +183,7 @@ def build_item(d, models, area_min, area_max, regions):
         "link": link if link.startswith("https://") else "",
         "fit": fit, "fitReason": reason, "areaFit": area_fit, "regionFit": region_fit, "source": "청약홈 API",
         "types": type_groups, "moveIn": move_in, "notes": notes,
+        "kind": str(d.get("HOUSE_DTL_SECD_NM") or d.get("HOUSE_SECD_NM") or "")[:10],
     }
 
 
