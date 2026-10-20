@@ -89,7 +89,7 @@ details > summary::-webkit-details-marker { display: none; }
 .hero { background: linear-gradient(135deg, #1D74E0 0%, #6E56F8 100%); color: #fff; box-shadow: 0 18px 40px -26px rgba(29,116,224,.8); }
 .hero-k { font-size: 12.5px; opacity: .85; }
 .hero-l { font-size: 13px; opacity: .9; margin-top: 10px; }
-.hero-v { font-size: 26px; font-weight: 800; letter-spacing: -.03em; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.hero-v { font-size: 23px; word-break: keep-all; font-weight: 800; letter-spacing: -.03em; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .hero-s { font-size: 13px; opacity: .88; margin-top: 2px; }
 .hero .bar { height: 8px; background: rgba(255,255,255,.28); border-radius: 999px; overflow: hidden; margin: 16px 0 6px; }
 .hero .bar i { display: block; height: 100%; background: #fff; width: 0; border-radius: 999px; }
@@ -365,7 +365,7 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 button.cat { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 4px; padding: 16px 14px; height: auto; min-height: 104px; width: 100%; border-radius: 18px; border: 0; background: var(--surface); box-shadow: 0 10px 30px -24px rgba(30,34,53,.35); text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
 .cat .ce { font-size: 28px; line-height: 1; } .cat b { font-size: 17px; font-weight: 800; } .cat small { color: var(--muted); font-size: 12px; font-weight: 500; line-height: 1.35; }
 .setbox { background: var(--bg); border-radius: 16px; padding: 14px; margin: 10px 0 4px; display: flex; flex-direction: column; gap: 8px; }
-.setbox h4 { margin: 0 0 2px; font-size: 14px; font-weight: 800; }
+.setbox > summary { font-weight: 800; font-size: 14px; cursor: pointer; } .setbox[open] > summary { margin-bottom: 6px; }
 .polread { display: flex; gap: 14px; align-items: center; margin: 8px 0 0; padding: 8px 12px; background: var(--bg); border-radius: 12px; font-size: 13.5px; }
 .polread label.who { display: flex; gap: 6px; align-items: center; cursor: pointer; font-weight: 700; }
 .cmp { padding: 12px 0; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; } .cmp:first-child { border-top: 0; }
@@ -392,6 +392,14 @@ button.cat { display: flex; flex-direction: column; align-items: flex-start; jus
 .cxmore { margin-top: 2px; } .cxmore > summary { color: var(--muted); font-weight: 700; font-size: 13px; cursor: pointer; padding: 4px 0; }
 .cxmore > .cx-grid, .cxmore > details, .cxmore > input, .cxmore > div { margin-top: 10px; }
 .cx { gap: 10px; }
+.hs .cpwrap { margin-top: 8px; } .hs .cprow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.hs .cpchip { height: auto; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.hs .cpchip.b { background: var(--coral-soft); color: var(--coral-ink); border-color: transparent; }
+.hs .cpchip.on { outline: 2px solid var(--accent); }
+.hs .cpsay { margin-top: 8px; padding: 10px 12px; background: var(--bg); border-radius: 12px; font-size: 13.5px; line-height: 1.55; }
+body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
+.datarow { display: flex; gap: 8px; justify-content: center; margin: 6px 0 18px; }
+.sub .why:empty { display: none; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -432,9 +440,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     <div class="top-r">
       <select id="meSel" class="mesel" aria-label="나는 누구"></select>
       <span><i class="dot" id="dot"></i><span id="saveState">연결 중</span></span>
-      <button type="button" class="ghost sm" id="btnBackup">백업</button>
-      <button type="button" class="ghost sm" id="btnRestore">복원</button>
-      <input type="file" id="fileRestore" accept=".json,application/json" hidden>
     </div>
   </header>
   <div class="banner" id="banner" hidden><span id="bannerText"></span><span class="acts" id="bannerActs"></span></div>
@@ -512,6 +517,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <ul class="reclist" id="hwBoth"></ul>
         </div>
       </details>
+
+      <div class="datarow"><button type="button" class="ghost sm" id="btnBackup">데이터 백업 저장</button><button type="button" class="ghost sm" id="btnRestore">백업에서 복원</button><input type="file" id="fileRestore" accept=".json,application/json" hidden></div>
 
       <details class="card fold" id="events" hidden>
         <summary>일정 · D-day</summary>
@@ -731,16 +738,16 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
   <!-- 숙제 -->
   <section class="pane" id="tab-subs" data-tab="subs" hidden>
-    <h2 class="vtitle">🏠 청약</h2>
+    <h2 class="vtitle">📋 청약</h2>
     <p class="vsub">공고를 보고, 내 자격을 확인해요</p>
       <div class="card" id="subsCard" style="margin-bottom:18px">
         <div class="mhead"><h3>청약 공고 리스트</h3><span class="chip" id="subsCount">0건</span></div>
         <p class="hsub" id="subsMeta">아직 가져온 공고가 없어요.</p>
-        <div class="setbox"><h4>⚙️ 내 기준</h4>
+        <details class="setbox"><summary id="setSum">⚙️ 내 기준</summary>
         <div class="ai-acts"><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label></div>
         <div class="ai-acts" style="margin-top:8px"><label class="chkp">정렬 <select id="subsSort" style="height:32px;font-size:13px"><option value="fit">순위 순</option><option value="end">마감 빠른 순</option></select></label></div>
         <div class="subcap"><label class="f"><span class="lbl">💰 내 분양가 상한 (순위·초과 표시 기준)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="비우면 자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></div>
-        </div>
+        </details>
         <h4 class="lh" style="margin:18px 0 6px">📋 공고 리스트</h4>
         <div id="subsList" class="stack"><div class="empty">표시할 공고가 없어요. 노트북에서 공고 가져오기를 실행하면 채워져요.</div></div>
         <details class="more" id="subsImportBox">
@@ -1037,6 +1044,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     $$('.tabbar button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tabGo === name ? 'true' : 'false'); });
     try { localStorage.setItem('ttk-tab', name); } catch (e) {}
     try { history.replaceState(null, '', '#' + name); } catch (e) {}
+    document.body.dataset.tab = name;
     if (!noScroll) window.scrollTo(0, 0);
   }
   function initialTab() {
@@ -1164,7 +1172,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     sc += mv; br.push('입주시기 ' + mv + '/10');
     if (sp > 0) cau.push({ g: 1, t: '우리 같은 신혼 케이스에 맞아요 — 신혼부부 특별공급 ' + T.reduce(function (n, t) { return n + (t.n || 0); }, 0) + '세대, 신생아 특별공급 ' + T.reduce(function (n, t) { return n + (t.b || 0); }, 0) + '세대가 있어요.' });
     else if (T.length) cau.push({ t: '신혼·신생아 특별공급 물량이 없어요. 일반공급만 노려볼 수 있어요.' });
-    if (sp > 0 && !validYm(plan.marriageDate)) cau.push({ t: '신혼부부 특별공급은 혼인 기간 요건이 있어요. 혼인신고 예정월을 아직 안 적었어요.' });
+    if (sp > 0 && !validYm(plan.marriageDate)) cau.push({ t: '신혼부부 특별공급은 혼인한 지 7년 이내여야 해요. 혼인신고 예정월을 아직 안 적었어요(모으기 탭 설정에서 넣어요).' });
     if (pOk === 'no') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')을 넘어요. 가장 싼 평형이 ' + fmt(pmin) + '이에요.' });
     else if (pOk === 'near') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')보다 조금 높아요. 가장 싼 평형이 ' + fmt(pmin) + '이에요.' });
     if (aOk === 'no') cau.push({ t: '희망 평형(' + ar[0] + '~' + ar[1] + '㎡)이 없어요.' + (T.length ? ' 있는 평형은 ' + T.map(function (t) { return t.a; }).join('·') + '㎡예요.' : '') });
@@ -1173,9 +1181,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); if (dd >= 0 && dd <= 3) cau.push({ b: 1, t: '접수 마감이 ' + (dd === 0 ? '오늘' : dd + '일 뒤') + '예요.' }); }
     (Array.isArray(x.notes) ? x.notes : []).forEach(function (n) {
       n = String(n);
-      if (/토지임대/.test(n)) cau.push({ b: 1, t: '토지임대부예요. 보이는 분양가는 건물값뿐이고 땅값은 매달 임대료로 내요. 되팔 때 제한도 있어요.' });
-      else if (/투기과열/.test(n)) cau.push({ b: 1, t: '투기과열지구예요. 대출과 전매(되팔기) 규제가 강해요.' });
-      else if (/공공택지/.test(n)) cau.push({ t: '공공택지예요. 전매 제한 기간이 길 수 있어요.' });
+      if (/토지임대/.test(n)) cau.push({ b: 1, t: '토지임대부예요. 건물만 분양받고 땅은 빌려 쓰는 방식이에요. 보이는 분양가는 건물값뿐이고, 땅값은 매달 토지 임대료로 내요. 되팔 때도 제한이 있어요.' });
+      else if (/투기과열/.test(n)) cau.push({ b: 1, t: '투기과열지구예요. 집값이 과열된 지역이라 대출이 덜 나오고, 당첨되면 일정 기간 팔 수 없어요(전매 제한). 재당첨도 제한돼요.' });
+      else if (/공공택지/.test(n)) cau.push({ t: '공공택지예요. 나라가 개발한 땅에 짓는 단지라 소득·자산 기준이 따로 붙고, 팔 수 없는 기간이 길 수 있어요.' });
       else cau.push({ t: n });
     });
     var pos = [];
@@ -1186,6 +1194,19 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (my) { var g3 = Math.abs((+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5)))); if (g3 <= 6) pos.push('입주 시기(' + dotYm(my) + ')가 목표와 맞아요'); }
     return { pos: pos, sp: sp, score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
   }
+  function shortCau(t) {
+    t = String(t);
+    var m = [[/토지임대/, '🌱 토지임대부'], [/투기과열/, '🔥 투기과열지구'], [/공공택지/, '🏗️ 공공택지'], [/조금 높/, '💸 분양가 조금 높음'], [/분양가가 상한/, '💸 분양가 초과'], [/마감/, '⏰ 마감 임박'], [/희망 평형/, '📐 희망 평형 아님'], [/관심 지역/, '🗺️ 관심 지역 아님'], [/입주는/, '🏠 입주 시기 차이'], [/혼인/, '💍 혼인 요건'], [/특별공급 물량이 없/, '🎟️ 특공 물량 없음']];
+    for (var i = 0; i < m.length; i++) if (m[i][0].test(t)) return m[i][1];
+    return 'ℹ️ ' + t.split(/[ .]/)[0];
+  }
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest('.cpchip'); if (!c) return;
+    var wrap = c.closest('.cpwrap'), say = wrap.querySelector('.cpsay'), was = c.classList.contains('on');
+    $$('.cpchip', wrap).forEach(function (x) { x.classList.remove('on'); });
+    if (was) { say.hidden = true; return; }
+    c.classList.add('on'); say.textContent = c.dataset.say; say.hidden = false;
+  });
   function subSummary(x, id) {
       var ev = evalSub(x), box2 = el('div', 'hs'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
       var head = el('div', 'hh'); var rkn = subRank[id] || 0; head.appendChild(el('span', rkn && rkn <= 3 ? 'medal' : 'rk', rkn === 1 ? '🥇' : rkn === 2 ? '🥈' : rkn === 3 ? '🥉' : String(rkn || '–')));
@@ -1199,8 +1220,16 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
       if (ev.T.length) ev.T.slice().sort(function (p, q) { return p.a - q.a; }).forEach(function (t) { line('💰 ' + t.a + '㎡ · ' + pyeong(t.a) + '평', (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정') + (t.u ? ' · ' + t.u + '세대' : '')); });
       else line('💰 금액', String(x.price || '').slice(0, 40));
-      var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 5);
-      if (cps.length) { box2.appendChild(el('div', 'cth', '⚠️ 주의할 점')); var ul = el('ul', 'hcp');  cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', (c.b ? (/토지임대/.test(c.t) ? '🌱 ' : /투기과열/.test(c.t) ? '🔥 ' : /분양가/.test(c.t) ? '💸 ' : /마감/.test(c.t) ? '⏰ ' : '🚨 ') : c.g ? '✅ ' : /평형/.test(c.t) ? '📐 ' : /지역/.test(c.t) ? '🗺️ ' : /입주/.test(c.t) ? '🏠 ' : /혼인/.test(c.t) ? '💍 ' : 'ℹ️ ') + String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
+      var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 6);
+      if (cps.length) {
+        var wrap = el('div', 'cpwrap'); wrap.appendChild(el('div', 'cth', '⚠️ 주의할 점 · 눌러서 설명 보기'));
+        var row = el('div', 'cprow'), say = el('div', 'cpsay'); say.hidden = true;
+        cps.forEach(function (c) {
+          var lab = shortCau(c.t), b = el('button', 'cpchip' + (c.b ? ' b' : ''), lab); b.type = 'button'; b.dataset.say = c.t;
+          row.appendChild(b);
+        });
+        wrap.appendChild(row); wrap.appendChild(say); box2.appendChild(wrap);
+      }
       return box2;
   }
   function makeSubRow(id) {
@@ -1242,7 +1271,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function renderSubs() {
     var box = $('#subsList'), showPast = $('#subsPast').checked, me = getMe();
     var onlyMine = $('#subsMatch').checked;
-    var cp = subCap(), ch = $('#subsCapHint'); if (ch) ch.textContent = cp[0] > 0 ? (cp[1] ? '지금은 “둘이 모을 수 있는 금액 ÷ 30%” 로 자동 계산한 ' + fmt(cp[0]) + '을 쓰고 있어요(분양가의 약 30%를 자기 돈으로 낸다는 가정). 정확히 알면 직접 입력하세요.' : '직접 입력한 상한 ' + fmt(cp[0]) + '을 쓰고 있어요.') : '저축 가능 금액을 입력하면 자동으로 분양가 상한을 계산해요.';
+    var cp = subCap(), ch = $('#subsCapHint'); var ss0 = $('#setSum'); if (ss0) ss0.textContent = '💰 분양가 상한 ' + (cp[0] > 0 ? fmt(cp[0]) + (cp[1] ? ' (자동)' : '') : '미정') + ' · ' + ($('#subsSort').value === 'end' ? '마감 빠른 순' : '순위 순') + ' · 눌러서 바꾸기';
+     if (ch) ch.textContent = cp[0] > 0 ? (cp[1] ? '지금은 “둘이 모을 수 있는 금액 ÷ 30%” 로 자동 계산한 ' + fmt(cp[0]) + '을 쓰고 있어요(분양가의 약 30%를 자기 돈으로 낸다는 가정). 정확히 알면 직접 입력하세요.' : '직접 입력한 상한 ' + fmt(cp[0]) + '을 쓰고 있어요.') : '저축 가능 금액을 입력하면 자동으로 분양가 상한을 계산해요.';
     var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; if (!(showPast || subActive(x)) || !subShown(x)) return false; if (!onlyMine) return true; return !!evalSub(x).rOk; });
     var hid = Object.keys(subsState).filter(function (id) { return (showPast || subActive(subsState[id])) && !subShown(subsState[id]); }).length;
     var allr = Object.keys(subsState).filter(function (id) { return subActive(subsState[id]) && subShown(subsState[id]) && subsState[id].status !== 'pass'; }), fs = $('#subsSort').value; $('#subsSort').value = 'fit'; subSort(allr); $('#subsSort').value = fs;
@@ -2015,7 +2045,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function refreshStudyProg() {
     var box = $('#studyProg'); if (!box) return; box.textContent = '';
     var tasks = allTasks(), tot = 0, a = 0, b = 0;
-    tasks.forEach(function (t) { tot += t.steps.length; a += personSteps(t, 'a'); b += personSteps(t, 'b'); });
+    tasks.forEach(function (t) { tot++; if (personSteps(t, 'a') >= t.steps.length) a++; if (personSteps(t, 'b') >= t.steps.length) b++; });
     POLICIES.forEach(function (p) { tot++; var s = policyState[p.id] || {}; if (s.chkA) a++; if (s.chkB) b++; });
     box.appendChild(el('h3', null, '공부 진도'));
     [['A', nameA(), a], ['B', nameB(), b]].forEach(function (p) {
