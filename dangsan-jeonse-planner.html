@@ -410,6 +410,12 @@ body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .vcks { display: flex; flex-wrap: wrap; gap: 6px; } .vnote { margin: 0; font-size: 14.5px; line-height: 1.55; white-space: pre-wrap; } .vis .ghost { align-self: flex-start; }
 .lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 16px; } .lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
 .fold2 > summary { list-style: none; background: var(--surface); padding: 16px 20px; border-radius: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 30px -24px rgba(30,34,53,.35); } .fold2 > summary::-webkit-details-marker { display: none; } .fold2[open] > summary { margin-bottom: 0; }
+.actrow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .actrow button { height: 54px; font-size: 16px; font-weight: 800; }
+#regPick { background: var(--ink); } .actnote { margin: -6px 2px 0; } .linkbtn { background: none; color: var(--accent); border: 0; padding: 0; height: auto; font: inherit; font-weight: 700; text-decoration: underline; }
+.sech { margin: 8px 2px -4px; font-size: 16px; }
+.regtag { font-weight: 800; font-size: 13.5px; padding: 6px 10px; border-radius: 10px; margin-bottom: 10px; } .regtag.upd { background: var(--mint-soft); color: var(--mint-ink); } .regtag.new { background: var(--sun-soft); color: var(--sun-ink); }
+.cmp-t { display: flex; flex-wrap: wrap; gap: 6px; } .cmp-n { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+#regOut:empty, #regOut:has(#regMsg:empty):not(:has(.regf)) { display: none; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -644,7 +650,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     <h2 class="vtitle">👟 발품팔기</h2>
     <p class="vsub">다녀온 집을 기록해요. 사진·체크·느낀 점</p>
     <div class="stack">
-      <button type="button" id="vNew">＋ 임장 기록하기</button>
+      <div class="actrow"><button type="button" id="vNew">📍 임장 기록</button><button type="button" id="regPick">📷 캡처 올리기</button></div>
+      <p class="note actnote">캡처는 이미 있는 단지면 시세를 갱신하고, 처음 보는 단지면 새로 추가해요. <button type="button" class="linkbtn" id="regManual">직접 입력</button></p>
+      <input type="file" id="regFile" accept="image/*" multiple hidden>
+      <div id="regOut" class="stack"><p class="note" id="regMsg"></p><div id="regForms" class="stack"></div></div>
       <form class="card" id="vForm" hidden>
         <h3>임장 기록</h3>
         <label class="f"><span class="lbl">단지</span><input id="vName" list="vNames" placeholder="단지 이름" maxlength="40" autocomplete="off"><datalist id="vNames"></datalist></label>
@@ -656,81 +665,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <div class="ai-acts"><button type="submit">저장</button><button type="button" class="ghost" id="vCancel">취소</button></div>
         <p class="note" id="vMsg"></p>
       </form>
-      <div id="vList" class="stack"><div class="empty">아직 임장 기록이 없어요. 다녀오면 바로 남겨 보세요.</div></div>
-      <details class="fold2" id="pxFold"><summary>📈 후보 단지 · 시세 추적</summary><div class="stack" style="margin-top:14px">
-      <div class="card" id="regCard">
-        <div class="mhead"><h3>📷 사진으로 매물 올리기</h3></div>
-        <p class="hsub">네이버 지도·부동산 화면을 캡처해서 올리면 자동으로 읽어요. 직접 입력도 돼요.</p>
-        <div class="ai-acts">
-          <button type="button" id="regPick">캡처 올리기</button>
-          <button type="button" class="ghost" id="regManual">직접 입력</button>
-          <input type="file" id="regFile" accept="image/*" multiple hidden>
-        </div>
-        <p class="note" id="regMsg" style="margin-top:8px"></p>
-        <div id="regForms" class="stack" style="margin-top:12px"></div>
-      </div>
-
-      <details class="card guide" id="guide">
-        <summary>매물 찾는 법과 기록 루틴</summary>
-        <p class="hsub" style="margin-top:6px">처음이면 읽어 보세요. 사이트마다 보는 것이 달라요.</p>
-        <details class="site" open>
-          <summary>네이버 지도 · 네이버 부동산</summary>
-          <p>지금 나온 전세 매물과 호가를 보는 곳이에요.</p>
-          <ol>
-            <li>네이버 지도 앱에서 <span class="kw">당산동 아파트</span>를 검색해요.</li>
-            <li>부동산(매물) 보기로 바꾸고 거래 방식 <b>전세</b>, 유형 <b>아파트</b>를 골라요.</li>
-            <li>면적은 <b>최소와 최대를 모두</b> 넣어요. 기본은 전용 40~60㎡(약 12~18평)이고, 역산 탭에서 바꿀 수 있어요. 네이버 화면의 면적이 전용인지 공급인지 꼭 확인하세요.</li>
-            <li>네이버의 평형 표기(예: 25평형)는 보통 공급면적 기준이라 전용(㎡)보다 큰 숫자예요. 단지 카드에 <b>전용 ㎡와 공급 평형을 둘 다</b> 적어 두면 평수를 헷갈리지 않아요.</li>
-            <li>보증금(가격)도 <b>최소와 최대</b>를 넣어요. 최대는 역산 결과의 상한, 최소는 하한의 70% 정도로 두면 너무 싼 매물(상태·권리 위험)을 한 번 거를 수 있어요.</li>
-            <li>단지를 눌러 <b>낮은 가격순</b>으로 정렬하고, 같은 평형의 최저 전세 호가와 매물 개수를 봐요.</li>
-          </ol>
-          <p>이렇게도 검색해 보세요: <span class="kw">당산동 전세 59㎡</span><span class="kw">당산역 소형 아파트 전세</span><span class="kw">당산 래미안 전세</span></p>
-          <div class="rec">기록: 단지별 같은 평형의 최저 전세 호가 + 그 평형 전세 매물 수</div>
-          <div class="links"><a href="https://land.naver.com" target="_blank" rel="noopener noreferrer">네이버 부동산</a></div>
-        </details>
-        <details class="site">
-          <summary>국토교통부 실거래가 공개시스템</summary>
-          <p>실제로 계약된 가격이에요. 호가보다 믿을 수 있어요.</p>
-          <ol>
-            <li>전월세 실거래가에서 지역을 <b>서울특별시 영등포구 당산동</b>으로 골라요.</li>
-            <li>아파트, 기간은 최근 1년으로 두고 조회해요.</li>
-            <li>우리 후보 단지와 평형의 최근 거래 3건 이상을 봐요. 층과 계약일도 함께 봐요.</li>
-          </ol>
-          <div class="rec">기록: 최근 실거래 가격·층·계약일은 단지 카드 메모에 적어 두세요</div>
-          <div class="links"><a href="https://rt.molit.go.kr" target="_blank" rel="noopener noreferrer">국토부 실거래가</a></div>
-        </details>
-        <details class="site">
-          <summary>호갱노노</summary>
-          <p>지도에서 단지를 누르면 전세가율, 매매·전세 실거래 그래프, 앞으로의 입주 물량, 소음 같은 입지 정보를 한 화면에서 볼 수 있어요.</p>
-          <ul><li>검색어: <span class="kw">당산동</span> 후 단지 선택</li><li>전세가율이 높은 단지는 보증금 위험을 한 번 더 확인해요.</li><li>근처에 입주 물량이 몰리는 시기는 전세가가 눌리기도 해서 계약 시기를 가늠하는 데 써요.</li></ul>
-          <div class="links"><a href="https://hogangnono.com" target="_blank" rel="noopener noreferrer">호갱노노</a></div>
-        </details>
-        <details class="site">
-          <summary>아실 (asil.kr)</summary>
-          <p>지역 단위로 전세 매물이 늘고 있는지 줄고 있는지, 입주 물량과 시세 변화를 보기 좋아요.</p>
-          <ul><li>영등포구와 인접 지역을 골라 전세 매물 증감을 봐요.</li><li>매물이 늘고 가격이 내리면 협상 여지가 생기는 신호예요.</li></ul>
-          <div class="links"><a href="https://asil.kr" target="_blank" rel="noopener noreferrer">아실</a></div>
-        </details>
-        <details class="site">
-          <summary>KB부동산</summary>
-          <p>은행이 대출 심사에 쓰는 시세를 확인하는 곳이에요. 단지를 검색해 KB시세와 전세가율을 봐요.</p>
-          <div class="links"><a href="https://kbland.kr" target="_blank" rel="noopener noreferrer">KB부동산</a></div>
-        </details>
-        <div class="routine">
-          <b>기록은 매일보다 주 1회가 좋아요</b>
-          <ul>
-            <li>호가는 하루 단위로 흔들려서 매일 적으면 잡음만 늘어요. 주 1회, 같은 요일 같은 시간에 같은 필터로 보세요.</li>
-            <li>봄·가을 이사철에는 격주로 늘려도 좋아요.</li>
-            <li>매번 적을 것: 같은 평형의 <b>최저 전세 호가</b>, <b>전세 매물 수</b>, 가끔 <b>실거래</b>.</li>
-            <li>읽는 법: 가격이 내리고 매물이 늘면 협상 여지, 가격이 오르고 매물이 줄면 서두르지 말고 다른 단지도 보세요.</li>
-            <li>4주 이상 쌓이면 아래 순위의 “AI 분석”으로 추이를 같이 봐요.</li>
-          </ul>
-        </div>
-      </details>
       <div class="card" id="cmpCard">
         <div class="mhead"><h3>📊 한눈에 비교</h3><button type="button" class="ghost sm" id="cmpSave" hidden>이미지로 저장</button></div>
-        <div id="cmpBody"><div class="empty">후보 단지에 전세가를 넣으면 비교 그림이 나와요.</div></div>
+        <div id="cmpBody"></div>
       </div>
+      <h3 class="sech">📍 임장 기록</h3>
+      <div id="vList" class="stack"><div class="empty">아직 임장 기록이 없어요. 다녀오면 바로 남겨 보세요.</div></div>
+      <details class="fold2" id="pxFold"><summary>✏️ 단지 데이터 직접 입력·수정</summary><div class="stack" style="margin-top:14px">
+
 
 
 
@@ -1411,7 +1353,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     fld('층', 'floor', 'text', it.floor || '');
     fld('방향', 'dir', 'text', it.dir || '');
     fld('메모', 'memo', 'text', it.memo || '', true);
-    f.appendChild(g);
+    var tag = el('div', 'regtag'); f.insertBefore(tag, f.firstChild); f.appendChild(g);
+    function upTag() { var nm = ($('[data-rf="name"]', f) || {}).value || '', hit = findComplex(nm); tag.className = 'regtag ' + (hit ? 'upd' : 'new'); tag.textContent = !nm.trim() ? '단지명을 확인해 주세요' : hit ? '🔄 기존 단지 “' + (cxData.get(hit).name || nm) + '” 시세 업데이트' : '🆕 새 단지로 추가'; }
+    $('[data-rf="name"]', f).addEventListener('input', upTag); upTag();
     var acts = el('div', 'acts'), ok = el('button', null, '등록'), no = el('button', 'ghost', '취소'); ok.type = 'button'; no.type = 'button'; acts.appendChild(ok); acts.appendChild(no); f.appendChild(acts);
     no.addEventListener('click', function () { f.remove(); });
     ok.addEventListener('click', async function () {
@@ -1444,7 +1388,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       else if (kind === '매매' && price > 0 && !Number(rec.sale)) { rec.sale = price; setPriceRec(id, today, rec); }
       var card = $('.cx[data-id="' + id + '"]'); if (card) fillCard(card);
       refreshRank(); refreshMonthly();
-      return (created ? '새 단지로 ' : '') + name + ' 매물을 등록했어요. 매물 탭의 단지 카드 “본 매물”에서 볼 수 있어요.';
+      return (created ? '🆕 새 단지로 추가했어요: ' : '🔄 시세를 업데이트했어요: ') + name + ' · 아래 비교에 반영됐어요.';
     } catch (e) { return '등록하지 못했어요. 잠시 뒤 다시 시도해 주세요.'; }
   }
   var CAPTURE_PROMPT = [
@@ -1568,6 +1512,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     write('visits/new', function () { return db.collection('visits').add(rec); });
   });
   function renderVisits() {
+    if (typeof refreshCompare === 'function') refreshCompare();
     var box = $('#vList'); if (!box) return; box.textContent = '';
     var ids = Object.keys(visitsState).sort(function (a, b) { var A = visitsState[a], B = visitsState[b]; return (B.date || '').localeCompare(A.date || '') || (B.createdAt || 0) - (A.createdAt || 0); });
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 임장 기록이 없어요. 다녀오면 바로 남겨 보세요.')); return; }
@@ -1972,7 +1917,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var out = [], none = [];
     cxData.forEach(function (d, id) {
       if (d.status === '탈락') return;
-      var sc = scoreOf(id); if (sc) out.push(sc); else none.push({ id: id, name: d.name || '(이름 없음)' });
+      var sc = scoreOf(id); if (sc) { var vs0 = visitsFor(d.name).filter(function (v) { return v.rating; }); if (vs0.length) { var av = vs0.reduce(function (a, v) { return a + v.rating; }, 0) / vs0.length; sc.total = Math.max(0, Math.min(100, Math.round(sc.total + (av - 2) * 5))); } out.push(sc); } else none.push({ id: id, name: d.name || '(이름 없음)' });
     });
     out.sort(function (a, b) { return b.total - a.total; });
     return { scored: out, none: none };
@@ -2001,25 +1946,44 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     refreshCompare(r);
   }
   var cmpRows = [];
+  function visitsFor(name) {
+    var n = normName(name), out = []; if (!n) return out;
+    Object.keys(visitsState).forEach(function (id) { var v = visitsState[id], m = normName(v.name); if (m && (m === n || (Math.min(m.length, n.length) >= 3 && (m.indexOf(n) >= 0 || n.indexOf(m) >= 0)))) out.push(v); });
+    out.sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); });
+    return out;
+  }
   function refreshCompare(r) {
     var box = $('#cmpBody'); if (!box) return; box.textContent = ''; cmpRows = [];
     var sv = $('#cmpSave'); if (sv) sv.hidden = true;
-    var cc0 = $('#cmpCard'), rk0 = $('#rank'); if (cc0) cc0.hidden = !(core.ready && r.scored.length); if (rk0) rk0.hidden = !(core.ready && r.scored.length);
-    if (!core.ready || !r.scored.length) return;
-    var maxJ = Math.max.apply(null, r.scored.map(function (x) { return x.lp.j; }));
-    r.scored.forEach(function (sc, i) {
-      var ser = seriesOf(sc.id), tr = trendOf(ser), row = el('div', 'cmp');
-      var head = el('div', 'cmp-h'); head.appendChild(el('span', 'rk-n', String(i + 1))); head.appendChild(el('b', null, sc.name));
+    r = r || allScores();
+    if (!cxData.size) { box.appendChild(el('div', 'empty', '캡처를 올리거나 임장 기록을 남기면 여기서 한눈에 비교해요.')); return; }
+    function card(sc, d, id, rank) {
+      var row = el('div', 'cmp'), ser = seriesOf(id), tr = trendOf(ser), vs = visitsFor(d.name);
+      var head = el('div', 'cmp-h'); head.appendChild(el('span', 'rk-n', rank ? String(rank) : '–')); head.appendChild(el('b', null, d.name || '(이름 없음)'));
       if (tr) head.appendChild(el('span', 'chip ' + (tr.pctMonth >= 0 ? 'warn' : 'ok'), (tr.pctMonth >= 0 ? '▲' : '▼') + Math.abs(tr.pctMonth).toFixed(1) + '%/월'));
       row.appendChild(head);
-      if (sc.area) row.appendChild(el('div', 'cmp-a', '전용 ' + sc.area + '㎡ · ' + pyeong(sc.area) + '평'));
-      var st = el('div', 'cmp-s');
-      [['전세가', fmt(sc.lp.j)], ['월 이자', fmt(sc.interest)], ['필수 저축', fmt(sc.need)]].forEach(function (p) { var d = el('div'); d.appendChild(el('small', null, p[0])); d.appendChild(el('b', null, p[1])); st.appendChild(d); });
+      var ar = Number(d.area) || 0, py = Number(d.py) || 0;
+      row.appendChild(el('div', 'cmp-a', ar ? '전용 ' + ar + '㎡ · ' + pyeong(ar) + '평' + (py ? ' (공급 ' + py + '평)' : '') : py ? '공급 ' + py + '평' : '평수 미입력'));
+      var lp = sc ? sc.lp : listingPrice(id), st = el('div', 'cmp-s');
+      [['전세가', lp ? fmt(lp.j) : '–'], ['월 이자', sc ? fmt(sc.interest) : '–'], ['필수 저축', sc ? fmt(sc.need) : '–']].forEach(function (p) { var dv = el('div'); dv.appendChild(el('small', null, p[0])); dv.appendChild(el('b', null, p[1])); st.appendChild(dv); });
       row.appendChild(st);
-      box.appendChild(row);
-      cmpRows.push({ n: i + 1, name: sc.name, area: sc.area ? sc.area + '㎡ ' + pyeong(sc.area) + '평' : '', j: sc.lp.j, interest: sc.interest, need: sc.need, trend: tr ? (tr.pctMonth >= 0 ? '▲' : '▼') + Math.abs(tr.pctMonth).toFixed(1) + '%/월' : '' });
+      var tags = el('div', 'cmp-t');
+      if (lp) { var ago = dayNum(todayStr()) - dayNum(lp.d); tags.appendChild(el('span', 'chip ' + (ago > 14 ? 'warn' : 'plain'), '시세 ' + dotD(lp.d) + (ago > 14 ? ' · ' + ago + '일 전, 캡처로 갱신' : ' 기준'))); }
+      else tags.appendChild(el('span', 'chip warn', '시세 없음 · 캡처 올리기'));
+      if (sc && sc.ratio != null) tags.appendChild(el('span', 'chip ' + (sc.ratio >= 80 ? 'bad' : sc.ratio >= 70 ? 'warn' : 'ok'), '전세가율 ' + sc.ratio.toFixed(0) + '%'));
+      if (vs.length) { var cnt = { 3: 0, 2: 0, 1: 0 }; vs.forEach(function (v) { if (cnt[v.rating] != null) cnt[v.rating]++; }); var face = (cnt[3] ? '👍' + cnt[3] + ' ' : '') + (cnt[2] ? '😐' + cnt[2] + ' ' : '') + (cnt[1] ? '👎' + cnt[1] : ''); tags.appendChild(el('span', 'chip grape', '📍 임장 ' + vs.length + '회' + (face.trim() ? ' · ' + face.trim() : '') + ' · 마지막 ' + dotD(vs[0].date || todayStr()))); }
+      else tags.appendChild(el('span', 'chip plain', '아직 안 가봤어요'));
+      row.appendChild(tags);
+      if (vs.length && vs[0].note) row.appendChild(el('p', 'cmp-n', '“' + String(vs[0].note).slice(0, 70) + (String(vs[0].note).length > 70 ? '…' : '') + '”'));
+      return row;
+    }
+    r.scored.forEach(function (sc, i) {
+      var d = cxData.get(sc.id) || {}; box.appendChild(card(sc, d, sc.id, i + 1));
+      cmpRows.push({ n: i + 1, name: sc.name, area: sc.area ? sc.area + '㎡ ' + pyeong(sc.area) + '평' : '', j: sc.lp.j, interest: sc.interest, need: sc.need, trend: (function () { var t = trendOf(seriesOf(sc.id)); return t ? (t.pctMonth >= 0 ? '▲' : '▼') + Math.abs(t.pctMonth).toFixed(1) + '%/월' : ''; })() });
     });
-    if (sv) sv.hidden = !dl;
+    r.none.forEach(function (n) { box.appendChild(card(null, cxData.get(n.id) || { name: n.name }, n.id, 0)); });
+    if (!core.ready) box.insertBefore(el('p', 'note', '모으기 탭에 연소득을 넣으면 순위와 월 이자가 계산돼요.'), box.firstChild);
+    if (sv) sv.hidden = !dl || !cmpRows.length;
   }
   $('#cmpSave').addEventListener('click', function () {
     if (!dl || !cmpRows.length) return;
