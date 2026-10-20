@@ -361,6 +361,9 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .hs .verdict2 b { font-size: 14.5px; }
 .hs .cth { margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--coral-ink); }
 .hs .verdict2 b { line-height: 1.5; }
+.cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cat { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 20px 16px; border-radius: 20px; border: 0; background: var(--surface); box-shadow: 0 10px 30px -24px rgba(30,34,53,.35); text-align: left; cursor: pointer; font: inherit; color: var(--ink); min-height: 120px; }
+.cat .ce { font-size: 34px; line-height: 1; } .cat b { font-size: 18px; font-weight: 800; } .cat small { color: var(--muted); font-size: 12.5px; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -463,7 +466,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <div id="moRows">
           <div class="quest" data-m="px"><span class="qi">🏢</span><div><b>후보 단지 시세 기록하기</b><small id="moPxSub"></small></div><button type="button" class="ghost" data-tab-go="homes">입력</button></div>
           <label class="quest" data-m="pol"><span class="qi">📣</span><div><b>정책·청약 새 공고 확인하기</b><small>서울주거포털, 청약홈, 마이홈포털에서 새 공고와 기준 변경을 봐요.</small></div><input type="checkbox" id="moPolicy" aria-label="정책 공고 확인 완료"></label>
-          <div class="quest" data-m="tk"><span class="qi">📚</span><div><b>지금 단계 숙제 진행하기</b><small id="moTkSub"></small></div><button type="button" class="ghost" data-tab-go="study">숙제</button></div>
+          <div class="quest" data-m="tk"><span class="qi">📚</span><div><b>숙제 진행하기</b><small id="moTkSub"></small></div><button type="button" class="ghost" data-tab-go="study">숙제</button></div>
         </div>
       </div>
 
@@ -702,8 +705,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   </section>
   <section class="pane" id="tab-study" data-tab="study" hidden>
     <h2 class="vtitle">숙제</h2>
-    <p class="vsub">왜 모으는지, 어떻게 쓰는지, 우리 조건에 맞는 집을 어떻게 찾는지 차근차근</p>
-    <div class="seg" id="studySeg" role="group" aria-label="숙제 종류">
+    <p class="vsub">네 가지만 하면 돼요.</p>
+    <div class="seg" id="studySeg" role="group" aria-label="숙제 종류" hidden>
       <button type="button" data-pane="board" aria-pressed="true">시기별 숙제</button>
       <button type="button" data-pane="pol" aria-pressed="false">정책</button>
     </div>
@@ -711,11 +714,15 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       <div class="boardbar">
         <span id="bdText">0 / 0</span>
         <div class="bar"><i id="bdBar"></i></div>
-        <label><input type="checkbox" id="onlyOpen"> 남은 것만</label>
+        <label hidden><input type="checkbox" id="onlyOpen"> 남은 것만</label>
       </div>
+      <div class="cats" id="cats"></div>
+      <div id="polLinkRow" style="margin-top:14px"><button type="button" class="ghost" id="polLink" style="width:100%">📋 정부 대출·지원 제도 모아보기</button></div>
+      <div id="catBack" hidden style="margin-bottom:10px"><button type="button" class="ghost" id="catBackBtn">← 숙제 전체</button></div>
       <div class="stack" id="phases"></div>
     </div>
     <div id="panePol" hidden>
+      <button type="button" class="ghost" id="polBack" style="margin-bottom:10px">← 숙제 전체</button>
       <p class="vsub" style="margin-top:0">우리에게 맞을 만한 제도예요. 아래 기준은 인터넷 자료를 요약한 것이라 틀릴 수 있어요. 링크의 공식 사이트에서 꼭 확인하세요.</p>
       <div class="tabs" id="polTabs" role="group" aria-label="분류">
         <button type="button" data-kind="" aria-pressed="true">전체</button>
@@ -775,10 +782,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   };
 
   var PHASES = [
-    { id: 'p0', t: '왜, 얼마나 모아야 하나', s: null, e: -15, sub: '전세의 돈 구조를 이해하고, 모으는 방법을 정해요.' },
-    { id: 'p1', t: '모은 돈과 대출·정책 활용하기', s: -15, e: -10, sub: '같은 보증금도 어떤 지원을 쓰느냐에 따라 이자가 달라져요.' },
-    { id: 'p2', t: '우리 조건에 맞는 집 찾기', s: -10, e: -4, sub: '숫자로 범위를 정하고, 후보를 뽑고, 시세를 추적해요.' },
-    { id: 'p3', t: '후보 좁히기와 계약 준비', s: -4, e: 2, sub: '계약 자체보다 준비 과정에 집중해요.' }
+    { id: 'c1', e: '💰', t: '모으기', sub: '얼마를, 어떻게 모을지 정하고 대출을 알아봐요.' },
+    { id: 'c2', e: '👟', t: '발품팔기', sub: '예산 안에서 후보를 뽑고, 시세를 추적하고, 직접 가 봐요.' },
+    { id: 'c3', e: '🏠', t: '청약', sub: '내 청약 상태를 알고 선택지에 넣을지 정해요.' },
+    { id: 'c4', e: '📚', t: '부동산 공부', sub: '전세 구조와 시세 읽는 법을 익혀요.' }
   ];
 
   var TASKS = [
@@ -864,6 +871,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       why: '이사철에는 견적이 일찍 마감돼요.',
       steps: ['이사 견적 두세 곳 받아 보기', '부대비용 칸에 이사·가전 예산 반영하기'], l: [] }
   ];
+
+  var CAT = { plan: 'c1', plan2: 'c1', sim: 'c1', support: 'c1', range: 'c2', pick: 'c2', track: 'c2', visit: 'c2', prod: 'c3', sub: 'c3', sub2: 'c3', why: 'c4', own: 'c4', read: 'c4', rank: 'c4' };
+  TASKS = TASKS.filter(function (t) { return CAT[t.id]; }).map(function (t) { t.ph = CAT[t.id]; return t; });
 
   var POLICIES = [
     { id: 'beotim', n: '신혼부부 전용 버팀목 전세대출', k: '대출', star: 1,
@@ -1000,14 +1010,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
 
   /* ---------- phases / tasks ---------- */
-  function currentPhase() {
-    var T = idx(targetYm()), now = idx(ymNow());
-    for (var i = 0; i < PHASES.length; i++) {
-      var p = PHASES[i], s = p.s == null ? -Infinity : T + p.s, e = T + p.e;
-      if (now >= s && now < e) return p.id;
-    }
-    return now < T ? 'p0' : 'p3';
-  }
+  function currentPhase() { return 'all'; }
   function phaseLabel(p) {
     var T = idx(targetYm()), now = idx(ymNow());
     var s = p.s == null ? now : T + p.s, e = T + p.e;
@@ -1023,7 +1026,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var list = TASKS.map(function (t) { return { id: t.id, ph: t.ph, star: t.star, who: t.who, t: t.t, why: t.why, steps: t.steps, l: t.l, custom: false }; });
     Object.keys(taskState).forEach(function (id) {
       var s = taskState[id];
-      if (s && s.custom) list.push({ id: id, ph: s.phase || 'p0', star: 0, who: s.who === 'each' ? 'each' : 'both', t: s.title || '', why: '', steps: ['완료하기'], l: [], custom: true });
+      if (s && s.custom) list.push({ id: id, ph: PHASES.some(function (p) { return p.id === s.phase; }) ? s.phase : 'c1', star: 0, who: s.who === 'each' ? 'each' : 'both', t: s.title || '', why: '', steps: ['완료하기'], l: [], custom: true });
     });
     return list;
   }
@@ -1556,8 +1559,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (nSub) item('📣', '청약 공고 ' + nSub + '건 확인하기', '마감이 가까운 순으로 정렬돼 있어요.', false, ['보기', 'study'], null, 'pol');
     var me = getMe(), tasks = allTasks(), cur = currentPhase(), pick = null;
     function star(x, y) { return (y.star ? 1 : 0) - (x.star ? 1 : 0); }
-    if (me) pick = tasks.filter(function (t) { return t.who === 'each' && t.ph === cur && personSteps(t, me.toLowerCase()) < t.steps.length; }).sort(star)[0];
-    if (!pick) pick = tasks.filter(function (t) { return t.who === 'both' && t.ph === cur && !isDone(t); }).sort(star)[0];
+    if (me) pick = tasks.filter(function (t) { return t.who === 'each' && true && personSteps(t, me.toLowerCase()) < t.steps.length; }).sort(star)[0];
+    if (!pick) pick = tasks.filter(function (t) { return t.who === 'both' && true && !isDone(t); }).sort(star)[0];
     if (pick) item('📚', '숙제: ' + pick.t, pick.who === 'each' ? '내가 할 숙제' : '같이 할 숙제', false, ['보기', 'task', pick.id]);
   }
 
@@ -1953,8 +1956,23 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     body.appendChild(meta); d.appendChild(body);
     return d;
   }
+  function setCat(id) {
+    $('#cats').hidden = !!id; $('#polLinkRow').hidden = !!id; $('#catBack').hidden = !id;
+    $$('.phase').forEach(function (p) { p.hidden = p.dataset.ph !== id; });
+    if (id) window.scrollTo(0, 0);
+  }
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-cat]'); if (c) { setCat(c.dataset.cat); return; }
+    if (e.target.closest('#catBackBtn')) { setCat(null); return; }
+    if (e.target.closest('#polLink')) { $('#studySeg [data-pane="pol"]').click(); window.scrollTo(0, 0); return; }
+    if (e.target.closest('#polBack')) { $('#studySeg [data-pane="board"]').click(); window.scrollTo(0, 0); }
+  });
   function buildBoard() {
-    var root = $('#phases'), cur = currentPhase();
+    var root = $('#phases'), cur = currentPhase(), cats = $('#cats');
+    PHASES.forEach(function (p) {
+      var b = el('button', 'cat'); b.type = 'button'; b.dataset.cat = p.id;
+      b.appendChild(el('span', 'ce', p.e)); b.appendChild(el('b', null, p.t)); var cp = el('small', null, ''); cp.dataset.cp = '1'; b.appendChild(cp); cats.appendChild(b);
+    });
     PHASES.forEach(function (p) {
       var sec = el('div', 'card phase'); sec.dataset.ph = p.id;
       var head = el('div', 'ph-head'); head.appendChild(el('h3', null, p.t));
@@ -1968,21 +1986,22 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         var list = el('div'); list.dataset.list = g[0]; grp.appendChild(list); sec.appendChild(grp);
       });
       TASKS.filter(function (t) { return t.ph === p.id; }).forEach(function (t) {
-        var row = makeTaskRow(t); if (p.id === cur && t.star) row.open = true;
+        var row = makeTaskRow(t); 
         sec.querySelector('[data-list="' + t.who + '"]').appendChild(row);
       });
       var form = el('form', 'addtask'); form.dataset.ph = p.id;
       var ws = el('select'); ws.setAttribute('aria-label', '종류'); ws.innerHTML = '<option value="both">같이</option><option value="each">각자</option>';
-      var inp = el('input'); inp.placeholder = '이 단계에 우리 숙제 추가'; inp.maxLength = 80; inp.setAttribute('aria-label', p.t + ' 숙제 추가');
+      var inp = el('input'); inp.placeholder = '우리 숙제 추가'; inp.maxLength = 80; inp.setAttribute('aria-label', p.t + ' 숙제 추가');
       var btn = el('button', null, '추가'); btn.type = 'submit'; form.appendChild(ws); form.appendChild(inp); form.appendChild(btn); sec.appendChild(form); root.appendChild(sec);
     });
+    setCat(null);
   }
   function refreshBoard() {
     var cur = currentPhase(), seen = {}, tasks = allTasks(), byId = {}, me = getMe();
     tasks.forEach(function (t) { byId[t.id] = t; });
     tasks.forEach(function (t) {
       if (!t.custom) return; seen[t.id] = 1;
-      var row = $('.task[data-id="' + t.id + '"]'), sec = $('.phase[data-ph="' + t.ph + '"]') || $('.phase[data-ph="p0"]');
+      var row = $('.task[data-id="' + t.id + '"]'), sec = $('.phase[data-ph="' + t.ph + '"]') || $('.phase[data-ph="c1"]');
       if (row && row.dataset.who !== t.who) { row.remove(); row = null; }
       if (!row) { row = makeTaskRow(t); if (!canWrite) $$('input,select,button', row).forEach(function (x) { x.disabled = true; }); sec.querySelector('[data-list="' + t.who + '"]').appendChild(row); }
       var tt = row.querySelector('.tk-title'); if (tt.firstChild && tt.firstChild.nodeValue !== t.t) tt.firstChild.nodeValue = t.t;
@@ -2004,15 +2023,15 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     });
     PHASES.forEach(function (p) {
       var sec = $('.phase[data-ph="' + p.id + '"]'), rows = $$('.task', sec), d = rows.filter(function (r) { return r.classList.contains('done'); }).length;
-      sec.querySelector('[data-rng]').textContent = phaseLabel(p); sec.querySelector('[data-prog]').textContent = d + ' / ' + rows.length + ' 완료';
-      sec.classList.toggle('now', p.id === cur); sec.querySelector('[data-now]').hidden = p.id !== cur;
+      sec.querySelector('[data-rng]').textContent = ''; sec.querySelector('[data-prog]').textContent = d + ' / ' + rows.length + ' 완료'; var tp = $('[data-cat="' + p.id + '"] [data-cp]'); if (tp) tp.textContent = d + ' / ' + rows.length + ' 완료';
+      sec.querySelector('[data-now]').hidden = true;
       var ea = 0, eb = 0, en = 0;
       tasks.forEach(function (t) { if (t.ph === p.id && t.who === 'each') { ea += personSteps(t, 'a'); eb += personSteps(t, 'b'); en += t.steps.length; } });
       sec.querySelector('[data-gp="each"]').textContent = en ? nameA() + ' ' + ea + '/' + en + ' · ' + nameB() + ' ' + eb + '/' + en : '';
       sec.querySelector('[data-gp="both"]').textContent = '';
       ['each', 'both'].forEach(function (g) { var grp = sec.querySelector('[data-grp="' + g + '"]'); grp.hidden = !grp.querySelector('.task'); });
     });
-    $('#bdText').textContent = doneTasks + ' / ' + totalTasks + ' 숙제 · 단계 ' + doneSteps + ' / ' + totalSteps;
+    $('#bdText').textContent = '전체 ' + doneTasks + ' / ' + totalTasks + ' 완료';
     $('#bdBar').style.width = (totalSteps ? doneSteps / totalSteps * 100 : 0) + '%';
   }
   function saveTask(id, patch, ms) {
@@ -2064,8 +2083,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var polDone = !!(monthlyState[ym] && monthlyState[ym].policy);
     $('.quest[data-m="pol"]').classList.toggle('done', polDone); if (polDone) n++;
     var cb = $('#moPolicy'); if (cb.checked !== polDone) cb.checked = polDone;
-    var left = allTasks().filter(function (t) { return t.ph === cur && !isDone(t); });
-    mark('tk', left.length === 0); $('#moTkSub').textContent = left.length === 0 ? '이 단계 숙제를 모두 끝냈어요.' : left.length + '개 남음';
+    var left = allTasks().filter(function (t) { return true && !isDone(t); });
+    mark('tk', left.length === 0); $('#moTkSub').textContent = left.length === 0 ? '숙제를 모두 끝냈어요.' : left.length + '개 남음';
     $('#moProg').textContent = n + ' / 3'; refreshOnboard(); refreshNext();
   }
   function refreshOnboard() {
@@ -2075,9 +2094,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
   function refreshHomework() {
     refreshOnboard();
-    var cur = currentPhase(), ph = PHASES.filter(function (p) { return p.id === cur; })[0], me = getMe(), tasks = allTasks();
-    $('#hwPhase').textContent = ph.t + ' · ' + phaseLabel(ph);
-    var each = tasks.filter(function (t) { return t.who === 'each' && t.ph === cur; });
+    var me = getMe(), tasks = allTasks();
+    $('#hwPhase').textContent = '전체 숙제 기준이에요.';
+    var each = tasks.filter(function (t) { return t.who === 'each' && true; });
     var total = 0, a = 0, b = 0; each.forEach(function (t) { total += t.steps.length; a += personSteps(t, 'a'); b += personSteps(t, 'b'); });
     var bars = $('#hwBars'); bars.textContent = '';
     [['A', nameA(), a], ['B', nameB(), b]].forEach(function (p) {
@@ -2105,7 +2124,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     function byStar(x, y) { return (y.star ? 1 : 0) - (x.star ? 1 : 0); }
     var mine = me ? each.filter(function (t) { return personSteps(t, me.toLowerCase()) < t.steps.length; }).sort(byStar) : [];
     fill($('#hwMine'), mine, me ? '지금 단계에서 내가 할 숙제를 모두 끝냈어요.' : '위에서 “나는 누구”를 고르면 내 숙제가 보여요.');
-    var both = tasks.filter(function (t) { return t.who === 'both' && t.ph === cur && !isDone(t); }).sort(byStar);
+    var both = tasks.filter(function (t) { return t.who === 'both' && true && !isDone(t); }).sort(byStar);
     fill($('#hwBoth'), both, '지금 단계의 같이 할 숙제를 모두 끝냈어요.');
   }
   document.addEventListener('click', function (e) {
@@ -2115,7 +2134,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var tg = e.target.closest('[data-tab-go]'); if (tg) { showTab(tg.dataset.tabGo); if (tg.dataset.pane) { var pb = $$('#studySeg button').filter(function (x) { return x.dataset.pane === tg.dataset.pane; })[0]; if (pb) pb.click(); } if (tg.dataset.open) { var od = $(tg.dataset.open); if (od) { od.open = true; setTimeout(function () { go(tg.dataset.open); }, 60); } } return; }
     var t = e.target.closest('[data-go-task]');
     if (t) {
-      showTab('study', true); $$('#studySeg button')[0].click();
+      showTab('study', true); $$('#studySeg button')[0].click(); var tk0 = allTasks().filter(function (x) { return x.id === t.dataset.goTask; })[0]; if (tk0) setCat(tk0.ph);
       var row = $('.task[data-id="' + t.dataset.goTask + '"]'); if (row) { row.open = true; row.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' }); }
     }
     var ed = e.target.closest('[data-evdel]');
