@@ -332,6 +332,67 @@ def fetch_sh(chrome_path=None, days=45, max_items=12):
     return out
 
 
+# ---------------------------------------------------------------- LH ----
+LH_LISTS = [
+    ("LH임대", "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026"),
+    ("LH분양", "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1027"),
+]
+LH_REGION = {"서울": "서울특별시", "경기": "경기도", "인천": "인천광역시"}
+
+
+def fetch_lh(regions, chrome_path=None, max_items=30):
+    """LH청약플러스 공고문 목록(표)에서 서울·경기 등 원하는 지역의 접수 중 공고를 읽는다(읽기만). 실패하면 빈 목록."""
+    from playwright.sync_api import sync_playwright
+    today = dt.date.today().isoformat(); out = []; seen = set(); stat = {"rows": 0, "region": 0, "ended": 0}; sample = []
+    want = [LH_REGION.get(r, r) for r in regions] if regions else []
+    with sync_playwright() as p:
+        kw = {"headless": True}
+        if chrome_path:
+            kw["executable_path"] = chrome_path
+        else:
+            kw["channel"] = "chrome"
+        br = p.chromium.launch(**kw)
+        try:
+            pg = br.new_page(viewport={"width": 1100, "height": 900})
+            for kind, url in LH_LISTS:
+                try:
+                    pg.goto(url, wait_until="domcontentloaded", timeout=45000); pg.wait_for_timeout(2000)
+                    rows = pg.eval_on_selector_all("tr", "els => els.map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim().replace(/\\s+/g,' ')))")
+                except Exception as e:  # noqa: BLE001
+                    print(f"LH 목록을 못 읽었어요({kind}): {str(e)[:100]}"); continue
+                rows = [r for r in rows if len(r) >= 8]
+                stat["rows"] += len(rows)
+                if not rows:
+                    print(f"LH {kind} 목록에서 표 줄을 못 찾았어요(제목: {pg.title()[:30]})")
+                sample += [" | ".join(r[:4])[:70] for r in rows[:3]]
+                for r in rows:
+                    typ, title, area, posted, end, status = r[1], r[2], r[3], r[5], r[6], r[7]
+                    date = lambda v: v.replace(".", "-") if re.fullmatch(r"\d{4}\.\d{2}\.\d{2}", v or "") else ""
+                    posted, end = date(posted), date(end)
+                    if want and not any(area.startswith(w) for w in want):
+                        stat["region"] += 1; continue
+                    if end and end < today:
+                        stat["ended"] += 1; continue
+                    key = (title, posted)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    out.append({
+                        "no": "LH" + hash36(title + posted), "name": title[:80], "location": f"{area} (LH 공고)", "supply": typ, "areas": "", "price": "",
+                        "applyStart": "", "applyEnd": end, "winnerDate": "", "link": url,
+                        "fit": "check", "fitReason": "LH 공고 (자격·접수일은 공고문 확인)", "areaFit": "", "regionFit": "yes" if any(g in title for g in PRIORITY) else "",
+                        "source": "LH 공고", "types": [], "moveIn": "", "kind": kind, "sched": {}, "posted": posted,
+                        "notes": [f"LH {typ} 공고예요. 소득·자산·거주 요건이 중심이고 청약통장은 공고마다 달라요. 공고 보기는 LH 목록 화면이라 제목으로 찾아 주세요."],
+                    })
+        finally:
+            br.close()
+    out = out[:max_items]
+    print(f"LH 읽은 줄 {stat['rows']}개 → 지역 달라서 제외 {stat['region']}, 마감 지남 {stat['ended']}, 남은 공고 {len(out)}건")
+    if not out and sample:
+        print("  읽은 줄 예시:"); [print("   -", x) for x in sample[:6]]
+    return out
+
+
 def hash36(t):
     h = 5381
     for ch in t:
@@ -498,6 +559,7 @@ def main():
     ap.add_argument("--hour", type=int, default=8, help="schedule: 자동 실행 시(0~23)")
     ap.add_argument("--minute", type=int, default=30, help="schedule: 자동 실행 분")
     ap.add_argument("--no-sh", action="store_true", help="SH 공고를 가져오지 않기")
+    ap.add_argument("--no-lh", action="store_true", help="LH 공고를 가져오지 않기")
     ap.add_argument("--raw", action="store_true", help="API 응답의 첫 항목 필드를 출력(필드 이름이 안 맞을 때 확인용)")
     args = ap.parse_args()
 
@@ -539,6 +601,12 @@ def main():
                 items += sh_items
             except Exception as e:  # noqa: BLE001
                 print(f"SH 공고는 건너뛰었어요: {str(e)[:120]}")
+        if not args.no_lh and (not regions or any(r in LH_REGION for r in regions)):
+            try:
+                lh_items = fetch_lh(regions, args.chrome)
+                items += lh_items
+            except Exception as e:  # noqa: BLE001
+                print(f"LH 공고는 건너뛰었어요: {str(e)[:120]}")
         OUT_DIR.mkdir(exist_ok=True)
         out = OUT_DIR / f"subs_{today.isoformat()}.json"
         out.write_text(json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")

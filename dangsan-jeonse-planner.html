@@ -1222,6 +1222,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (rent) {
       var sr2 = hl === 'no' ? 'bad' : 'warn', rsd = plan.resid === '서울';
       chip(sr2, (sr2 === 'bad' ? '❌ ' : '⚠️ ') + '임대 신청 자격 확인', '공공임대는 무주택, 소득(도시근로자 월평균소득 비율)·자산 기준과 거주 요건을 봐요. 신혼부부 유형은 혼인 기간 요건도 있어요. ' + (hl === 'no' ? '집이 있다고 입력돼 있어서 어려워요.' : '우리 합산 연소득은 ' + (core && core.income > 0 ? fmt(core.income) : '미입력') + '이에요. 공고문의 소득 기준표와 비교하세요.'), true);
+      if (/신혼/.test((x.supply || '') + (x.name || ''))) chip(validYm(plan.marriageDate) ? 'ok' : 'warn', '💍 신혼부부 대상', '신혼부부 유형은 혼인 기간(보통 7년 이내)이 요건이에요. ' + (validYm(plan.marriageDate) ? '혼인신고 예정월이 입력돼 있어요. 접수일 전에 혼인신고가 돼 있어야 하는지 공고문에서 확인하세요.' : '혼인신고 예정월을 아직 안 적었어요(모으기 탭 설정).'));
       chip(rsd ? 'ok' : 'warn', rsd ? '📍 서울 거주' : '📍 서울 거주 확인', 'SH 공고는 서울 거주자 조건이 있는 경우가 많아요. ' + (rsd ? '서울에 산다고 입력돼 있어요.' : '사는 곳을 서울로 입력하지 않았어요. 공고문의 거주 요건을 확인하세요.'));
     } else if (noAcc) {
       var sn = hl === 'no' ? 'bad' : hl === 'yes' ? 'ok' : 'warn';
