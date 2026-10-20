@@ -349,6 +349,11 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .hs .hl small { flex: none; width: 92px; white-space: nowrap; color: var(--muted); } .hs .hl span { font-weight: 700; } .hs .hl.mute span { color: var(--muted); font-weight: 500; }
 .hs .hcp { margin: 6px 0 0; padding: 8px 10px; list-style: none; background: var(--bg); border-radius: 12px; gap: 3px !important; font-size: 13px; display: flex; flex-direction: column; gap: 1px; }
 .hs .hcp li.b { color: var(--coral-ink); font-weight: 700; } .hs .hcp li.g { color: var(--mint-ink); font-weight: 700; }
+.sub .info { gap: 5px; padding: 10px 12px; background: var(--bg); border-radius: 12px; }
+.sub .info .hl { display: flex; gap: 8px; font-size: 13.5px; } .sub .info .hl small { flex: none; width: 96px; white-space: nowrap; color: var(--muted); font-size: 13px; } .sub .info .hl span { font-weight: 700; color: var(--ink); }
+.sub .links a { display: inline-block; font-size: 14px; font-weight: 700; color: #fff; background: var(--accent); padding: 8px 16px; border-radius: 999px; text-decoration: none; }
+.sub .ctl { grid-template-columns: 112px minmax(0, 1fr); }
+.sub .ctl select { grid-column: auto; } .sub .ctl input[type="text"] { grid-column: auto; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -690,26 +695,16 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       <div class="card" id="subsCard" style="margin-bottom:18px">
         <div class="mhead"><h3>청약 공고 리스트</h3><span class="chip" id="subsCount">0건</span></div>
         <p class="hsub" id="subsMeta">아직 공고를 찾지 않았어요.</p>
-        <div class="ai-acts"><button type="button" id="subsFind">공고 찾기</button><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label></div>
-        <div class="ai-acts" style="margin-top:8px"><label class="chkp">정렬 <select id="subsSort" style="height:32px;font-size:13px"><option value="fit">적합도 높은 순</option><option value="end">마감 빠른 순</option></select></label></div>
-        <details class="more subcap"><summary>분양가 상한 설정 (순위 계산용)</summary><label class="f"><span class="lbl">살 수 있는 분양가 상한 (적합도 계산용)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></details>
-        <div class="routine subs-how" id="subsHow" hidden>
-          <b>공고 찾는 방법 (크롬의 Claude 확장 프로그램)</b>
-          <ol>
-            <li>아래 글이 복사됐어요. 크롬에서 Claude 확장 프로그램 창을 열고 붙여 넣어 보내세요.</li>
-            <li>Claude가 청약홈에서 공고를 읽고, 마지막에 <b>JSON 코드 블록</b>을 줘요.</li>
-            <li>그 코드 블록을 복사해서 아래 <b>“공고 가져오기”</b> 칸에 붙여 넣고 “리스트에 넣기”를 누르세요.</li>
-          </ol>
-          <p class="note" id="subsCopied" style="margin:0 0 8px"></p>
-          <textarea class="pr" id="subsPrompt" readonly aria-label="Claude에 붙여 넣을 글"></textarea>
-        </div>
+        <div class="ai-acts"><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label></div>
+        <div class="ai-acts" style="margin-top:8px"><label class="chkp">정렬 <select id="subsSort" style="height:32px;font-size:13px"><option value="fit">순위 순</option><option value="end">마감 빠른 순</option></select></label></div>
+        <div class="subcap"><label class="f"><span class="lbl">💰 내 분양가 상한 (순위·초과 표시 기준)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="비우면 자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></div>
+        <div id="subsList" class="stack" style="margin-top:14px"><div class="empty">표시할 공고가 없어요. 노트북에서 공고 가져오기를 실행하면 채워져요.</div></div>
         <details class="more" id="subsImportBox">
-          <summary>공고 가져오기 (Claude가 준 JSON 붙여 넣기)</summary>
+          <summary>자동 가져오기 (노트북 스크립트가 쓰는 칸)</summary>
           <textarea class="pr" id="subsImport" placeholder="여기에 Claude가 준 JSON을 붙여 넣으세요" aria-label="공고 JSON"></textarea>
           <div class="ai-acts"><button type="button" id="subsImportBtn">리스트에 넣기</button></div>
           <p class="note" id="subsImportMsg" style="margin-top:8px"></p>
         </details>
-        <div id="subsList" class="stack" style="margin-top:14px"><div class="empty">표시할 공고가 없어요. “공고 찾기”로 시작해 보세요.</div></div>
       </div>
       <p class="vsub" style="margin-top:0">우리에게 맞을 만한 제도예요. 아래 기준은 인터넷 자료를 요약한 것이라 틀릴 수 있어요. 링크의 공식 사이트에서 꼭 확인하세요.</p>
       <div class="tabs" id="polTabs" role="group" aria-label="분류">
@@ -1093,7 +1088,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function safeUrl(u) { u = String(u || ''); return /^https:\/\/[^\s]+$/.test(u) ? u : null; }
   function subShown(x) { return evalSub(x).aOk !== 'no'; }
   function subActive(x) { return !validD(x.applyEnd) || dayNum(x.applyEnd) >= dayNum(todayStr()); }
-  function subTodo(x, me) { return subActive(x) && subShown(x) && x.fit !== 'no' && x.status !== 'pass' && !(me ? x['chk' + me] : (x.chkA && x.chkB)); }
+  function subTodo(x, me) { return subActive(x) && subShown(x) && x.fit !== 'no' && !x.status; }
   function subCap() {
     if (has('subsMax')) return [num('subsMax'), false];
     var c = core; return c && c.canTotal > 0 ? [Math.floor(c.canTotal / 0.3 / 100) * 100, true] : [0, true];
@@ -1152,13 +1147,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function makeSubRow(id) {
     var row = el('article', 'sub'); row.dataset.id = id;
     var sum = el('div'); sum.dataset.sum = '1'; row.appendChild(sum);
-    var more = el('details', 'more'); more.appendChild(el('summary', null, '접수일·공급·링크 자세히'));
-    var info = el('div', 'info'); info.dataset.info = '1'; more.appendChild(info);
-    var why = el('div', 'why'); why.dataset.why = '1'; more.appendChild(why);
-    var brk = el('div', 'brk'); brk.dataset.brk2 = '1'; brk.hidden = true; more.appendChild(brk);
-    var links = el('div', 'links'); links.dataset.sl = '1'; more.appendChild(links); row.appendChild(more);
+    var info = el('div', 'info'); info.dataset.info = '1'; row.appendChild(info);
+    var why = el('div', 'why'); why.dataset.why = '1'; row.appendChild(why);
+    var links = el('div', 'links'); links.dataset.sl = '1'; row.appendChild(links);
     var ctl = el('div', 'ctl');
-    ['a', 'b'].forEach(function (w) { var l = el('label', 'ckl'), cb = el('input'); cb.type = 'checkbox'; cb.dataset.ck = w; var nm = el('b'); nm.dataset.cn = w; l.appendChild(cb); l.appendChild(nm); ctl.appendChild(l); });
     var sel = el('select'); sel.dataset.sk = 'status'; sel.setAttribute('aria-label', '상태'); SUBSTATUS.forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); }); ctl.appendChild(sel);
     var note = el('input'); note.type = 'text'; note.dataset.sk = 'note'; note.placeholder = '메모'; note.maxLength = 300; note.setAttribute('aria-label', '메모'); ctl.appendChild(note);
     row.appendChild(ctl);
@@ -1170,11 +1162,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function fillSubRow(row, x) {
     var ev = evalSub(x); x._id = x._id || row.dataset.id; row.querySelector('[data-sum]').replaceChildren(subSummary(x, row.dataset.id));
     var info = row.querySelector('[data-info]'); info.textContent = '';
-    [['공급', x.supply], ['접수', (validD(x.applyStart) || validD(x.applyEnd)) ? (x.applyStart || '?') + ' ~ ' + (x.applyEnd || '?') : ''], ['당첨자 발표', x.winnerDate], ['입주', ev.my ? dotYm(ev.my) : '']].forEach(function (p) {
-      if (!p[1]) return; var line = el('span'); line.appendChild(document.createTextNode(p[0] + ' ')); line.appendChild(el('b', null, String(p[1]))); info.appendChild(line);
+    [['🗓️ 접수', (validD(x.applyStart) || validD(x.applyEnd)) ? (x.applyStart || '?') + ' ~ ' + (x.applyEnd || '?') : ''], ['🏆 당첨자 발표', x.winnerDate], ['🏠 입주', ev.my ? dotYm(ev.my) : ''], ['📋 공급', x.supply]].forEach(function (p) {
+      if (!p[1]) return; var line = el('div', 'hl'); line.appendChild(el('small', null, p[0])); line.appendChild(el('span', null, String(p[1]))); info.appendChild(line);
     });
     var why = row.querySelector('[data-why]'); why.textContent = x.fitReason ? '판단 근거: ' + x.fitReason : ''; why.hidden = !x.fitReason;
-    row.querySelector('[data-brk2]').textContent = '';
     var links = row.querySelector('[data-sl]'); links.textContent = '';
     var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고 보기'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; links.appendChild(a); }
     links.hidden = !u;
@@ -1279,11 +1270,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     $('#subsImportBtn').disabled = false;
     msg.textContent = n + '건을 넣었어요 (새 공고 ' + fresh + '건' + (skip ? ', 건너뜀 ' + skip + '건' : '') + ').';
     if (n) $('#subsImport').value = '';
-  });
-  $('#subsFind').addEventListener('click', async function () {
-    var text = buildSubsPrompt(), how = $('#subsHow'), ta = $('#subsPrompt'); how.hidden = false; ta.value = text; $('#subsImportBox').open = true;
-    try { await navigator.clipboard.writeText(text); $('#subsCopied').textContent = '프롬프트를 복사했어요.'; }
-    catch (e) { $('#subsCopied').textContent = '복사가 막혔어요. 아래 글을 직접 선택해서 복사하세요.'; ta.select(); }
   });
   var imagesOk = false;
   function normName(t) { return String(t || '').toLowerCase().replace(/[\s·\-_().\[\]\/]/g, ''); }
