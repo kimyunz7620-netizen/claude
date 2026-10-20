@@ -459,6 +459,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <div class="row"><strong class="small" id="spTitle"></strong><button type="button" class="link small" id="spClose">닫기</button></div>
         <div class="pills" id="spChips"></div>
         <div class="fields"><label class="field"><span id="spAmtLbl">금액</span><input type="text" inputmode="numeric" id="spAmt" placeholder="0"></label><label class="field" id="spMemoBox"><span>무엇</span><input type="text" id="spMemo" placeholder="예: 배달 대신 집밥"></label><label class="field" id="spDateBox" style="grid-column:1/-1"><span>날짜</span><input type="date" id="spDate"></label></div>
+        <label class="field" id="spAcctBox" hidden><span>들어온 통장</span><select id="spAcct"><option value="">🏦 하나은행 (월급 통장)</option><option value="kbank">💳 케이뱅크 (체크)</option></select></label>
         <p class="small" id="spPreview"></p>
         <div class="btns"><button class="btn" type="submit" style="flex:1" id="spSave">기록</button><button type="button" class="btn ghost" id="spReset" hidden>원래대로</button></div>
       </form>
@@ -1004,8 +1005,8 @@ function payTxSteps(M,pl){
   if(pl.gift&&gapDest!==fundAcc){const ro=(c=>c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28&&(c-0xAC00)%28!==8?"으로":"로")(fundAcc.charCodeAt(fundAcc.length-1));
     steps.push({k:"giftmove",from:gapDest,to:fundAcc,amt:pl.gift,sub:`✋ 자동이체 아님 · 직접 옮기기 (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")}) · 매달 ${won((fundFix&&fundFix.amount)||0)}은 ${(fundFix&&fundFix.day)||22}일에 자동으로 ${fundAcc}${ro} 들어가요`})}
   if(toCard>0)steps.push({k:"kb",from:SALARY,to:ca,amt:toCard,sub:[`카드값 ${won(pl.card-pl.giftCard)}`,prepay?`할부 선결제용 ${won(prepay)}`:""].filter(Boolean).join(" + ")});
-  if(pl.cashRes){const ce=entriesIn(cycleOf(M),e=>e.method==="cash"&&!imported(e)),auto=ST().cashReserve==null||ST().cashReserve==="";
-    steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,sub:auto&&ce.length?`케뱅(체크카드)에서 쓴 생활비를 다시 채워요 · `+ce.map(e=>`${md(bDate(e))} ${e.memo||catName(e.cat)} ${won(e.amount)}`).join(" + "):"체크카드로 쓸 생활비"})}
+  if(pl.cashRes){const ce=entriesIn(cycleOf(M),e=>e.method==="cash"&&!imported(e)),kin=kbankInAt(cycleOf(M)),auto=ST().cashReserve==null||ST().cashReserve==="";
+    steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,sub:auto&&ce.length?`케뱅(체크카드)에서 쓴 생활비를 다시 채워요 · `+ce.map(e=>`${md(bDate(e))} ${e.memo||catName(e.cat)} ${won(e.amount)}`).join(" + ")+(kin?` − 케뱅으로 들어온 부수입 ${won(kin)}`:""):"체크카드로 쓸 생활비"})}
   if(pl.giftCard)steps.push({k:"gc",from:fundAcc,to:ca,amt:pl.giftCard,sub:"카드로 산 경조사 선물만큼 경조사 통장에서 채워요"});
   steps.push({k:"pay",act:`롯데카드 앱 › ${early?"즉시결제":"결제계좌 확인"}`,amt:pl.card,sub:early?`결제예정금액 › 즉시결제 · ${ca}에서 빠져요`:`${md(pd)}에 ${ca}에서 자동으로 빠져요`});
   if(items.length)steps.push({k:"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 '선결제·상환 기록'에 적기"});
@@ -1032,8 +1033,8 @@ function txSub(t){if(t.length<=60)return `<div class="txs">${esc(t)}</div>`;cons
 /* ---------- payday plan ---------- */
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
-  const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),back=backIn(M),extra=extraAt(M)+back;
-  const autoRes=sum(entriesIn(c,e=>e.method==="cash"&&!imported(e)),e=>e.amount) /* only what was spent from 케뱅 since the app started; old-tracker rows were settled before */,manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
+  const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),back=backIn(M),extra=extraHanaAt(M)+back;
+  const autoRes=Math.max(0,sum(entriesIn(c,e=>e.method==="cash"&&!imported(e)),e=>e.amount)-kbankInAt(c)) /* only what was spent from 케뱅 since the app started; old-tracker rows were settled before */,manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
   const fixed=fixedCash(M),inc=incomeAt(M),gift=fundGapAt(M),giftCard=ab!=null?fundCardIn(M):0,pp=st.prepayPot,potIn=pp&&ymAdd(pp.ym,1)===M&&pp.amount>0?pp.amount:0,avail=inc+extra+potIn-card+giftCard-fixed-gift-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
   return{M,inc,extra,back,potIn,gift,giftCard,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
@@ -1104,6 +1105,9 @@ const cyclePledge=c=>sum(Object.keys(S.weekGoals).filter(ws=>ws>=c.start&&ws<=c.
 /* side income joins the next payday's plan: with 즉시결제 that's the 21st, otherwise the card day */
 const planYmOf=d=>dom(d)<(ST().payEarly?PAY():CARD()+1)?ymOf(d):ymAdd(ymOf(d),1);
 const extraAt=ym=>sum(S.wins.filter(w=>w.kind==="sell"&&planYmOf(w.date)===ym),w=>w.amount);
+/* 부수입 that landed in 케뱅 (acct "kbank") is not in the salary account on payday: it shrinks the 케뱅 top-up instead */
+const extraHanaAt=ym=>sum(S.wins.filter(w=>w.kind==="sell"&&w.acct!=="kbank"&&planYmOf(w.date)===ym),w=>w.amount);
+const kbankInAt=c=>sum(S.wins.filter(w=>w.kind==="sell"&&w.acct==="kbank"&&inRange(w.date,c)),w=>w.amount);
 /* money I paid on my card for others (곗돈 등) and get back in cash: it offsets that charge in the same card bill */
 const backIn=ym=>sum(S.entries.filter(e=>e.back&&e.excl&&e.method==="lotte"&&e.amount>0&&payYmOf(e.date)===ym),e=>e.amount);
 function cycleSummary(){
@@ -1602,7 +1606,7 @@ function openStep(mode){
   stepMode=stepMode===mode?null:mode;const goal=mode==="goal",W0=weekBudgetFor(TODAY),wl=weekLimit(TODAY),wr=weekRange(TODAY);
   $("spTitle").textContent=goal?`🎯 ${md(wr.start)}~${md(wr.end)} 이번 주 한도`:mode==="skip"?"🙅 사고 싶었는데 참은 돈":"💰 중고 판매·환급 같은 부수입";
   $("spAmtLbl").textContent=goal?`이번 주 한도 (평소 ${man(W0)})`:mode==="skip"?"참은 금액":"받은 금액";
-  $("spMemoBox").hidden=goal;$("spDateBox").hidden=goal;$("spDate").max=TODAY;$("spDate").value=selDate&&selDate<=TODAY?selDate:TODAY;$("spMemo").value="";$("spMemo").placeholder=mode==="skip"?"예: 배달 대신 집밥":"예: 당근 의자 판매";
+  $("spMemoBox").hidden=goal;$("spAcctBox").hidden=mode!=="sell";$("spAcct").value="";$("spDateBox").hidden=goal;$("spDate").max=TODAY;$("spDate").value=selDate&&selDate<=TODAY?selDate:TODAY;$("spMemo").value="";$("spMemo").placeholder=mode==="skip"?"예: 배달 대신 집밥":"예: 당근 의자 판매";
   $("spAmt").value=goal?num(wl):"";$("spSave").textContent=goal?"이번 주 목표로 정하기":"기록";$("spReset").hidden=!(goal&&wl<W0);
   $("spChips").innerHTML=goal?[30000,50000,80000].map(c=>`<button type="button" class="pill" data-spset="${W0-c}">−${man(c)}</button>`).join(""):mode==="skip"?[5000,10000,30000].map(c=>`<button type="button" class="pill" data-spset="${c}">${man1(c)}</button>`).join(""):"";
   renderStep();if(stepMode)setTimeout(()=>$("spAmt").focus(),0);
@@ -1611,7 +1615,7 @@ function stepPreview(){
   const a=parseNum($("spAmt").value),r=speedRate(),W0=weekBudgetFor(TODAY);
   if(stepMode==="goal"){const cut=W0-a,c=cycleOf(payYmOf(TODAY)),cur=weekPledge(weekRange(TODAY).start),B=cycleBudgetFor(payYmOf(TODAY))-cyclePledge(c)+cur-Math.max(0,cut);
     $("spPreview").innerHTML=!(a>0)?"":cut>0?`이번 주 <b>${man(a)}</b>으로 줄이면 주기 예산 <b>${man(B)}</b>, 아낀 <b>${man(cut)}</b>은 저축 계획으로 가서 ${r.goal}이 <span class="good-t">${fasterTxt(cut)} 빨라져요</span>`:cut<0?`평소 한도(${man(W0)})보다 높게는 못 정해요.`:"평소 한도와 같아요."}
-  else $("spPreview").innerHTML=a>0?`${r.goal}이 <span class="good-t">${fasterTxt(a)} 빨라져요</span>${stepMode==="sell"?` · ${ymKo(planYmOf((v=>v&&v<=TODAY?v:TODAY)($("spDate").value)))} 선결제에 더해져요`:" · 그 돈은 쓰지 않은 채로 두면 돼요"}`:"";
+  else $("spPreview").innerHTML=a>0?`${r.goal}이 <span class="good-t">${fasterTxt(a)} 빨라져요</span>${stepMode==="sell"?($("spAcct").value==="kbank"?" · 다음 월급날 케뱅 채우기에서 그만큼 덜 보내요":` · ${ymKo(planYmOf((v=>v&&v<=TODAY?v:TODAY)($("spDate").value)))} 선결제에 더해져요`):" · 그 돈은 쓰지 않은 채로 두면 돼요"}`:"";
 }
 /* the goal is measured from a fixed start: the first month-end record, or deposit − debt when the app started */
 function goalBase(){const st=ST(),snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1);return snaps.length?snaps[0].net:(st.deposit||0)+(st.startCash||0)-(st.startDebt||totalDebt())}
@@ -2016,6 +2020,7 @@ document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.cla
 document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("fxin"))saveFixedOverride(el.dataset.fx,el.dataset.ym,parseNum(el.value))});
 $("habits").addEventListener("change",saveDay);
 $("spDate").addEventListener("input",()=>stepPreview());
+$("spAcct").addEventListener("change",()=>stepPreview());
 $("spAmt").addEventListener("input",()=>{const v=parseNum($("spAmt").value);$("spAmt").value=v?num(v):"";stepPreview()});
 $("stepPanel").addEventListener("submit",async e=>{e.preventDefault();
   const a=parseNum($("spAmt").value),mode=stepMode,W0=weekBudgetFor(TODAY);
@@ -2023,7 +2028,8 @@ $("stepPanel").addEventListener("submit",async e=>{e.preventDefault();
     stepMode=null;try{await put("weekgoals/"+ws,{limit:a,setAt:new Date().toISOString()});toast(`🎯 이번 주 ${man(a)}! 지키면 ${speedRate().goal} ${ft} 빨라져요`)}catch(_){}return}
   if(!(a>0)){toast("금액을 입력해 주세요");return}
   const ft=fasterTxt(a);stepMode=null;
-  try{await put("wins/"+newId(),{date:(v=>v&&v<=TODAY?v:TODAY)($("spDate").value),kind:mode,amount:a,memo:$("spMemo").value.trim(),createdAt:new Date().toISOString()});toast(`${mode==="skip"?"🙅 참았어요":"💰 부수입"} +${won(a)} · ${speedRate().goal} ${ft} 당겨짐`)}catch(_){}
+  const acct=mode==="sell"?$("spAcct").value:"";
+  try{await put("wins/"+newId(),{date:(v=>v&&v<=TODAY?v:TODAY)($("spDate").value),kind:mode,amount:a,memo:$("spMemo").value.trim(),...(acct?{acct}:{}),createdAt:new Date().toISOString()});toast(`${mode==="skip"?"🙅 참았어요":"💰 부수입"} +${won(a)} · ${speedRate().goal} ${ft} 당겨짐`)}catch(_){}
 });
 document.addEventListener("change",e=>{const id=e.target.dataset&&e.target.dataset.task;if(!id)return;if(e.target.dataset.pot){const[ym,a]=e.target.dataset.pot.split(":"),cur=ST().prepayPot;const pp=e.target.checked?{ym,amount:Number(a)}:cur&&cur.ym===ym?null:cur;S.settings={...ST(),prepayPot:pp};put("config/settings",S.settings).catch(()=>{});if(e.target.checked)toast(`🐷 ${won(Number(a))} 다음 선결제용으로 모아 둘게요`)}S.tasks={...S.tasks,[id]:e.target.checked};render();const done=S.tasks;taskWriting=taskWriting.then(()=>put("plan/tasks",{done}).catch(()=>{}))});
 $("wkForm").addEventListener("submit",async e=>{
