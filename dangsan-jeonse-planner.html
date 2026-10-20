@@ -432,6 +432,10 @@ body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .sub .cprow { gap: 5px; } .hs .cpchip { padding: 5px 10px; font-size: 12.5px; }
 .hs .cpchip.xtra { display: none; } .hs .cpwrap.showx .cpchip.xtra { display: inline-block; }
 .hs .cpmore { height: auto; padding: 5px 10px; border-radius: 999px; background: transparent; color: var(--accent); border: 1px dashed var(--line); font-size: 12.5px; font-weight: 700; }
+.hs .hl.bad span { color: var(--coral-ink); }
+.setbox { padding: 10px 14px !important; margin: 6px 0 0 !important; gap: 4px !important; }
+.setbox > summary { font-size: 13px !important; font-weight: 700 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; list-style: none; } .setbox > summary::-webkit-details-marker { display: none; }
+.setbox[open] > summary { white-space: normal; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -1222,7 +1226,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (rOk) pos.push('관심 지역이에요');
     if (el0.specOk) pos.push('내 자격에 맞는 특별공급이 있어요'); else if (sp > 0) pos.push('신혼·신생아 특별공급 물량이 있어요');
     if (my) { var g3 = Math.abs((+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5)))); if (g3 <= 6) pos.push('입주 시기(' + dotYm(my) + ')가 목표와 맞아요'); }
-    return { el: el0, pos: pos, sp: sp, score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
+    return { land: land, el: el0, pos: pos, sp: sp, score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
   }
   function shortCau(t) {
     t = String(t);
@@ -1238,23 +1242,31 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (was) { say.hidden = true; return; }
     c.classList.add('on'); say.textContent = c.dataset.say; say.hidden = false;
   });
-  function subSummary(x, id) {
+  function subSummary(x, id, compact) {
       var ev = evalSub(x), box2 = el('div', 'hs'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
       var head = el('div', 'hh'); var rkn = subRank[id] || 0; head.appendChild(el('span', rkn && rkn <= 3 ? 'medal' : 'rk', rkn === 1 ? '🥇' : rkn === 2 ? '🥈' : rkn === 3 ? '🥉' : String(rkn || '–')));
       head.appendChild(el('b', null, x.name || '(이름 없음)'));
       if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
       var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
       box2.appendChild(head);
-      var vtxt = ev.pos.length ? '💡 ' + ev.pos.slice(0, 3).join(' · ') : (ev.T.length ? '💡 딱 맞는 조건은 아직 없어요' : '💡 평형·금액 정보가 아직 없어요');
-      var ban = el('div', 'verdict2 ' + (ev.pos.length >= 2 && ev.pOk !== 'no' ? 'go' : 'mid')); ban.appendChild(el('b', null, vtxt)); box2.appendChild(ban);
+      var okParts = []; if (ev.aOk === 'yes') okParts.push('평형'); if (ev.pOk === 'yes' || (ev.land && ev.T.length)) okParts.push(ev.land ? '금액(건물값)' : '금액'); if (ev.el.anyOk) okParts.push('자격');
+      var tri;
+      if (ev.pOk === 'no' || ev.el.allBad) tri = ['no', '🙅 패스해도 돼요 · ' + (ev.pOk === 'no' ? '분양가가 상한을 넘어요' : '지금 정보로는 신청이 어려워요')];
+      else if (ev.aOk !== 'no' && ev.el.anyOk && ev.pOk !== 'near') tri = ['go', '👍 요약 받아볼 만해요 · ' + (okParts.join('·') || '조건') + '이 맞아요'];
+      else tri = ['mid', '🤔 애매해요 · ' + (!ev.el.known ? '청약통장·혼인월을 입력하면 더 정확해요' : ev.pOk === 'near' ? '분양가가 상한보다 조금 높아요' : '신청 자격을 더 확인해야 해요')];
+      var ban = el('div', 'verdict2 ' + tri[0]); ban.appendChild(el('b', null, tri[1])); box2.appendChild(ban);
       function line(k, v, cls) { if (!v) return; var r = el('div', 'hl ' + (cls || '')); r.appendChild(el('small', null, k)); r.appendChild(el('span', null, v)); box2.appendChild(r); }
       line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
       if (ev.T.length) ev.T.slice().sort(function (p, q) { return p.a - q.a; }).forEach(function (t) { line('💰 ' + t.a + '㎡ · ' + pyeong(t.a) + '평', (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정') + (t.u ? ' · ' + t.u + '세대' : '')); });
       else line('💰 금액', String(x.price || '').slice(0, 40));
+      var spOk = ev.el.chips.filter(function (c) { return c.st === 'ok' && /특공|생애최초/.test(c.label); })[0];
+      var elTxt = spOk ? '신혼 특공 등 특별공급으로 신청 가능성이 있어요' : ev.el.anyOk ? '일반공급 1순위로 신청할 수 있어요' : ev.el.allBad ? '지금 입력한 정보로는 신청이 어려워요' : '자격은 아직 확인이 필요해요';
+      var eln = el('div', 'hl ' + (spOk || ev.el.anyOk ? '' : ev.el.allBad ? 'bad' : 'mute')); eln.appendChild(el('small', null, '🧾 자격')); eln.appendChild(el('span', null, elTxt)); box2.appendChild(eln);
+      if (compact) return box2;
       var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 5);
       var must = ev.el.chips.filter(function (c) { return /통장 필요|무주택 필요/.test(c.label); }), mst = must.some(function (c) { return c.st === 'bad'; }) ? 'bad' : must.some(function (c) { return c.st === 'warn'; }) ? 'warn' : 'ok';
       var ech = ev.el.chips.filter(function (c) { return !/통장 필요|무주택 필요|소득·자산/.test(c.label); });
-      var wrap = el('div', 'cpwrap'); wrap.appendChild(el('div', 'cth', '확인할 것 · 눌러서 설명 보기'));
+      var wrap = el('div', 'cpwrap'); wrap.appendChild(el('div', 'cth', '꼭 알아둘 것 · 눌러서 설명 보기'));
       var row = el('div', 'cprow'), say = el('div', 'cpsay'); say.hidden = true; var all = [];
       function addChip(pri, cls, label, text) { all.push({ p: pri, cls: cls, label: label, text: text }); }
       addChip(mst === 'bad' ? 0 : mst === 'warn' ? 1 : 3, mst, (mst === 'ok' ? '✅ ' : mst === 'bad' ? '❌ ' : '⚠️ ') + '통장·무주택', must.map(function (c) { return c.say; }).join('\n\n'));
@@ -1262,8 +1274,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var inc = ev.el.chips.filter(function (c) { return /소득·자산/.test(c.label); })[0]; if (inc) addChip(4, 'warn', inc.label, inc.say);
       cps.forEach(function (c) { addChip(c.b ? 0 : 2, c.b ? 'b' : '', shortCau(c.t), c.t); });
       all.sort(function (p, q) { return p.p - q.p; });
-      all.forEach(function (c, i) { var bt = el('button', 'cpchip ' + c.cls + (i >= 4 ? ' xtra' : ''), c.label); bt.type = 'button'; bt.dataset.say = c.text; row.appendChild(bt); });
-      if (all.length > 4) { var mo = el('button', 'cpmore', '＋' + (all.length - 4) + '개 더보기'); mo.dataset.t = mo.textContent; mo.type = 'button'; row.appendChild(mo); }
+      all.forEach(function (c, i) { var bt = el('button', 'cpchip ' + c.cls + (i >= 3 ? ' xtra' : ''), c.label); bt.type = 'button'; bt.dataset.say = c.text; row.appendChild(bt); });
+      if (all.length > 3) { var mo = el('button', 'cpmore', '＋' + (all.length - 3) + '개 더보기'); mo.dataset.t = mo.textContent; mo.type = 'button'; row.appendChild(mo); }
       wrap.appendChild(row); wrap.appendChild(say); box2.appendChild(wrap);
       return box2;
   }
@@ -1365,7 +1377,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var mt = el('div', 'mentorbox'); mt.dataset.mentor = '1'; row.appendChild(mt);
     var sbar = el('div', 'sbar'); var links = el('div', 'links'); links.dataset.sl = '1'; sbar.appendChild(links);
     var sel = el('select'); sel.dataset.sk = 'status'; sel.setAttribute('aria-label', '상태'); SUBSTATUS.forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); }); sbar.appendChild(sel); row.appendChild(sbar);
-    var det = el('details', 'more2'); det.appendChild(el('summary', null, '접수일·공급·메모'));
+    var det = el('details', 'more2'); det.appendChild(el('summary', null, '접수일·공급·메모 더 보기'));
     var info = el('div', 'info'); info.dataset.info = '1'; det.appendChild(info);
     var why = el('div', 'why'); why.dataset.why = '1'; det.appendChild(why);
     var note = el('input'); note.type = 'text'; note.dataset.sk = 'note'; note.placeholder = '메모'; note.maxLength = 300; note.setAttribute('aria-label', '메모'); note.style.marginTop = '8px'; det.appendChild(note);
@@ -1401,7 +1413,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var box = $('#subsList'), showPast = $('#subsPast').checked, me = getMe();
     var onlyMine = $('#subsMatch').checked;
     var es = $('#eligSum'), eb = $('#eligBox');
-    if (es) { var hasAcc = (plan.accA != null && plan.accA !== '') || (plan.accB != null && plan.accB !== ''); es.textContent = '🧾 내 청약 자격 · ' + (hasAcc ? '통장 ' + (plan.accA != null && plan.accA !== '' ? nameA() + ' ' + plan.accA + '개월' : '') + (plan.accA != null && plan.accA !== '' && plan.accB != null && plan.accB !== '' ? ' · ' : '') + (plan.accB != null && plan.accB !== '' ? nameB() + ' ' + plan.accB + '개월' : '') + ' · ' + (plan.homeless === 'yes' ? '무주택' : plan.homeless === 'no' ? '집 있음' : '무주택 미입력') : '입력하면 자격을 판단해요'); if (!hasAcc && !eb.dataset.once) { eb.open = true; eb.dataset.once = '1'; } }
+    if (es) { var hasAcc = (plan.accA != null && plan.accA !== '') || (plan.accB != null && plan.accB !== ''); es.textContent = '🧾 내 청약 자격 · ' + (hasAcc ? '통장 ' + (plan.accA != null && plan.accA !== '' ? nameA() + ' ' + plan.accA + '개월' : '') + (plan.accA != null && plan.accA !== '' && plan.accB != null && plan.accB !== '' ? ' · ' : '') + (plan.accB != null && plan.accB !== '' ? nameB() + ' ' + plan.accB + '개월' : '') + ' · ' + (plan.homeless === 'yes' ? '무주택' : plan.homeless === 'no' ? '집 있음' : '무주택 미입력') : '입력하면 자격을 판단해요');  }
     var cp = subCap(), ch = $('#subsCapHint'); var ss0 = $('#setSum'); if (ss0) ss0.textContent = '💰 분양가 상한 ' + (cp[0] > 0 ? fmt(cp[0]) + (cp[1] ? ' (자동)' : '') : '미정') + ' · ' + ($('#subsSort').value === 'end' ? '마감 빠른 순' : '순위 순') + ' · 눌러서 바꾸기';
      if (ch) ch.textContent = cp[0] > 0 ? (cp[1] ? '지금은 “둘이 모을 수 있는 금액 ÷ 30%” 로 자동 계산한 ' + fmt(cp[0]) + '을 쓰고 있어요(분양가의 약 30%를 자기 돈으로 낸다는 가정). 정확히 알면 직접 입력하세요.' : '직접 입력한 상한 ' + fmt(cp[0]) + '을 쓰고 있어요.') : '저축 가능 금액을 입력하면 자동으로 분양가 상한을 계산해요.';
     var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; if (!(showPast || subActive(x)) || !subShown(x)) return false; if (!onlyMine) return true; return !!evalSub(x).rOk; });
@@ -1599,7 +1611,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     $('#subsHomeCount').textContent = ids.length + '건';
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 가져온 공고가 없어요. “전체 보기”에서 가져오세요.')); return; }
     ids.slice(0, 3).forEach(function (id) {
-      box.appendChild(subSummary(subsState[id], id));
+      box.appendChild(subSummary(subsState[id], id, true));
     });
   }
   function dDay(d) { var diff = dayNum(d) - dayNum(todayStr()); return diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : 'D+' + (-diff); }
