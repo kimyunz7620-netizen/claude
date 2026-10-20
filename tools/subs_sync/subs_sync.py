@@ -130,22 +130,23 @@ def build_item(d, models, area_min, area_max, regions):
         })
     fits_area = [t for t in types if t["area"] is not None and area_min <= t["area"] <= area_max]
     priority = any(p in addr for p in PRIORITY)
-    if types and not fits_area:
-        fit, reason = "no", f"희망 면적({area_min:g}~{area_max:g}㎡)에 맞는 평형이 없어요"
-    elif fits_area:
-        hope = priority and any(t["nwwds"] > 0 for t in fits_area)
-        fit = "good" if hope else "check"
-        reason = ("관심 지역·희망 면적·신혼 특공 물량 있음 (자격은 공고문 확인)" if hope
-                  else "희망 면적에 맞음 (소득·자격은 공고문 확인)")
-    else:
-        fit, reason = "check", "평형 정보를 못 읽었어요 (공고문 확인)"
+    area_fit = "" if not types else ("yes" if fits_area else "no")
+    region_fit = "yes" if priority else "no"
+    nw_ok = any(t["nwwds"] > 0 for t in fits_area)
+    good = priority and bool(fits_area) and nw_ok
+    fit = "good" if good else "check"
+    bits = ["관심 지역" if priority else "관심 지역 아님",
+            "희망 평형 있음" if area_fit == "yes" else ("희망 평형 없음" if area_fit == "no" else "평형 정보 없음")]
+    if good:
+        bits.append("신혼특공 물량 있음")
+    reason = " · ".join(bits) + " (소득·자격은 공고문 확인)"
     supply = " · ".join(x for x in [
         f"총 {to_int(d.get('TOT_SUPLY_HSHLDCO'))}세대" if d.get("TOT_SUPLY_HSHLDCO") else "",
         f"신혼 {nwwds}" if nwwds else "", f"신생아 {nwbb}" if nwbb else "", f"생애최초 {frst}" if frst else ""] if x)
-    shown = fits_area or types
+    shown = types
     areas = " / ".join(
         f"{t['area']:g}㎡ {t['units']}세대" + (f" {won(t['price'])}" if t["price"] else "")
-        for t in shown[:4] if t["area"] is not None)
+        for t in shown[:10] if t["area"] is not None)
     prices = [t["price"] for t in shown if t["price"]]
     price = (won(min(prices)) if min(prices) == max(prices) else f"{won(min(prices))}~{won(max(prices))}") if prices else ""
     hm, pb = str(d.get("HOUSE_MANAGE_NO", "")), str(d.get("PBLANC_NO", ""))
@@ -156,8 +157,7 @@ def build_item(d, models, area_min, area_max, regions):
         "applyStart": d.get("RCEPT_BGNDE") or "", "applyEnd": d.get("RCEPT_ENDDE") or "",
         "winnerDate": d.get("PRZWNER_PRESNATN_DE") or "",
         "link": link if link.startswith("https://") else "",
-        "fit": fit, "fitReason": reason, "source": "청약홈 API",
-        "_priority": priority,
+        "fit": fit, "fitReason": reason, "areaFit": area_fit, "regionFit": region_fit, "source": "청약홈 API",
     }
 
 
@@ -167,10 +167,9 @@ def build_items(details, models, area_min, area_max, regions):
         it = build_item(d, models.get(str(d.get("HOUSE_MANAGE_NO")), []), area_min, area_max, regions)
         if it and it["name"]:
             items.append(it)
-    order = {"good": 0, "check": 1, "no": 2}
-    items.sort(key=lambda x: (order[x["fit"]], not x["_priority"], x["applyEnd"] or "9999"))
-    for it in items:
-        it.pop("_priority", None)
+    def rank(x):
+        return -((x["fit"] == "good") * 4 + (x["regionFit"] == "yes") * 2 + (x["areaFit"] == "yes"))
+    items.sort(key=lambda x: (rank(x), x["applyEnd"] or "9999"))
     return items
 
 

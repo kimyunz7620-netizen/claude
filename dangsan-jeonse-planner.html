@@ -610,7 +610,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       <div class="card" id="subsCard" style="margin-bottom:18px">
         <div class="mhead"><h3>청약 공고 리스트</h3><span class="chip" id="subsCount">0건</span></div>
         <p class="hsub" id="subsMeta">아직 공고를 찾지 않았어요.</p>
-        <div class="ai-acts"><button type="button" id="subsFind">공고 찾기</button><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label></div>
+        <div class="ai-acts"><button type="button" id="subsFind">공고 찾기</button><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 내 평형·지역만 보기</label></div>
         <div class="routine subs-how" id="subsHow" hidden>
           <b>공고 찾는 방법 (크롬의 Claude 확장 프로그램)</b>
           <ol>
@@ -1031,6 +1031,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     chips.appendChild(el('span', 'chip ' + fit[1], fit[0]));
     if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); chips.appendChild(el('span', 'chip ' + (dd < 0 ? 'plain' : dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd < 0 ? '마감됨' : '마감 ' + (dd === 0 ? 'D-day' : 'D-' + dd))); }
     if (validD(x.applyStart) && dayNum(x.applyStart) > dayNum(todayStr())) chips.appendChild(el('span', 'chip grape', '접수 시작 D-' + (dayNum(x.applyStart) - dayNum(todayStr()))));
+    var ar = areaRange();
+    if (x.areaFit === 'yes') chips.appendChild(el('span', 'chip ok', '희망 평형(' + ar[0] + '~' + ar[1] + '㎡) 있음'));
+    else if (x.areaFit === 'no') chips.appendChild(el('span', 'chip warn', '희망 평형과 다름'));
+    if (x.regionFit === 'yes') chips.appendChild(el('span', 'chip ok', '관심 지역'));
+    else if (x.regionFit === 'no') chips.appendChild(el('span', 'chip warn', '관심 지역 아님'));
     var st = row.querySelector('.st'); st.firstChild.textContent = x.name || '(이름 없음)'; st.lastChild.textContent = x.location || '';
     var info = row.querySelector('[data-info]'); info.textContent = '';
     [['공급', x.supply], ['면적·분양가', x.areas], ['분양가', x.price], ['접수', (validD(x.applyStart) || validD(x.applyEnd)) ? (x.applyStart || '?') + ' ~ ' + (x.applyEnd || '?') : ''], ['당첨자 발표', x.winnerDate]].forEach(function (p) {
@@ -1046,7 +1051,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   }
   function renderSubs() {
     var box = $('#subsList'), showPast = $('#subsPast').checked, me = getMe();
-    var ids = Object.keys(subsState).filter(function (id) { return showPast || subActive(subsState[id]); });
+    var onlyMine = $('#subsMatch').checked;
+    var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; return (showPast || subActive(x)) && !(onlyMine && (x.areaFit === 'no' || x.regionFit === 'no')); });
     ids.sort(function (a, b) { var A = subsState[a].applyEnd || '9999', B = subsState[b].applyEnd || '9999'; return A < B ? -1 : A > B ? 1 : 0; });
     var todo = Object.keys(subsState).filter(function (id) { return subTodo(subsState[id], me ? me.toUpperCase() : null); }).length;
     $('#subsCount').textContent = todo + '건 확인할 차례';
@@ -1072,6 +1078,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   });
   $('#subsList').addEventListener('input', function (e) { var row = e.target.closest('.sub'); if (row && e.target.dataset.sk === 'note') saveSub(row.dataset.id, { note: e.target.value }, 500); });
   $('#subsPast').addEventListener('change', renderSubs);
+  $('#subsMatch').addEventListener('change', renderSubs);
   function buildSubsPrompt() {
     var c = core, ar = areaRange();
     return [
@@ -1082,7 +1089,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '- 둘 다 무주택인 예비 신혼부부야. 청약통장 가입 기간·납입 횟수와 순자산은 아직 몰라(필요하면 “확인 필요”로 처리해).', '',
       '[1] 공고 찾기 (크롬, 읽기만)',
       '- 청약홈(applyhome.co.kr)의 분양정보에서 지금 접수 중이거나 앞으로 2개월 안에 접수가 시작되는 APT 공고를 찾아. LH청약플러스와 SH 공고도 같이 봐.',
-      '- 서울을 우선 보고, 영등포·마포·강서·양천·동작 공고를 먼저 정리해. 서울 공고가 5건보다 적을 때만 경기 인접 지역을 포함해.',
+      '- 서울과 경기 전체를 봐. 평형은 걸러 내지 말고 전체를 넣어. 대신 JSON에 areaFit(희망 평형이 있으면 yes, 없으면 no)과 regionFit(영등포·마포·강서·양천·동작이면 yes, 아니면 no)을 적어 줘.',
       '- 로그인, 청약 신청, 개인정보 입력은 절대 하지 마. 공고 내용을 읽기만 해.',
       '- 공고문에서 확인한 값만 적고, 모르는 값은 빈 문자열로 둬. 추측하지 마.', '',
       '[2] 적합도 판단',
@@ -1092,7 +1099,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '- fitReason에는 근거를 40자 안쪽으로 적어.', '',
       '[3] 결과 출력',
       '- 코드 블록 하나에 JSON 배열만 출력해. 설명은 코드 블록 밖에 써.',
-      '- 각 공고 객체의 필드(모두 문자열, 날짜는 YYYY-MM-DD, 모르면 빈 문자열): no(공고번호), name, location, supply(공급 유형과 세대수 한 줄), areas(전용면적별 세대수와 분양가 한 줄), price(분양가 요약), applyStart, applyEnd(접수 마감일), winnerDate(당첨자 발표일), link(공고 상세 https 주소), fit(good|check|no), fitReason, source',
+      '- 각 공고 객체의 필드(모두 문자열, 날짜는 YYYY-MM-DD, 모르면 빈 문자열): no(공고번호), name, location, supply(공급 유형과 세대수 한 줄), areas(전용면적별 세대수와 분양가 한 줄), price(분양가 요약), applyStart, applyEnd(접수 마감일), winnerDate(당첨자 발표일), link(공고 상세 https 주소), fit(good|check|no), fitReason, areaFit(yes|no), regionFit(yes|no), source',
       '- 코드 블록 아래에 단지, 접수 마감 D-day, 적합도, 링크를 표로 간단히 정리하고, 읽지 못한 항목과 확인하지 못한 요건을 따로 적어 줘.',
       '- 할 수 있으면 https://claude.ai/artifact/PEcENbrXxFuvdH9mK96fTK 를 새 탭에서 열고 숙제 탭 → 정책·청약 → “공고 가져오기” 칸에 JSON을 붙여 넣은 뒤 “리스트에 넣기”를 눌러 줘. 어려우면 JSON만 주면 돼.'
     ].join('\n');
@@ -1113,9 +1120,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     for (var i = 0; i < data.length && i < 60; i++) {
       var it = data[i]; if (!it || typeof it !== 'object' || !T(it.name)) { skip++; continue; }
       var key = T(it.no).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || hash36(T(it.name) + T(it.applyStart)), id = 's_' + key;
-      var rec = { name: T(it.name, 80), location: T(it.location, 80), supply: T(it.supply, 160), areas: T(it.areas, 240), price: T(it.price, 160),
+      var rec = { name: T(it.name, 80), location: T(it.location, 80), supply: T(it.supply, 160), areas: T(it.areas, 500), price: T(it.price, 160),
         applyStart: validD(it.applyStart) ? it.applyStart : '', applyEnd: validD(it.applyEnd) ? it.applyEnd : '', winnerDate: validD(it.winnerDate) ? it.winnerDate : '',
-        link: safeUrl(T(it.link, 500)) || '', fit: ['good', 'check', 'no'].indexOf(it.fit) >= 0 ? it.fit : 'check', fitReason: T(it.fitReason, 80), source: T(it.source, 40), foundAt: todayStr() };
+        link: safeUrl(T(it.link, 500)) || '', fit: ['good', 'check', 'no'].indexOf(it.fit) >= 0 ? it.fit : 'check', fitReason: T(it.fitReason, 120), areaFit: ['yes', 'no'].indexOf(it.areaFit) >= 0 ? it.areaFit : '', regionFit: ['yes', 'no'].indexOf(it.regionFit) >= 0 ? it.regionFit : '', source: T(it.source, 40), foundAt: todayStr() };
       var existed = !!subsState[id];
       try { if (existed) await db.doc('subs/' + id).update(rec); else { await db.doc('subs/' + id).set(rec); fresh++; } n++; } catch (e) { skip++; }
     }
