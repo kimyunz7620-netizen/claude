@@ -358,13 +358,7 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .hs .verdict2.go { background: var(--mint-soft); color: var(--mint-ink); } .hs .verdict2.mid { background: var(--sun-soft); color: var(--sun-ink); } .hs .verdict2.no { background: var(--coral-soft); color: var(--coral-ink); }
 .hs .pills { display: flex; gap: 6px; } .hs .pill { font-size: 12.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.75); color: var(--muted); } .hs .pill.y { color: var(--mint-ink); } .hs .pill.n { color: var(--coral-ink); }
 .hs .hl { padding: 2px 0; } .hs .hcp { background: none; padding: 0; margin-top: 8px; gap: 5px !important; border-top: 1px solid var(--line); padding-top: 8px; border-radius: 0; }
-.hs .keybox { background: #fff; border: 2px solid var(--accent); border-radius: 14px; padding: 4px 14px; margin: 2px 0 4px; }
-.hs .kr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
-.hs .kr:first-child { border-top: 0; }
-.hs .kr small { flex: none; font-size: 13px; font-weight: 700; color: var(--muted); }
-.hs .kr b { font-size: 17px; font-weight: 800; text-align: right; color: var(--ink); }
-.hs .kr.loc b { font-size: 17px; } .hs .kr.mute b { color: var(--muted); font-weight: 600; font-size: 15px; } .hs .kr.over b { color: var(--coral-ink); }
-.hs .kr.hit b { color: var(--accent); }
+.hs .verdict2 b { font-size: 14.5px; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -1147,23 +1141,17 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
       var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
       box2.appendChild(head);
-      var vd = ev.pOk === 'no' ? ['no', '🙅 우리한테는 어려워요'] : (ev.pOk !== 'near' && ev.aOk !== 'no' && ev.rOk && ev.sp > 0) ? ['go', '👍 도전해볼 만해요'] : ['mid', '🤔 확인할 게 있어요'];
-      var ban = el('div', 'verdict2 ' + vd[0]); ban.appendChild(el('b', null, vd[1]));
-      var pills = el('div', 'pills');
-      function pill(k, st) { pills.appendChild(el('span', 'pill ' + (st === 'y' ? 'y' : st === 'n' ? 'n' : ''), k + (st === 'y' ? ' ✓' : st === 'n' ? ' ✗' : ' ?'))); }
-      pill('지역', ev.rOk ? 'y' : 'n'); pill('평형', ev.aOk === 'yes' ? 'y' : ev.aOk === 'no' ? 'n' : ''); pill('금액', ev.pOk === 'yes' ? 'y' : (ev.pOk === 'no' || ev.pOk === 'near') ? 'n' : '');
-      ban.appendChild(pills); box2.appendChild(ban);
-      var kb = el('div', 'keybox');
-      var lc = String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 ');
-      if (lc) { var r1 = el('div', 'kr loc' + (ev.rOk ? '' : ' mute')); r1.appendChild(el('small', null, '📍 지역')); r1.appendChild(el('b', null, lc)); kb.appendChild(r1); }
-      var ar2 = areaRange();
-      if (ev.T.length) ev.T.slice().sort(function (p, q) { return p.a - q.a; }).forEach(function (t) {
-        var okA = t.a >= ar2[0] - 0.5 && t.a <= ar2[1] + 0.5, over = ev.cap > 0 && t.pmin > ev.cap, r = el('div', 'kr' + (over ? ' over' : okA ? ' hit' : ' mute'));
-        r.appendChild(el('small', null, '📐 ' + t.a + '㎡ · ' + pyeong(t.a) + '평'));
-        r.appendChild(el('b', null, (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정') + (over ? ' ✗' : okA ? ' ✓' : ''))); kb.appendChild(r);
-      });
-      else if (x.price) { var r3 = el('div', 'kr'); r3.appendChild(el('small', null, '💰 금액')); r3.appendChild(el('b', null, String(x.price).slice(0, 40))); kb.appendChild(r3); }
-      if (kb.children.length) box2.appendChild(kb);
+      var bad1 = [];
+      if (ev.pOk === 'no') bad1.push('💸 분양가가 상한을 넘어요'); else if (ev.pOk === 'near') bad1.push('💸 분양가가 상한보다 조금 높아요');
+      if (ev.aOk === 'no') bad1.push('📐 희망 평형이 없어요');
+      if (!ev.rOk) bad1.push('🗺️ 관심 지역이 아니에요');
+      var vcls = !ev.T.length && !bad1.length ? 'mid' : ev.pOk === 'no' ? 'no' : bad1.length ? 'mid' : 'go';
+      var vtxt = bad1.length ? bad1[0] : (ev.T.length ? '👍 지역·평형·금액이 모두 맞아요' : '📋 평형·금액 정보가 아직 없어요');
+      var ban = el('div', 'verdict2 ' + vcls); ban.appendChild(el('b', null, vtxt)); box2.appendChild(ban);
+      function line(k, v, cls) { if (!v) return; var r = el('div', 'hl ' + (cls || '')); r.appendChild(el('small', null, k)); r.appendChild(el('span', null, v)); box2.appendChild(r); }
+      line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
+      if (ev.T.length) line('💰 평형·금액', ev.T.slice().sort(function (p, q) { return p.a - q.a; }).map(function (t) { return t.a + '㎡(' + pyeong(t.a) + '평) ' + (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정'); }).join(' · '));
+      else line('💰 금액', String(x.price || '').slice(0, 40));
       var cps = ev.cau.slice().sort(function (p, q) { return (q.b ? 2 : q.g ? 1 : 0) - (p.b ? 2 : p.g ? 1 : 0); }).slice(0, 4);
       if (cps.length) { var ul = el('ul', 'hcp');  cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', (c.b ? (/토지임대/.test(c.t) ? '🌱 ' : /투기과열/.test(c.t) ? '🔥 ' : /분양가/.test(c.t) ? '💸 ' : /마감/.test(c.t) ? '⏰ ' : '🚨 ') : c.g ? '✅ ' : /평형/.test(c.t) ? '📐 ' : /지역/.test(c.t) ? '🗺️ ' : /입주/.test(c.t) ? '🏠 ' : /혼인/.test(c.t) ? '💍 ' : 'ℹ️ ') + String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
       return box2;
