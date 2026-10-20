@@ -314,19 +314,21 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 
 .sub { gap: 10px; }
 .sub .top { display: flex; gap: 10px; align-items: center; }
-.sub .score { flex: none; width: 52px; height: 52px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); line-height: 1.1; }
+.sub .score { flex: none; width: 56px; height: 56px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); line-height: 1.1; }
 .sub .score b { font-size: 20px; font-weight: 800; } .sub .score small { font-size: 10.5px; color: var(--muted); }
 .sub .score.hi { background: var(--mint-soft); color: var(--mint-ink); } .sub .score.mid { background: var(--sun-soft); color: var(--sun-ink); } .sub .score.lo { background: var(--coral-soft); color: var(--coral-ink); }
 .sub .top .st { flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
 .sub .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .sub .tile { background: var(--bg); border-radius: 12px; padding: 9px 10px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.sub .tile small { font-size: 11px; color: var(--muted); } .sub .tile b { font-size: 13.5px; font-weight: 800; word-break: keep-all; }
+.sub .tile small { font-size: 11px; color: var(--muted); } .sub .tile b { font-size: 15px; font-weight: 800; word-break: keep-all; }
 .sub .tile.ok { background: var(--mint-soft); } .sub .tile.warn { background: var(--sun-soft); } .sub .tile.bad { background: var(--coral-soft); }
 .sub .tl { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
 .sub .tl span.in { color: var(--mint-ink); font-weight: 700; } .sub .tl span { color: var(--muted); }
-.sub .cau { border-radius: 12px; padding: 10px 12px; background: var(--sun-soft); font-size: 13px; }
+.sub .cau { border-radius: 12px; padding: 12px 14px; background: var(--sun-soft); border-left: 5px solid var(--sun-ink); font-size: 14px; }
+.sub .cau.red { border-left-color: var(--coral-ink); }
+.sub .cau .foot { margin: 8px 0 0; font-size: 11.5px; color: var(--muted); }
 .sub .cau.red { background: var(--coral-soft); }
-.sub .cau h4 { margin: 0 0 4px; font-size: 13px; font-weight: 800; }
+.sub .cau h4 { margin: 0 0 6px; font-size: 14px; font-weight: 800; }
 .sub .cau ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
 .sub .cau li.b { font-weight: 700; color: var(--coral-ink); }
 .sub .brk { font-size: 11.5px; color: var(--muted); }
@@ -1106,12 +1108,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (sp > 0 && !validYm(plan.marriageDate)) cau.push({ t: '신혼부부 특별공급은 혼인 기간 요건이 있어요 — 혼인신고 예정월이 비어 있어요' });
     if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); if (dd >= 0 && dd <= 3) cau.push({ b: 1, t: '접수 마감까지 ' + (dd === 0 ? '오늘' : dd + '일') }); }
     (Array.isArray(x.notes) ? x.notes : []).forEach(function (n) { cau.push({ b: /토지임대|투기과열/.test(n), t: String(n) }); });
-    cau.push({ t: '소득·자산·청약통장 요건은 계산에 넣지 않았어요. 공고문에서 꼭 확인하세요' });
     return { score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
   }
   function makeSubRow(id) {
     var row = el('article', 'sub'); row.dataset.id = id;
-    var top = el('div', 'top'); var sc = el('div', 'score'); sc.dataset.sco = '1'; sc.appendChild(el('b')); sc.appendChild(el('small', null, '적합도')); top.appendChild(sc);
+    var top = el('div', 'top'); var sc = el('div', 'score'); sc.dataset.sco = '1'; sc.appendChild(el('b')); sc.appendChild(el('small', null, '순위')); top.appendChild(sc);
     var st = el('div', 'st'); st.appendChild(el('b')); st.appendChild(el('small')); top.appendChild(st); row.appendChild(top);
     var chips = el('div', 'chips'); chips.dataset.sc = '1'; row.appendChild(chips);
     var tiles = el('div', 'tiles'); tiles.dataset.tiles = '1'; row.appendChild(tiles);
@@ -1133,7 +1134,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function priceTxt(e) { return e.pmin ? (e.pmax && e.pmax !== e.pmin ? eok(e.pmin) + '~' + eok(e.pmax) : eok(e.pmin)) : ''; }
   function fillSubRow(row, x) {
     var ev = evalSub(x), chips = row.querySelector('[data-sc]'); chips.textContent = '';
-    var sco = row.querySelector('[data-sco]'); sco.className = 'score ' + (ev.score >= 70 ? 'hi' : ev.score >= 45 ? 'mid' : 'lo'); sco.firstChild.textContent = ev.score;
+    var sco = row.querySelector('[data-sco]'); var rk = subRank[x._id] || 0; sco.className = 'score ' + (rk === 1 ? 'hi' : rk === 2 || rk === 3 ? 'mid' : 'lo'); sco.firstChild.textContent = rk ? rk : '–';
     var fit = SUBFIT[x.fit] || ['확인 필요', 'warn'];
     chips.appendChild(el('span', 'chip ' + fit[1], fit[0]));
     if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); chips.appendChild(el('span', 'chip ' + (dd < 0 ? 'plain' : dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd < 0 ? '마감됨' : '마감 ' + (dd === 0 ? 'D-day' : 'D-' + dd))); }
@@ -1153,12 +1154,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var cau = row.querySelector('[data-cau]'); cau.textContent = ''; cau.className = 'cau' + (ev.cau.some(function (c) { return c.b; }) ? ' red' : '');
     cau.appendChild(el('h4', null, '⚠ 주의할 점'));
     var ul = el('ul'); ev.cau.sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : '', c.t)); }); cau.appendChild(ul);
+    cau.appendChild(el('p', 'foot', '소득·자산·청약통장 요건은 평가에 안 넣었어요. 공고문에서 꼭 확인하세요.'));
     var info = row.querySelector('[data-info]'); info.textContent = '';
     [['공급', x.supply], ['접수', (validD(x.applyStart) || validD(x.applyEnd)) ? (x.applyStart || '?') + ' ~ ' + (x.applyEnd || '?') : ''], ['당첨자 발표', x.winnerDate], ['입주', ev.my ? dotYm(ev.my) : '']].forEach(function (p) {
       if (!p[1]) return; var line = el('span'); line.appendChild(document.createTextNode(p[0] + ' ')); line.appendChild(el('b', null, String(p[1]))); info.appendChild(line);
     });
     var why = row.querySelector('[data-why]'); why.textContent = x.fitReason ? '판단 근거: ' + x.fitReason : ''; why.hidden = !x.fitReason;
-    row.querySelector('[data-brk2]').textContent = '적합도 ' + ev.score + '점 = ' + ev.br.join(' + ');
+    row.querySelector('[data-brk2]').textContent = '';
     var links = row.querySelector('[data-sl]'); links.textContent = '';
     var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고 보기'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; links.appendChild(a); }
     links.hidden = !u;
@@ -1166,6 +1168,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     $$('[data-ck]', row).forEach(function (cb) { var on = !!x['chk' + cb.dataset.ck.toUpperCase()]; if (cb.checked !== on) cb.checked = on; });
     $$('[data-sk]', row).forEach(function (e) { if (e === document.activeElement) return; var v = x[e.dataset.sk] || ''; if (e.value !== v) e.value = v; });
   }
+  var subRank = {};
   function subSort(ids) {
     var byEnd = $('#subsSort') && $('#subsSort').value === 'end', sc = {};
     ids.forEach(function (id) { sc[id] = evalSub(subsState[id]).score; });
@@ -1177,6 +1180,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var onlyMine = $('#subsMatch').checked;
     var cp = subCap(), ch = $('#subsCapHint'); if (ch) ch.textContent = cp[0] > 0 ? (cp[1] ? '지금은 “둘이 모을 수 있는 금액 ÷ 30%” 로 자동 계산한 ' + fmt(cp[0]) + '을 쓰고 있어요(분양가의 약 30%를 자기 돈으로 낸다는 가정). 정확히 알면 직접 입력하세요.' : '직접 입력한 상한 ' + fmt(cp[0]) + '을 쓰고 있어요.') : '저축 가능 금액을 입력하면 자동으로 분양가 상한을 계산해요.';
     var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; if (!(showPast || subActive(x))) return false; if (!onlyMine) return true; var e = evalSub(x); return e.aOk !== 'no' && e.rOk; });
+    var allr = Object.keys(subsState).filter(function (id) { return subActive(subsState[id]) && subsState[id].status !== 'pass'; }), fs = $('#subsSort').value; $('#subsSort').value = 'fit'; subSort(allr); $('#subsSort').value = fs;
+    subRank = {}; allr.forEach(function (id, i) { subRank[id] = i + 1; subsState[id]._id = id; });
     subSort(ids);
     var todo = Object.keys(subsState).filter(function (id) { return subTodo(subsState[id], me ? me.toUpperCase() : null); }).length;
     $('#subsCount').textContent = todo + '건 확인할 차례';
@@ -1371,10 +1376,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 가져온 공고가 없어요. “전체 보기 · 공고 찾기”에서 가져오세요.')); return; }
     ids.slice(0, 4).forEach(function (id) {
       var x = subsState[id], ev = evalSub(x), row = el('div', 'evrow'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
-      var sc = el('div', 'dd', String(ev.score)); sc.style.cssText = 'font-weight:800;min-width:40px;text-align:center'; row.appendChild(sc);
+      var sc = el('div', 'dd', (subRank[id] || '–') + '위'); sc.style.cssText = 'font-weight:800;min-width:40px;text-align:center'; row.appendChild(sc);
       var mid = el('div'); mid.appendChild(el('b', null, x.name || '(이름 없음)'));
       var ar = ev.T.map(function (t) { return t.a; });
-      mid.appendChild(el('small', null, (x.location || '') + ' · ' + (priceTxt(ev) || '분양가 미확인') + (ar.length ? ' · ' + Math.min.apply(null, ar) + '~' + Math.max.apply(null, ar) + '㎡' : '')));
+      mid.appendChild(el('small', null, (x.location || '') + ' · ' + (priceTxt(ev) || '분양가 미확인') + (ar.length ? ' · ' + (Math.min.apply(null, ar) === Math.max.apply(null, ar) ? Math.min.apply(null, ar) : Math.min.apply(null, ar) + '~' + Math.max.apply(null, ar)) + '㎡' : '')));
       var chips = el('div', 'chips'); chips.style.marginTop = '4px';
       if (dd != null) chips.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
       if (ev.pOk === 'no' || ev.pOk === 'near') chips.appendChild(el('span', 'chip bad', ev.pOk === 'no' ? '분양가 초과' : '분양가 조금 높음'));
