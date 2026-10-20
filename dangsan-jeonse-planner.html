@@ -421,11 +421,15 @@ body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .sub .links { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .mentorbtn { height: 40px; padding: 0 16px; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 800; font-size: 14px; }
 .bpanel { margin-top: 10px; padding: 12px 14px; background: var(--bg); border-radius: 14px; font-size: 14px; } .bpanel ol { margin: 0 0 10px; padding-left: 20px; line-height: 1.6; } .bpanel input[type=file] { width: 100%; }
-.mentor { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 16px; border: 2px solid var(--ink); background: #fff; } .mentor .mh { font-weight: 800; font-size: 15px; }
+.mentor > summary { cursor: pointer; list-style: none; display: flex; flex-direction: column; gap: 8px; } .mentor > summary::-webkit-details-marker { display: none; } .mentor[open] > summary { margin-bottom: 12px; } .mentor .mone { display: block; }
+.mentor { display: block; padding: 14px; border-radius: 16px; border: 2px solid var(--ink); background: #fff; } .mentor .mh { font-weight: 800; font-size: 15px; }
 .mone { padding: 10px 12px; border-radius: 12px; font-weight: 800; font-size: 14.5px; line-height: 1.5; } .mone.go { background: var(--mint-soft); color: var(--mint-ink); } .mone.mid { background: var(--sun-soft); color: var(--sun-ink); } .mone.no { background: var(--coral-soft); color: var(--coral-ink); }
 .msec h5 { margin: 0 0 6px; font-size: 14px; } .msec p { margin: 4px 0; font-size: 14px; line-height: 1.6; } .msec ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.6; } .mgap { font-weight: 800; }
 .mel { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-top: 1px dashed var(--line); font-size: 14px; } .mel:first-of-type { border-top: 0; } .mel span { color: var(--muted); line-height: 1.5; } .mel.ok b { color: var(--mint-ink); } .mel.bad b { color: var(--coral-ink); }
 .mnote { margin: 0; font-size: 12px; color: var(--muted); }
+.sub .sbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .sub .sbar .links { flex: 1 1 auto; } .sub .sbar select { width: 112px; height: 40px; font-size: 14px; flex: none; }
+.sub .more2 > summary { color: var(--muted); }
+.sub .cprow { gap: 5px; } .hs .cpchip { padding: 5px 10px; font-size: 12.5px; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -1244,25 +1248,22 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
       if (ev.T.length) ev.T.slice().sort(function (p, q) { return p.a - q.a; }).forEach(function (t) { line('💰 ' + t.a + '㎡ · ' + pyeong(t.a) + '평', (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정') + (t.u ? ' · ' + t.u + '세대' : '')); });
       else line('💰 금액', String(x.price || '').slice(0, 40));
-      var ewrap = el('div', 'cpwrap'); ewrap.appendChild(el('div', 'cth ok', '🧾 내 자격 · 눌러서 설명 보기'));
-      var erow = el('div', 'cprow'), esay = el('div', 'cpsay'); esay.hidden = true;
-      ev.el.chips.forEach(function (c) { var b = el('button', 'cpchip ' + c.st, c.label); b.type = 'button'; b.dataset.say = c.say; erow.appendChild(b); });
-      ewrap.appendChild(erow); ewrap.appendChild(esay); box2.appendChild(ewrap);
-      var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 6);
-      if (cps.length) {
-        var wrap = el('div', 'cpwrap'); wrap.appendChild(el('div', 'cth', '⚠️ 주의할 점 · 눌러서 설명 보기'));
-        var row = el('div', 'cprow'), say = el('div', 'cpsay'); say.hidden = true;
-        cps.forEach(function (c) {
-          var lab = shortCau(c.t), b = el('button', 'cpchip' + (c.b ? ' b' : ''), lab); b.type = 'button'; b.dataset.say = c.t;
-          row.appendChild(b);
-        });
-        wrap.appendChild(row); wrap.appendChild(say); box2.appendChild(wrap);
-      }
+      var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 5);
+      var must = ev.el.chips.filter(function (c) { return /통장 필요|무주택 필요/.test(c.label); }), mst = must.some(function (c) { return c.st === 'bad'; }) ? 'bad' : must.some(function (c) { return c.st === 'warn'; }) ? 'warn' : 'ok';
+      var ech = ev.el.chips.filter(function (c) { return !/통장 필요|무주택 필요|소득·자산/.test(c.label); });
+      var wrap = el('div', 'cpwrap'); wrap.appendChild(el('div', 'cth', '자격·주의 · 눌러서 설명 보기'));
+      var row = el('div', 'cprow'), say = el('div', 'cpsay'); say.hidden = true;
+      function addChip(cls, label, text) { var b = el('button', 'cpchip ' + cls, label); b.type = 'button'; b.dataset.say = text; row.appendChild(b); }
+      addChip(mst, (mst === 'ok' ? '✅ ' : mst === 'bad' ? '❌ ' : '⚠️ ') + '통장·무주택', must.map(function (c) { return c.say; }).join('\n\n'));
+      ech.forEach(function (c) { addChip(c.st, c.label, c.say); });
+      var inc = ev.el.chips.filter(function (c) { return /소득·자산/.test(c.label); })[0]; if (inc) addChip('warn', inc.label, inc.say);
+      cps.forEach(function (c) { addChip(c.b ? 'b' : '', shortCau(c.t), c.t); });
+      wrap.appendChild(row); wrap.appendChild(say); box2.appendChild(wrap);
       return box2;
   }
 
   /* ---------- 멘토 요약 (공고문 PDF → 맞춤 요약) ---------- */
-  var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/', briefBusy = {}, briefOpen = {}, briefMsg = {};
+  var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/', briefJust = {}, briefBusy = {}, briefOpen = {}, briefMsg = {};
   function loadPdfJs() {
     return new Promise(function (res, rej) {
       if (window.pdfjsLib) return res(window.pdfjsLib);
@@ -1320,7 +1321,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var text = pickPages(pages, 60000), ev = evalSub(x);
       var res = await sampleFn.json(briefPrompt(x, ev, text), { cache: false });
       var b = cleanBrief(res); if (!b || !b.oneLine) throw { code: 'bad' };
-      saveSub(id, { brief: b, briefAt: todayStr() }); briefMsg[id] = ''; briefOpen[id] = false;
+      briefJust[id] = true; saveSub(id, { brief: b, briefAt: todayStr() }); briefMsg[id] = ''; briefOpen[id] = false;
     } catch (err) {
       var c = err && err.code; briefMsg[id] = c === 'empty' ? '글자를 읽지 못했어요. 스캔본 PDF일 수 있어요.' : c === 'not_granted' ? 'AI 사용을 허용하지 않아서 요약할 수 없어요.' : c === 'rate_limited' ? '요청이 많아요. 잠시 뒤에 다시 시도해 주세요.' : c === 'prompt_too_large' ? '공고문이 너무 길어요. 다른 PDF로 시도해 주세요.' : (err && err.message === 'pdfjs') ? 'PDF 읽기 도구를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.' : '요약하지 못했어요. 잠시 뒤 다시 시도해 주세요.';
     } finally { briefBusy[id] = false; renderSubs(); }
@@ -1330,8 +1331,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var box = row.querySelector('[data-mentor]'), b = x.brief, sig = [!!b, x.briefAt || '', x.status || '', !!briefBusy[id], !!briefOpen[id], briefMsg[id] || ''].join('|');
     if (box.dataset.sig === sig) return; box.dataset.sig = sig; box.textContent = '';
     if (b) {
-      var w = el('div', 'mentor'); w.appendChild(el('div', 'mh', '🧑‍🏫 멘토 요약' + (x.briefAt ? ' · ' + dotD(x.briefAt) : '')));
-      w.appendChild(el('div', 'mone ' + (b.fit === 'good' ? 'go' : b.fit === 'hard' ? 'no' : 'mid'), b.oneLine));
+      var w = el('details', 'mentor'); w.open = !!briefJust[id]; var sm = el('summary', 'mh'); sm.appendChild(document.createTextNode('🧑‍🏫 멘토 요약' + (x.briefAt ? ' · ' + dotD(x.briefAt) : ''))); sm.appendChild(el('span', 'mone ' + (b.fit === 'good' ? 'go' : b.fit === 'hard' ? 'no' : 'mid'), b.oneLine)); w.appendChild(sm);
       function sec(title, body) { if (!body || (Array.isArray(body) && !body.length)) return; var s2 = el('div', 'msec'); s2.appendChild(el('h5', null, title)); if (Array.isArray(body)) { var ul = el('ul'); body.forEach(function (z) { ul.appendChild(el('li', null, z)); }); s2.appendChild(ul); } else s2.appendChild(el('p', null, body)); w.appendChild(s2); }
       if (b.eligibility && b.eligibility.length) { var s3 = el('div', 'msec'); s3.appendChild(el('h5', null, '🧾 내가 신청할 수 있는 유형')); b.eligibility.forEach(function (e) { var r = el('div', 'mel ' + e.status); r.appendChild(el('b', null, (e.status === 'ok' ? '✅ ' : e.status === 'bad' ? '❌ ' : '⚠️ ') + e.type)); r.appendChild(el('span', null, e.why)); s3.appendChild(r); }); w.appendChild(s3); }
       if (b.cash && (b.cash.steps.length || b.cash.total || b.cash.gap)) { var s4 = el('div', 'msec'); s4.appendChild(el('h5', null, '💵 현금은 이렇게 필요해요')); b.cash.steps.forEach(function (z) { var r = el('div', 'mel'); r.appendChild(el('b', null, z.when + ' · ' + z.what)); r.appendChild(el('span', null, z.amount)); s4.appendChild(r); }); if (b.cash.total) s4.appendChild(el('p', null, b.cash.total)); if (b.cash.gap) s4.appendChild(el('p', 'mgap', b.cash.gap)); w.appendChild(s4); }
@@ -1357,13 +1357,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var row = el('article', 'sub'); row.dataset.id = id;
     var sum = el('div'); sum.dataset.sum = '1'; row.appendChild(sum);
     var mt = el('div', 'mentorbox'); mt.dataset.mentor = '1'; row.appendChild(mt);
-    var info = el('div', 'info'); info.dataset.info = '1'; row.appendChild(info);
-    var why = el('div', 'why'); why.dataset.why = '1'; row.appendChild(why);
-    var links = el('div', 'links'); links.dataset.sl = '1'; row.appendChild(links);
-    var ctl = el('div', 'ctl');
-    var sel = el('select'); sel.dataset.sk = 'status'; sel.setAttribute('aria-label', '상태'); SUBSTATUS.forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); }); ctl.appendChild(sel);
-    var note = el('input'); note.type = 'text'; note.dataset.sk = 'note'; note.placeholder = '메모'; note.maxLength = 300; note.setAttribute('aria-label', '메모'); ctl.appendChild(note);
-    row.appendChild(ctl);
+    var sbar = el('div', 'sbar'); var links = el('div', 'links'); links.dataset.sl = '1'; sbar.appendChild(links);
+    var sel = el('select'); sel.dataset.sk = 'status'; sel.setAttribute('aria-label', '상태'); SUBSTATUS.forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); }); sbar.appendChild(sel); row.appendChild(sbar);
+    var det = el('details', 'more2'); det.appendChild(el('summary', null, '접수일·공급·메모'));
+    var info = el('div', 'info'); info.dataset.info = '1'; det.appendChild(info);
+    var why = el('div', 'why'); why.dataset.why = '1'; det.appendChild(why);
+    var note = el('input'); note.type = 'text'; note.dataset.sk = 'note'; note.placeholder = '메모'; note.maxLength = 300; note.setAttribute('aria-label', '메모'); note.style.marginTop = '8px'; det.appendChild(note);
+    row.appendChild(det);
     if (!canWrite) $$('input,select', row).forEach(function (x) { x.disabled = true; });
     return row;
   }
