@@ -400,6 +400,16 @@ button.cat { display: flex; flex-direction: column; align-items: flex-start; jus
 body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .datarow { display: flex; gap: 8px; justify-content: center; margin: 6px 0 18px; }
 .sub .why:empty { display: none; }
+#vNew { width: 100%; height: 52px; font-size: 16px; font-weight: 800; }
+#vForm { display: flex; flex-direction: column; gap: 14px; } #vForm textarea { width: 100%; font: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px; color: var(--ink); }
+.vrate { display: flex; gap: 8px; } .vrate button { flex: 1; height: 44px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); font-weight: 700; } .vrate button.on { background: var(--accent); color: #fff; border-color: transparent; }
+.vchk { display: flex; flex-direction: column; gap: 6px; } .vc { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+.vthumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; } .vth { position: relative; } .vth img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; display: block; } .vth .vx { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; min-width: 0; padding: 0; border-radius: 50%; background: var(--ink); color: #fff; font-size: 14px; line-height: 1; }
+.vis { display: flex; flex-direction: column; gap: 10px; } .vh { display: flex; gap: 10px; align-items: center; } .vh .vr { font-size: 26px; } .vh b { display: block; font-size: 16px; } .vh small { color: var(--muted); font-size: 12.5px; }
+.vph { display: flex; gap: 6px; overflow-x: auto; } .vph img { height: 120px; border-radius: 12px; cursor: zoom-in; flex: none; }
+.vcks { display: flex; flex-wrap: wrap; gap: 6px; } .vnote { margin: 0; font-size: 14.5px; line-height: 1.55; white-space: pre-wrap; } .vis .ghost { align-self: flex-start; }
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 16px; } .lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+.fold2 > summary { list-style: none; background: var(--surface); padding: 16px 20px; border-radius: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 30px -24px rgba(30,34,53,.35); } .fold2 > summary::-webkit-details-marker { display: none; } .fold2[open] > summary { margin-bottom: 0; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -632,8 +642,22 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   <!-- 매물 -->
   <section class="pane" id="tab-homes" data-tab="homes" hidden>
     <h2 class="vtitle">👟 발품팔기</h2>
-    <p class="vsub">후보를 넣고, 같은 조건으로 꾸준히 시세를 기록해요</p>
+    <p class="vsub">다녀온 집을 기록해요. 사진·체크·느낀 점</p>
     <div class="stack">
+      <button type="button" id="vNew">＋ 임장 기록하기</button>
+      <form class="card" id="vForm" hidden>
+        <h3>임장 기록</h3>
+        <label class="f"><span class="lbl">단지</span><input id="vName" list="vNames" placeholder="단지 이름" maxlength="40" autocomplete="off"><datalist id="vNames"></datalist></label>
+        <label class="f"><span class="lbl">방문일</span><input id="vDate" type="date"></label>
+        <div class="f"><span class="lbl">전체 느낌</span><div class="vrate" id="vRate"><button type="button" data-r="3">👍 좋아요</button><button type="button" data-r="2">😐 보통</button><button type="button" data-r="1">👎 별로</button></div></div>
+        <div class="f"><span class="lbl">확인한 것</span><div class="vchk" id="vChk"></div></div>
+        <label class="f"><span class="lbl">느낀 점</span><textarea id="vNote" rows="3" maxlength="300" placeholder="소음, 햇빛, 동네 분위기, 중개사 말 등"></textarea></label>
+        <div class="f"><span class="lbl">사진</span><div class="ai-acts"><button type="button" class="ghost" id="vPhotoBtn">📷 사진 추가</button><input type="file" id="vFile" accept="image/*" multiple hidden></div><div class="vthumbs" id="vThumbs"></div></div>
+        <div class="ai-acts"><button type="submit">저장</button><button type="button" class="ghost" id="vCancel">취소</button></div>
+        <p class="note" id="vMsg"></p>
+      </form>
+      <div id="vList" class="stack"><div class="empty">아직 임장 기록이 없어요. 다녀오면 바로 남겨 보세요.</div></div>
+      <details class="fold2" id="pxFold"><summary>📈 후보 단지 · 시세 추적</summary><div class="stack" style="margin-top:14px">
       <div class="card" id="regCard">
         <div class="mhead"><h3>📷 사진으로 매물 올리기</h3></div>
         <p class="hsub">네이버 지도·부동산 화면을 캡처해서 올리면 자동으로 읽어요. 직접 입력도 돼요.</p>
@@ -733,6 +757,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </div>
         <div class="ai-out" id="aiOut" hidden></div>
       </div>
+      </div></details>
     </div>
   </section>
 
@@ -797,7 +822,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var db = null, dl = null, sampleFn = null, canWrite = true;
-  var subsState = {}, subsMeta = {}, eventsState = {}, plan = {}, cxData = new Map(), priceMap = {}, taskState = {}, policyState = {}, monthlyState = {};
+  var visitsState = {}, subsState = {}, subsMeta = {}, eventsState = {}, plan = {}, cxData = new Map(), priceMap = {}, taskState = {}, policyState = {}, monthlyState = {};
   var core = null;
   var DEFAULTS = { targetDate: '2028-05', nameA: '윤지', nameB: '성빈', stance: 'tight' };
   var ASM = { asmRateBeotim: 2.2, asmRateNewborn: 2.0, asmRateBank: 3.8, asmCapBeotim: 30000, asmCapNewborn: 24000, asmIncBeotim: 7500, asmIncNewborn: 20000, asmSave: 3.0 };
@@ -893,8 +918,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       why: '순위는 정답이 아니라 토론 재료예요. 왜 이 순위가 나왔는지를 같이 봐요.',
       steps: ['순위 점수 구성(저축 부담·이자·보증금 안전·추세·면적) 읽기', '1~3위 단지의 약점 칩 확인', '목표 전세가나 가정값을 바꾸면 순위가 어떻게 바뀌는지 실험'], l: [] },
     { id: 'visit', ph: 'p2', star: 1, who: 'both', t: '임장은 시간대를 바꿔서 두 번',
-      why: '숫자에 안 나오는 것을 눈과 귀로 확인해요. 단지 카드의 임장 체크를 같이 채워 보세요.',
-      steps: ['평일 저녁과 주말 낮으로 시간대 정하기', '소음(철도·도로)과 주차 확인', '역까지 걸어서 걸리는 시간 재기', '엘리베이터, 복도, 관리 상태 보기', '단지 카드의 임장 체크와 메모 남기기', '다녀온 뒤 상태를 “다녀옴”으로 바꾸기'], l: [] },
+      why: '숫자에 안 나오는 것을 눈과 귀로 확인해요. 임장 일지에 다녀온 기록을 남겨 보세요.',
+      steps: ['평일 저녁과 주말 낮으로 시간대 정하기', '소음(철도·도로)과 주차 확인', '역까지 걸어서 걸리는 시간 재기', '엘리베이터, 복도, 관리 상태 보기', '임장 일지에 기록 남기기', '다녀온 뒤 상태를 “다녀옴”으로 바꾸기'], l: [] },
     { id: 'agent', ph: 'p2', star: 0, who: 'both', t: '중개사·매물 알림 활용하기',
       why: '좋은 매물은 금방 나가요. 알림과 중개사 연결을 미리 만들어 둬요.',
       steps: ['포털 매물 알림 설정', '중개사 2~3곳에 원하는 평형과 시기 알려 두기', '“이 집 전세보증보험 가입 되나요?”를 첫 질문으로 정하기'], l: ['naver'] },
@@ -1505,6 +1530,65 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       row.appendChild(el('small', null, '전세 ' + fmt(c.b.j) + ' · ' + dotD(c.a.d) + ' → ' + dotD(c.b.d))); cb.appendChild(row);
     });
   }
+
+  /* ---------- 임장 일지 ---------- */
+  var vPhotos = [], vRate = 0;
+  function renderVisitForm() {
+    var ck = $('#vChk'); if (!ck.children.length) VISIT.forEach(function (v, i) { var l = el('label', 'vc'), c = el('input'); c.type = 'checkbox'; c.dataset.vi = i; l.appendChild(c); l.appendChild(el('span', null, v)); ck.appendChild(l); });
+    var dl = $('#vNames'); dl.textContent = ''; cxData.forEach(function (d) { if (d.name) { var o = el('option'); o.value = d.name; dl.appendChild(o); } });
+  }
+  function shrinkImage(file) {
+    return new Promise(function (res) {
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onload = function () { var m = 560, k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.6)); };
+      im.onerror = function () { URL.revokeObjectURL(url); res(null); }; im.src = url;
+    });
+  }
+  function drawThumbs() { var b = $('#vThumbs'); b.textContent = ''; vPhotos.forEach(function (u, i) { var w = el('div', 'vth'), im = el('img'); im.src = u; im.alt = '임장 사진'; var x = el('button', 'vx', '×'); x.type = 'button'; x.dataset.vrm = i; w.appendChild(im); w.appendChild(x); b.appendChild(w); }); }
+  function openVisitForm(open) {
+    $('#vForm').hidden = !open; $('#vNew').hidden = open;
+    if (open) { renderVisitForm(); $('#vDate').value = todayStr(); $('#vName').value = ''; $('#vNote').value = ''; vPhotos = []; vRate = 0; drawThumbs(); $$('#vRate button').forEach(function (b) { b.classList.remove('on'); }); $$('#vChk input').forEach(function (c) { c.checked = false; }); $('#vMsg').textContent = ''; $('#vName').focus(); }
+  }
+  $('#vNew').addEventListener('click', function () { openVisitForm(true); });
+  $('#vCancel').addEventListener('click', function () { openVisitForm(false); });
+  $('#vRate').addEventListener('click', function (e) { var b = e.target.closest('button[data-r]'); if (!b) return; vRate = vRate === +b.dataset.r ? 0 : +b.dataset.r; $$('#vRate button').forEach(function (x) { x.classList.toggle('on', +x.dataset.r === vRate); }); });
+  $('#vPhotoBtn').addEventListener('click', function () { $('#vFile').click(); });
+  $('#vFile').addEventListener('change', async function (e) {
+    var files = Array.prototype.slice.call(e.target.files || []).slice(0, 4 - vPhotos.length);
+    for (var i = 0; i < files.length; i++) { var u = await shrinkImage(files[i]); if (u) vPhotos.push(u); }
+    e.target.value = ''; drawThumbs();
+  });
+  $('#vThumbs').addEventListener('click', function (e) { var b = e.target.closest('[data-vrm]'); if (!b) return; vPhotos.splice(+b.dataset.vrm, 1); drawThumbs(); });
+  $('#vForm').addEventListener('submit', function (e) {
+    e.preventDefault(); if (!db) return;
+    var name = $('#vName').value.trim(), note = $('#vNote').value.trim(), checks = $$('#vChk input').filter(function (c) { return c.checked; }).map(function (c) { return +c.dataset.vi; });
+    if (!name && !note && !vPhotos.length) { $('#vMsg').textContent = '단지 이름이나 느낀 점, 사진 중 하나는 남겨 주세요.'; return; }
+    var me = getMe(), d = $('#vDate').value, rec = { name: name || '(이름 없음)', date: validD(d) ? d : todayStr(), by: me ? me.toUpperCase() : '', rating: vRate, checks: checks, note: note, photos: vPhotos.slice(0, 4), createdAt: Date.now() };
+    openVisitForm(false);
+    write('visits/new', function () { return db.collection('visits').add(rec); });
+  });
+  function renderVisits() {
+    var box = $('#vList'); if (!box) return; box.textContent = '';
+    var ids = Object.keys(visitsState).sort(function (a, b) { var A = visitsState[a], B = visitsState[b]; return (B.date || '').localeCompare(A.date || '') || (B.createdAt || 0) - (A.createdAt || 0); });
+    if (!ids.length) { box.appendChild(el('div', 'empty', '아직 임장 기록이 없어요. 다녀오면 바로 남겨 보세요.')); return; }
+    ids.forEach(function (id) {
+      var v = visitsState[id], c = el('article', 'card vis'); c.dataset.id = id;
+      var h = el('div', 'vh'); h.appendChild(el('span', 'vr', v.rating === 3 ? '👍' : v.rating === 2 ? '😐' : v.rating === 1 ? '👎' : '📍'));
+      var m = el('div'); m.appendChild(el('b', null, v.name || '(이름 없음)')); m.appendChild(el('small', null, dotYm(String(v.date || '').slice(0, 7)) + '.' + String(v.date || '').slice(8, 10) + (v.by ? ' · ' + (v.by === 'A' ? nameA() : nameB()) : ''))); h.appendChild(m); c.appendChild(h);
+      if (Array.isArray(v.photos) && v.photos.length) { var ph = el('div', 'vph'); v.photos.forEach(function (u) { if (typeof u === 'string' && u.indexOf('data:image/') === 0) { var im = el('img'); im.src = u; im.alt = '임장 사진'; ph.appendChild(im); } }); c.appendChild(ph); }
+      var cks = Array.isArray(v.checks) ? v.checks.filter(function (i) { return VISIT[i]; }) : [];
+      if (cks.length) { var cw = el('div', 'vcks'); cks.forEach(function (i) { cw.appendChild(el('span', 'chip ok', '✓ ' + VISIT[i])); }); c.appendChild(cw); }
+      if (v.note) c.appendChild(el('p', 'vnote', v.note));
+      var del = el('button', 'ghost sm', '삭제'); del.type = 'button'; del.dataset.vdel = id; if (!canWrite) del.disabled = true; c.appendChild(del);
+      box.appendChild(c);
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var img = e.target.closest('.vph img'); if (img) { var lb = el('div', 'lightbox'), big = el('img'); big.src = img.src; big.alt = '임장 사진'; lb.appendChild(big); lb.addEventListener('click', function () { lb.remove(); }); document.body.appendChild(lb); return; }
+    var d = e.target.closest('[data-vdel]'); if (!d || !db) return; var id = d.dataset.vdel;
+    if (d.classList.contains('confirm')) { delete visitsState[id]; renderVisits(); write('visits/' + id, function () { return db.doc('visits/' + id).delete(); }); return; }
+    d.classList.add('confirm'); d.textContent = '정말 삭제'; setTimeout(function () { d.classList.remove('confirm'); d.textContent = '삭제'; }, 3000);
+  });
   function renderEvents() {
     var box = $('#evList'); box.textContent = '';
     var ids = Object.keys(eventsState).filter(function (id) { return validD(eventsState[id].date); }).sort(function (a, b) { return eventsState[a].date < eventsState[b].date ? -1 : 1; });
@@ -2314,7 +2398,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var cx = [], px = [];
     cxData.forEach(function (d, id) { cx.push(Object.assign({ id: id }, d)); });
     Object.keys(priceMap).forEach(function (id) { Object.keys(priceMap[id]).forEach(function (d) { var r = priceMap[id][d]; px.push({ cx: id, d: d, jeonse: r.jeonse == null ? null : r.jeonse, sale: r.sale == null ? null : r.sale, cnt: r.cnt == null ? null : r.cnt }); }); });
-    return { app: 'ttangkong-planner', version: 2, exportedAt: new Date().toISOString(), plan: plan, complexes: cx, prices: px, events: eventsState, subs: subsState, tasks: taskState, policies: policyState, monthly: monthlyState };
+    return { app: 'ttangkong-planner', version: 2, exportedAt: new Date().toISOString(), plan: plan, complexes: cx, prices: px, events: eventsState, visits: visitsState, subs: subsState, tasks: taskState, policies: policyState, monthly: monthlyState };
   }
   $('#btnBackup').addEventListener('click', async function () {
     if (!dl) { showBanner('이 화면에서는 백업 파일을 저장할 수 없어요.'); return; }
@@ -2338,7 +2422,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (o.plan && typeof o.plan === 'object') await db.doc('plan/main').set(o.plan);
       for (var i = 0; i < (o.complexes || []).length; i++) { var c = Object.assign({}, o.complexes[i]), id = String(c.id || ''); delete c.id; if (id) await db.doc('complexes/' + id).set(c); }
       for (var j = 0; j < (o.prices || []).length; j++) { var p = o.prices[j]; if (p && p.cx && validD(p.d)) await db.doc('prices/' + p.cx + '_' + p.d).set({ cx: p.cx, d: p.d, jeonse: p.jeonse == null ? null : p.jeonse, sale: p.sale == null ? null : p.sale, cnt: p.cnt == null ? null : p.cnt }); }
-      var maps = [['tasks', o.tasks], ['policies', o.policies], ['monthly', o.monthly], ['events', o.events], ['subs', o.subs]];
+      var maps = [['tasks', o.tasks], ['policies', o.policies], ['monthly', o.monthly], ['events', o.events], ['visits', o.visits], ['subs', o.subs]];
       for (var m = 0; m < maps.length; m++) { var mp = maps[m][1] || {}, keys = Object.keys(mp); for (var q = 0; q < keys.length; q++) await db.doc(maps[m][0] + '/' + keys[q]).set(mp[keys[q]]); }
       setState('ok', '복원 완료');
     } catch (e) { setState('err', '복원 실패'); showBanner('복원 중 문제가 생겼어요. 일부만 복원됐을 수 있어요.'); }
@@ -2391,6 +2475,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     db.collection('tasks').onSnapshot(function (s) { taskState = {}; s.docs.forEach(function (d) { taskState[d.id] = withPending('tasks/' + d.id, Object.assign({}, d.data())); }); refreshBoard(); refreshMonthly(); refreshHomework(); }, onErr);
     db.collection('policies').onSnapshot(function (s) { policyState = {}; s.docs.forEach(function (d) { policyState[d.id] = withPending('policies/' + d.id, Object.assign({}, d.data())); }); refreshPolicies(); }, onErr);
     db.collection('monthly').onSnapshot(function (s) { monthlyState = {}; s.docs.forEach(function (d) { monthlyState[d.id] = Object.assign({}, d.data()); }); refreshMonthly(); }, onErr);
+    db.collection('visits').onSnapshot(function (s) { visitsState = {}; s.docs.forEach(function (d) { visitsState[d.id] = Object.assign({}, d.data()); }); renderVisits(); }, onErr);
     db.collection('events').onSnapshot(function (s) { eventsState = {}; s.docs.forEach(function (d) { eventsState[d.id] = Object.assign({}, d.data()); }); renderEvents(); }, onErr);
     db.collection('subs').onSnapshot(function (s) { subsState = {}; s.docs.forEach(function (d) { subsState[d.id] = withPending('subs/' + d.id, Object.assign({}, d.data())); }); renderSubs(); refreshMonthly(); }, onErr);
     db.doc('subs_meta/main').onSnapshot(function (s) { subsMeta = s.exists ? Object.assign({}, s.data()) : {}; renderSubs(); }, onErr);
