@@ -318,7 +318,10 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .sub .score b { font-size: 20px; font-weight: 800; } .sub .score small { font-size: 10.5px; color: var(--muted); }
 .sub .score.hi { background: var(--mint-soft); color: var(--mint-ink); } .sub .score.mid { background: var(--sun-soft); color: var(--sun-ink); } .sub .score.lo { background: var(--coral-soft); color: var(--coral-ink); }
 .sub .top .st { flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
-.sub .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sub .tiles { display: flex; flex-direction: column; gap: 6px; }
+.sub .kv { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; background: var(--bg); border-radius: 12px; padding: 11px 14px; }
+.sub .kv small { font-size: 13px; color: var(--muted); white-space: nowrap; } .sub .kv b { font-size: 16px; font-weight: 800; text-align: right; }
+.sub .kv.ok { background: var(--mint-soft); } .sub .kv.warn { background: var(--sun-soft); } .sub .kv.bad { background: var(--coral-soft); }
 .sub .tile { background: var(--bg); border-radius: 12px; padding: 9px 10px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .sub .tile small { font-size: 11px; color: var(--muted); } .sub .tile b { font-size: 15px; font-weight: 800; word-break: keep-all; }
 .sub .tile.ok { background: var(--mint-soft); } .sub .tile.warn { background: var(--sun-soft); } .sub .tile.bad { background: var(--coral-soft); }
@@ -1143,17 +1146,18 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (validD(x.applyStart) && dayNum(x.applyStart) > dayNum(todayStr())) chips.appendChild(el('span', 'chip grape', '접수 시작 D-' + (dayNum(x.applyStart) - dayNum(todayStr()))));
     var st = row.querySelector('.st'); st.firstChild.textContent = x.name || '(이름 없음)'; st.lastChild.textContent = x.location || '';
     var ar = areaRange(), tiles = row.querySelector('[data-tiles]'); tiles.textContent = '';
-    function tile(lab, val, cls) { if (!val || val === '–') return; var t = el('div', 'tile ' + (cls || '')); t.appendChild(el('small', null, lab)); t.appendChild(el('b', null, val)); tiles.appendChild(t); }
-    tile('지역', (x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? 'ok' : 'warn');
-    tile('분양가', priceTxt(ev) || String(x.price || '').slice(0, 24), ev.pOk === 'yes' ? 'ok' : ev.pOk === 'near' ? 'warn' : ev.pOk === 'no' ? 'bad' : '');
-    var pyr = ev.T.length ? ev.T.map(function (t) { return t.a; }) : []; var pl = pyr.length ? Math.min.apply(null, pyr) : 0, ph = pyr.length ? Math.max.apply(null, pyr) : 0, rngTxt = pyr.length ? (pl === ph ? pl + '㎡ (' + pyeong(pl) + '평)' : pl + '~' + ph + '㎡ (' + pyeong(pl) + '~' + pyeong(ph) + '평)') : '–';
-    tile('평형', rngTxt, ev.aOk === 'yes' ? 'ok' : ev.aOk === 'no' ? 'warn' : '');
-    tiles.hidden = !tiles.children.length; tiles.style.gridTemplateColumns = 'repeat(' + Math.max(1, tiles.children.length) + ', minmax(0, 1fr))';
-    var tl = row.querySelector('[data-tl]'); tl.textContent = ''; tl.hidden = !ev.T.length;
-    ev.T.forEach(function (t) {
-      var ok = t.a >= ar[0] - 0.5 && t.a <= ar[1] + 0.5, pr = t.pmin ? (t.pmax && t.pmax !== t.pmin ? fmt(t.pmin) + '~' + fmt(t.pmax) : fmt(t.pmin)) : '분양가 미확인';
-      tl.appendChild(el('span', ok ? 'in' : '', (ok ? '✓ ' : '') + t.a + '㎡(' + pyeong(t.a) + '평) · ' + (t.u || '?') + '세대 · ' + pr + ((t.n || t.b) ? ' · 신혼 ' + (t.n || 0) + ' / 신생아 ' + (t.b || 0) : '')));
-    });
+    row.querySelector('[data-tl]').hidden = true;
+    var loc = String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 ');
+    function kv(lab, val, cls) { var r = el('div', 'kv ' + (cls || '')); r.appendChild(el('small', null, lab)); r.appendChild(el('b', null, val)); tiles.appendChild(r); }
+    if (loc) kv('지역', loc, ev.rOk ? 'ok' : 'warn');
+    if (ev.T.length) {
+      ev.T.slice().sort(function (p, q) { return p.a - q.a; }).forEach(function (t) {
+        var ok = t.a >= ar[0] - 0.5 && t.a <= ar[1] + 0.5, pr = t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '';
+        var cls = !t.pmin ? '' : ev.cap > 0 && t.pmin > ev.cap * 1.3 ? 'bad' : ev.cap > 0 && t.pmin > ev.cap ? 'warn' : 'ok';
+        kv(t.a + '㎡ · ' + pyeong(t.a) + '평', (pr || '금액 정보 없음') + (t.u ? ' · ' + t.u + '세대' : ''), cls);
+      });
+    } else if (x.price) kv('금액', String(x.price).slice(0, 40), ev.pOk === 'no' ? 'bad' : '');
+    tiles.hidden = !tiles.children.length;
     var cau = row.querySelector('[data-cau]'); cau.textContent = ''; cau.className = 'cau' + (ev.cau.some(function (c) { return c.b; }) ? ' red' : '');
     cau.appendChild(el('h4', null, '⚠ 주의할 점'));
     var ul = el('ul'); ev.cau.sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : '', c.t)); }); cau.appendChild(ul);
