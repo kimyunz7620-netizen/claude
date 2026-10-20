@@ -364,7 +364,18 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .cat { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px 14px; border-radius: 18px; border: 0; background: var(--bg); text-align: left; cursor: pointer; font: inherit; color: var(--ink);  }
 .cat .ce { font-size: 28px; line-height: 1; } .cat b { font-size: 18px; font-weight: 800; } .cat small { color: var(--muted); font-size: 12.5px; }
-.phase .ph-head h3 { display: none; }
+.setbox { background: var(--bg); border-radius: 16px; padding: 14px; margin: 10px 0 4px; display: flex; flex-direction: column; gap: 8px; }
+.setbox h4 { margin: 0 0 2px; font-size: 14px; font-weight: 800; }
+.polread { display: flex; gap: 14px; align-items: center; margin: 8px 0 0; padding: 8px 12px; background: var(--bg); border-radius: 12px; font-size: 13.5px; }
+.polread label.who { display: flex; gap: 6px; align-items: center; cursor: pointer; font-weight: 700; }
+.cmp { padding: 12px 0; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; } .cmp:first-child { border-top: 0; }
+.cmp-h { display: flex; align-items: baseline; gap: 8px; } .cmp-h b { font-size: 16px; font-weight: 800; } .cmp-a { color: var(--muted); font-size: 12.5px; margin-left: auto; }
+.cmp-bar { position: relative; height: 26px; background: var(--bg); border-radius: 8px; overflow: hidden; } .cmp-bar i { display: block; height: 100%; background: var(--accent-soft, #dfe6ff); } .cmp-bar span { position: absolute; left: 10px; top: 0; line-height: 26px; font-weight: 800; font-size: 14px; }
+.cmp-s { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .cmp-s small { display: block; color: var(--muted); font-size: 11.5px; } .cmp-s b { font-size: 14px; }
+.cmp .spark { width: 100%; height: 36px; }
+#polWrap .pol { box-shadow: none; border: 1px solid var(--line); margin-top: 10px; }
+#hw-all .addtask, #hw-all .grp-h { display: none; }
+#studyProg { margin-bottom: 14px; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -414,8 +425,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
   <!-- 홈 -->
   <section class="pane" id="tab-home" data-tab="home">
-    <h2 class="vtitle">오늘</h2>
-    <p class="vsub">이번 달 할 일과 우리 현황</p>
+    <h2 class="vtitle">모아보기</h2>
+    <p class="vsub">네 가지를 한눈에</p>
     <div class="stack">
       <div class="card" id="onboard" hidden>
         <div class="mhead"><h3>처음 시작하기</h3><span style="display:flex;gap:8px;align-items:center"><span class="chip" id="obProg">0 / 4</span><button type="button" class="ghost sm" data-hideob>숨기기</button></span></div>
@@ -444,7 +455,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </details>
       </div>
 
-      <div class="card" id="catCard"><div class="mhead"><h3>우리가 할 4가지</h3><span class="chip" id="catAll"></span></div><div class="cats" id="cats"></div></div>
+      <div class="card" id="catCard"><div class="mhead"><h3>모아보기</h3></div><div class="cats" id="cats"></div></div>
 
       <div class="card" id="subsHome">
         <div class="mhead"><h3>청약 공고</h3><span class="chip" id="subsHomeCount">0건</span></div>
@@ -452,17 +463,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <div class="ai-acts"><button type="button" class="ghost" data-tab-go="subs">전체 보기</button></div>
       </div>
 
-      <div class="card" id="regCard">
-        <div class="mhead"><h3>발품 매물 등록</h3></div>
-        <p class="hsub">네이버 지도·부동산 화면을 캡처해서 올리면 자동으로 읽어요. 직접 입력도 돼요.</p>
-        <div class="ai-acts">
-          <button type="button" id="regPick">캡처 올리기</button>
-          <button type="button" class="ghost" id="regManual">직접 입력</button>
-          <input type="file" id="regFile" accept="image/*" multiple hidden>
-        </div>
-        <p class="note" id="regMsg" style="margin-top:8px"></p>
-        <div id="regForms" class="stack" style="margin-top:12px"></div>
-      </div>
+      <div class="card" id="regHome"><div class="mhead"><h3>발품 매물 올리기</h3></div><p class="hsub">네이버 지도·부동산 화면을 캡처해서 올리면 자동으로 읽어요.</p><div class="ai-acts"><button type="button" data-tab-go="homes">📷 사진으로 올리러 가기</button></div></div>
 
       <div class="card" id="monthly">
         <div class="mhead"><h3>이번 달 숙제 · <span id="moLabel"></span></h3><span class="chip" id="moProg">0 / 3</span></div>
@@ -513,7 +514,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   <section class="pane" id="tab-calc" data-tab="calc" hidden>
     <h2 class="vtitle">💰 모으기</h2>
     <p class="vsub">얼마를 모아야 하는지 거꾸로 계산해요</p>
-    <div class="stack" id="hw-c1" style="margin-bottom:14px"></div>
     <div class="stack">
       <div class="card">
         <h3>우리 조건</h3>
@@ -603,8 +603,24 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   <section class="pane" id="tab-homes" data-tab="homes" hidden>
     <h2 class="vtitle">👟 발품팔기</h2>
     <p class="vsub">후보를 넣고, 같은 조건으로 꾸준히 시세를 기록해요</p>
-    <div class="stack" id="hw-c2" style="margin-bottom:14px"></div>
     <div class="stack">
+      <div class="card" id="regCard">
+        <div class="mhead"><h3>📷 사진으로 매물 올리기</h3></div>
+        <p class="hsub">네이버 지도·부동산 화면을 캡처해서 올리면 자동으로 읽어요. 직접 입력도 돼요.</p>
+        <div class="ai-acts">
+          <button type="button" id="regPick">캡처 올리기</button>
+          <button type="button" class="ghost" id="regManual">직접 입력</button>
+          <input type="file" id="regFile" accept="image/*" multiple hidden>
+        </div>
+        <p class="note" id="regMsg" style="margin-top:8px"></p>
+        <div id="regForms" class="stack" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card" id="cmpCard">
+        <div class="mhead"><h3>📊 한눈에 비교</h3><button type="button" class="ghost sm" id="cmpSave" hidden>이미지로 저장</button></div>
+        <div id="cmpBody"><div class="empty">후보 단지에 전세가를 넣으면 비교 그림이 나와요.</div></div>
+      </div>
+
       <details class="card guide" id="guide">
         <summary>매물 찾는 법과 기록 루틴</summary>
         <p class="hsub" style="margin-top:6px">처음이면 읽어 보세요. 사이트마다 보는 것이 달라요.</p>
@@ -694,14 +710,16 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   <section class="pane" id="tab-subs" data-tab="subs" hidden>
     <h2 class="vtitle">🏠 청약</h2>
     <p class="vsub">공고를 보고, 내 자격을 확인해요</p>
-    <div class="stack" id="hw-c3" style="margin-bottom:14px"></div>
       <div class="card" id="subsCard" style="margin-bottom:18px">
         <div class="mhead"><h3>청약 공고 리스트</h3><span class="chip" id="subsCount">0건</span></div>
         <p class="hsub" id="subsMeta">아직 가져온 공고가 없어요.</p>
+        <div class="setbox"><h4>⚙️ 내 기준</h4>
         <div class="ai-acts"><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label></div>
         <div class="ai-acts" style="margin-top:8px"><label class="chkp">정렬 <select id="subsSort" style="height:32px;font-size:13px"><option value="fit">순위 순</option><option value="end">마감 빠른 순</option></select></label></div>
         <div class="subcap"><label class="f"><span class="lbl">💰 내 분양가 상한 (순위·초과 표시 기준)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="비우면 자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></div>
-        <div id="subsList" class="stack" style="margin-top:14px"><div class="empty">표시할 공고가 없어요. 노트북에서 공고 가져오기를 실행하면 채워져요.</div></div>
+        </div>
+        <h4 class="lh" style="margin:18px 0 6px">📋 공고 리스트</h4>
+        <div id="subsList" class="stack"><div class="empty">표시할 공고가 없어요. 노트북에서 공고 가져오기를 실행하면 채워져요.</div></div>
         <details class="more" id="subsImportBox">
           <summary>자동 가져오기 (노트북 스크립트가 쓰는 칸)</summary>
           <textarea class="pr" id="subsImport" placeholder="여기에 Claude가 준 JSON을 붙여 넣으세요" aria-label="공고 JSON"></textarea>
@@ -709,9 +727,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           <p class="note" id="subsImportMsg" style="margin-top:8px"></p>
         </details>
       </div>
-    <details class="card fold" id="polFold">
-      <summary>📋 정부 대출·지원 제도</summary>
-      <div class="fbody">
+  </section>
+  <section class="pane" id="tab-study" data-tab="study" hidden>
+    <h2 class="vtitle">📚 부동산 공부</h2>
+    <p class="vsub">실용적인 것만 모았어요. 읽고 나면 각자 체크해요.</p>
+    <div class="card" id="studyProg"></div>
+    <div class="stack" id="hw-all"></div>
+    <div class="card" id="polWrap" style="margin-top:14px"><div class="mhead"><h3>💰 정부 대출·지원 제도</h3></div>
       <p class="vsub" style="margin-top:0">우리에게 맞을 만한 제도예요. 아래 기준은 인터넷 자료를 요약한 것이라 틀릴 수 있어요. 링크의 공식 사이트에서 꼭 확인하세요.</p>
       <div class="tabs" id="polTabs" role="group" aria-label="분류">
         <button type="button" data-kind="" aria-pressed="true">전체</button>
@@ -722,13 +744,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       </div>
       <div class="stack" id="pollist"></div>
 
-      </div>
-    </details>
-  </section>
-  <section class="pane" id="tab-study" data-tab="study" hidden>
-    <h2 class="vtitle">📚 부동산 공부</h2>
-    <p class="vsub">전세 구조와 시세 읽는 법을 익혀요</p>
-    <div class="stack" id="hw-c4"></div>
+
+    </div>
   </section>
 
   <footer>대출·세금·청약 조건은 자주 바뀝니다. 이 페이지의 기준 수치는 참고용이고, 신청 직전에 주택도시기금, 청약홈, 서울주거포털, 마이홈포털, 국세청 홈택스에서 다시 확인하세요.</footer>
@@ -779,10 +796,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   };
 
   var PHASES = [
-    { id: 'c1', e: '💰', t: '모으기', sub: '얼마를, 어떻게 모을지 정하고 대출을 알아봐요.' },
-    { id: 'c2', e: '👟', t: '발품팔기', sub: '예산 안에서 후보를 뽑고, 시세를 추적하고, 직접 가 봐요.' },
-    { id: 'c3', e: '🏠', t: '청약', sub: '내 청약 상태를 알고 선택지에 넣을지 정해요.' },
-    { id: 'c4', e: '📚', t: '부동산 공부', sub: '전세 구조와 시세 읽는 법을 익혀요.' }
+    { id: 'c4', e: '📚', t: '기본 개념', sub: '전세가 어떤 구조인지, 시세를 어떻게 읽는지 먼저 익혀요.' },
+    { id: 'c1', e: '💰', t: '모으기', sub: '얼마를 모을지 정하고 대출을 알아봐요.' },
+    { id: 'c2', e: '👟', t: '발품팔기', sub: '후보를 뽑고 직접 가 봐요.' },
+    { id: 'c3', e: '🏠', t: '청약', sub: '내 청약 상태를 확인해요.' }
   ];
 
   var TASKS = [
@@ -869,8 +886,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       steps: ['이사 견적 두세 곳 받아 보기', '부대비용 칸에 이사·가전 예산 반영하기'], l: [] }
   ];
 
-  var CAT = { plan: 'c1', plan2: 'c1', sim: 'c1', support: 'c1', range: 'c2', pick: 'c2', track: 'c2', visit: 'c2', prod: 'c3', sub: 'c3', sub2: 'c3', why: 'c4', own: 'c4', read: 'c4', rank: 'c4' };
-  TASKS = TASKS.filter(function (t) { return CAT[t.id]; }).map(function (t) { t.ph = CAT[t.id]; return t; });
+  var CAT = { why: 'c4', read: 'c4', plan: 'c1', sim: 'c1', pick: 'c2', visit: 'c2', prod: 'c3', sub: 'c3' };
+  TASKS = TASKS.filter(function (t) { return CAT[t.id]; }).map(function (t) { t.ph = CAT[t.id]; t.who = 'each'; return t; });
 
   var POLICIES = [
     { id: 'beotim', n: '신혼부부 전용 버팀목 전세대출', k: '대출', star: 1,
@@ -1802,7 +1819,47 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     });
     r.none.forEach(function (n) { var row = el('div', 'rk noprice'); row.appendChild(el('div', 'rk-n', '–')); var mid = el('div'); mid.appendChild(el('b', null, n.name)); mid.appendChild(el('small', null, '전세 호가를 입력하면 순위에 들어가요')); row.appendChild(mid); row.appendChild(el('div')); box.appendChild(row); });
     $('#aiActs').hidden = !sampleFn || !r.scored.length;
+    refreshCompare(r);
   }
+  var cmpRows = [];
+  function refreshCompare(r) {
+    var box = $('#cmpBody'); if (!box) return; box.textContent = ''; cmpRows = [];
+    var sv = $('#cmpSave'); if (sv) sv.hidden = true;
+    if (!core.ready || !r.scored.length) { box.appendChild(el('div', 'empty', core.ready ? '후보 단지에 전세가를 넣으면 비교 그림이 나와요.' : '모으기 탭에 연소득을 넣으면 비교 그림이 나와요.')); return; }
+    var maxJ = Math.max.apply(null, r.scored.map(function (x) { return x.lp.j; }));
+    r.scored.forEach(function (sc, i) {
+      var ser = seriesOf(sc.id), tr = trendOf(ser), row = el('div', 'cmp');
+      var head = el('div', 'cmp-h'); head.appendChild(el('span', 'rk-n', String(i + 1))); head.appendChild(el('b', null, sc.name));
+      head.appendChild(el('span', 'cmp-a', sc.area ? sc.area + '㎡ · ' + pyeong(sc.area) + '평' : '')); row.appendChild(head);
+      var bar = el('div', 'cmp-bar'), fi = el('i'); fi.style.width = (sc.lp.j / maxJ * 100) + '%'; bar.appendChild(fi); bar.appendChild(el('span', null, fmt(sc.lp.j))); row.appendChild(bar);
+      var st = el('div', 'cmp-s');
+      [['월 이자', fmt(sc.interest)], ['필수 저축', fmt(sc.need)], ['추세', tr ? (tr.pctMonth >= 0 ? '▲ ' : '▼ ') + Math.abs(tr.pctMonth).toFixed(1) + '%/월' : '–']].forEach(function (p) { var d = el('div'); d.appendChild(el('small', null, p[0])); d.appendChild(el('b', null, p[1])); st.appendChild(d); });
+      row.appendChild(st);
+      if (ser.length > 1) {
+        var W = 300, H = 36, lo = Math.min.apply(null, ser.map(function (x) { return x.j; })), hi = Math.max.apply(null, ser.map(function (x) { return x.j; })), sp = (hi - lo) || 1;
+        var pts = ser.map(function (x, k) { return (k / (ser.length - 1) * W).toFixed(1) + ',' + (H - 4 - (x.j - lo) / sp * (H - 8)).toFixed(1); }).join(' ');
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'spark'); svg.setAttribute('preserveAspectRatio', 'none');
+        var pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline'); pl.setAttribute('points', pts); pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', '#2f6bff'); pl.setAttribute('stroke-width', '2'); svg.appendChild(pl); row.appendChild(svg);
+      }
+      box.appendChild(row);
+      cmpRows.push({ n: i + 1, name: sc.name, area: sc.area ? sc.area + '㎡ ' + pyeong(sc.area) + '평' : '', j: sc.lp.j, interest: sc.interest, need: sc.need, trend: tr ? (tr.pctMonth >= 0 ? '▲' : '▼') + Math.abs(tr.pctMonth).toFixed(1) + '%' : '-' });
+    });
+    if (sv) sv.hidden = !dl;
+  }
+  $('#cmpSave').addEventListener('click', function () {
+    if (!dl || !cmpRows.length) return;
+    var W = 900, RH = 120, H = 130 + cmpRows.length * RH, cv = document.createElement('canvas'); cv.width = W; cv.height = H; var g = cv.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.fillStyle = '#1f2235'; g.font = '800 34px SUIT, sans-serif'; g.fillText('땅콩집 후보 비교 · ' + todayStr(), 36, 62);
+    var maxJ = Math.max.apply(null, cmpRows.map(function (x) { return x.j; }));
+    cmpRows.forEach(function (x, i) {
+      var y = 100 + i * RH; g.fillStyle = '#f3f4fb'; g.fillRect(24, y, W - 48, RH - 14);
+      g.fillStyle = '#2f6bff'; g.font = '800 30px SUIT, sans-serif'; g.fillText(String(x.n), 44, y + 44);
+      g.fillStyle = '#1f2235'; g.fillText(x.name, 90, y + 44); g.font = '500 22px SUIT, sans-serif'; g.fillStyle = '#6b7088'; g.fillText(x.area, 90 + Math.min(420, g.measureText(x.name).width + 20) + 20, y + 44);
+      g.fillStyle = '#dfe6ff'; g.fillRect(44, y + 58, W - 96, 14); g.fillStyle = '#2f6bff'; g.fillRect(44, y + 58, (W - 96) * x.j / maxJ, 14);
+      g.fillStyle = '#1f2235'; g.font = '700 22px SUIT, sans-serif'; g.fillText('전세 ' + fmt(x.j) + '   월 이자 ' + fmt(x.interest) + '   필수 저축 ' + fmt(x.need) + '   추세 ' + x.trend, 44, y + 98);
+    });
+    cv.toBlob(function (bl) { if (bl) dl.save({ filename: '땅콩집-후보비교-' + todayStr() + '.png', data: bl }).catch(function () {}); }, 'image/png');
+  });
 
   /* ---------- AI analysis ---------- */
   var aiCtl = null;
@@ -1882,12 +1939,28 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var ul = el('ul', 'pol-chk'); p.chk.forEach(function (x) { ul.appendChild(el('li', null, x)); }); c.appendChild(ul);
       var fit = el('div', 'chips'); fit.dataset.fit = '1'; c.appendChild(fit);
       c.appendChild(linkChips(p.l));
+      var rd = el('div', 'polread'); rd.appendChild(el('b', null, '읽었어요'));
+      ['A', 'B'].forEach(function (w) { var lab = el('label', 'who'), cb = el('input'); cb.type = 'checkbox'; cb.dataset.pk = 'chk' + w; var nm = el('b'); nm.dataset.pn = w; lab.appendChild(cb); lab.appendChild(nm); rd.appendChild(lab); });
+      c.appendChild(rd);
       var st = el('div', 'pol-state'), sel = el('select'); sel.dataset.k = 'status'; sel.setAttribute('aria-label', p.n + ' 상태');
       PSTATUS.forEach(function (s) { sel.appendChild(el('option', null, s)); });
       var note = el('input'); note.dataset.k = 'note'; note.placeholder = '메모 (확인한 기준 등)'; note.maxLength = 300; note.setAttribute('aria-label', p.n + ' 메모');
       var when = el('span', 'when'); when.dataset.when = '1';
       st.appendChild(sel); st.appendChild(note); st.appendChild(when); c.appendChild(st); root.appendChild(c);
     });
+  }
+  function refreshStudyProg() {
+    var box = $('#studyProg'); if (!box) return; box.textContent = '';
+    var tasks = allTasks(), tot = 0, a = 0, b = 0;
+    tasks.forEach(function (t) { tot += t.steps.length; a += personSteps(t, 'a'); b += personSteps(t, 'b'); });
+    POLICIES.forEach(function (p) { tot++; var s = policyState[p.id] || {}; if (s.chkA) a++; if (s.chkB) b++; });
+    box.appendChild(el('h3', null, '공부 진도'));
+    [['A', nameA(), a], ['B', nameB(), b]].forEach(function (p) {
+      var row = el('div', 'pbar'); row.appendChild(el('b', null, p[1]));
+      var bar = el('div', 'bar2'), i = el('i'); i.style.width = (tot ? p[2] / tot * 100 : 0) + '%'; bar.appendChild(i); row.appendChild(bar);
+      row.appendChild(el('span', null, p[2] + ' / ' + tot)); box.appendChild(row);
+    });
+    var tp = $('[data-cat="study"] [data-cp]'); if (tp) tp.textContent = nameA() + ' ' + a + '/' + tot + ' · ' + nameB() + ' ' + b + '/' + tot;
   }
   function refreshPolicies() {
     $$('.pol').forEach(function (c) {
@@ -1896,10 +1969,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         if (e === document.activeElement) return;
         var v = s[e.dataset.k], t = v == null ? '' : String(v); if (e.tagName === 'SELECT' && !t) t = PSTATUS[0]; if (e.value !== t) e.value = t;
       });
+      $$('[data-pk]', c).forEach(function (cb) { var on = !!s[cb.dataset.pk]; if (cb.checked !== on) cb.checked = on; });
+      $$('[data-pn]', c).forEach(function (n) { n.textContent = n.dataset.pn === 'A' ? nameA() : nameB(); });
       c.dataset.status = s.status || PSTATUS[0];
       c.querySelector('[data-when]').textContent = s.checkedAt ? '마지막 확인 ' + dotYm(s.checkedAt) : '아직 확인하지 않았어요';
       var box = c.querySelector('[data-fit]'); box.textContent = ''; var f = fitFor(id); if (f) box.appendChild(el('span', 'chip ' + f[1], f[0]));
     });
+    refreshStudyProg();
   }
   function onPolicyInput(e) {
     var c = e.target.closest('.pol'), k = e.target.dataset.k; if (!c || !k || !db) return;
@@ -1949,10 +2025,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     return d;
   }
   function buildBoard() {
-    var cur = currentPhase(), cats = $('#cats'), TABOF = { c1: 'calc', c2: 'homes', c3: 'subs', c4: 'study' };
-    PHASES.forEach(function (p) {
-      var b = el('button', 'cat'); b.type = 'button'; b.dataset.cat = p.id; b.dataset.tabGo = TABOF[p.id];
-      b.appendChild(el('span', 'ce', p.e)); b.appendChild(el('b', null, p.t)); var cp = el('small', null, ''); cp.dataset.cp = '1'; b.appendChild(cp); cats.appendChild(b);
+    var cur = currentPhase(), cats = $('#cats');
+    [['calc', '💰', '모으기', '역산 계산기'], ['homes', '👟', '발품팔기', '매물·시세·사진 올리기'], ['subs', '📋', '청약찾기', '공고 리스트'], ['study', '📚', '부동산 공부', '']].forEach(function (c) {
+      var b = el('button', 'cat'); b.type = 'button'; b.dataset.cat = c[0]; b.dataset.tabGo = c[0];
+      b.appendChild(el('span', 'ce', c[1])); b.appendChild(el('b', null, c[2])); var cp = el('small', null, c[3]); if (c[0] === 'study') cp.dataset.cp = '1'; b.appendChild(cp); cats.appendChild(b);
     });
     PHASES.forEach(function (p) {
       var sec = el('div', 'card phase'); sec.dataset.ph = p.id;
@@ -1973,7 +2049,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var form = el('form', 'addtask'); form.dataset.ph = p.id;
       var ws = el('select'); ws.setAttribute('aria-label', '종류'); ws.innerHTML = '<option value="both">같이</option><option value="each">각자</option>';
       var inp = el('input'); inp.placeholder = '우리 숙제 추가'; inp.maxLength = 80; inp.setAttribute('aria-label', p.t + ' 숙제 추가');
-      var btn = el('button', null, '추가'); btn.type = 'submit'; form.appendChild(ws); form.appendChild(inp); form.appendChild(btn); sec.appendChild(form); $('#hw-' + p.id).appendChild(sec);
+      var btn = el('button', null, '추가'); btn.type = 'submit'; form.appendChild(ws); form.appendChild(inp); form.appendChild(btn); sec.appendChild(form); $('#hw-all').appendChild(sec);
     });
   }
   function refreshBoard() {
@@ -2003,7 +2079,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     });
     PHASES.forEach(function (p) {
       var sec = $('.phase[data-ph="' + p.id + '"]'), rows = $$('.task', sec), d = rows.filter(function (r) { return r.classList.contains('done'); }).length;
-      sec.querySelector('[data-rng]').textContent = ''; sec.querySelector('[data-prog]').textContent = d + ' / ' + rows.length + ' 완료'; var tp = $('[data-cat="' + p.id + '"] [data-cp]'); if (tp) tp.textContent = d + ' / ' + rows.length + ' 완료';
+      sec.querySelector('[data-rng]').textContent = ''; sec.querySelector('[data-prog]').textContent = d + ' / ' + rows.length + ' 완료'; 
       sec.querySelector('[data-now]').hidden = true;
       var ea = 0, eb = 0, en = 0;
       tasks.forEach(function (t) { if (t.ph === p.id && t.who === 'each') { ea += personSteps(t, 'a'); eb += personSteps(t, 'b'); en += t.steps.length; } });
@@ -2011,7 +2087,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       sec.querySelector('[data-gp="both"]').textContent = '';
       ['each', 'both'].forEach(function (g) { var grp = sec.querySelector('[data-grp="' + g + '"]'); grp.hidden = !grp.querySelector('.task'); });
     });
-    $('#catAll').textContent = doneTasks + ' / ' + totalTasks + ' 완료';
+    refreshStudyProg();
   }
   function saveTask(id, patch, ms) {
     if (!db) return;
@@ -2183,7 +2259,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (e.target.closest('[data-f]')) onPlanInput(e);
     else if (e.target.closest('.pol')) onPolicyInput(e);
   });
-  $('#pollist').addEventListener('change', function (e) { if (e.target.dataset.k === 'status') onPolicyInput(e); });
+  $('#pollist').addEventListener('change', function (e) {
+    if (e.target.dataset.k === 'status') onPolicyInput(e);
+    else if (e.target.dataset.pk && db) { var c = e.target.closest('.pol'), id = c.dataset.id, patch = {}; patch[e.target.dataset.pk] = e.target.checked; policyState[id] = Object.assign({}, policyState[id], patch); refreshPolicies(); addPending('policies/' + id, patch); flushWrite('policies/' + id, 'pol:' + id + e.target.dataset.pk, 0, function () { return upsert('policies/' + id, pending['policies/' + id] ? pending['policies/' + id].patch : patch); }); }
+  });
   (function () { var d = new Date(), w = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()]; $('#today').textContent = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + w + '요일'; })();
   $('#pxDate').value = todayStr();
   buildPolicies(); buildBoard(); initMeSel(); renderPlan(); renderEvents(); showTab(initialTab(), true);
