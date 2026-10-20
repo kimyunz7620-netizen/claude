@@ -386,7 +386,8 @@ button.cat { display: flex; flex-direction: column; align-items: flex-start; jus
 .chg { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 9px 0; border-top: 1px dashed var(--line); } .chg:first-child { border-top: 0; }
 .chg b { font-size: 14.5px; } .chg span { font-weight: 800; font-size: 14.5px; } .chg span.up { color: var(--coral-ink); } .chg span.down { color: var(--mint-ink); } .chg small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
 .cx-head { flex-wrap: nowrap; } .cx-head .cx-name { flex: 1 1 0; min-width: 0; }
-.cx3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }
+.cx-area { font-size: 13.5px; font-weight: 700; margin-top: -4px; } .cx-area.none { color: var(--muted); font-weight: 500; }
+.cx3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
 .cx3 .lbl { font-size: 11.5px; } .cx3 input { padding-inline: 8px; }
 .cxmore { margin-top: 2px; } .cxmore > summary { color: var(--muted); font-weight: 700; font-size: 13px; cursor: pointer; padding: 4px 0; }
 .cxmore > .cx-grid, .cxmore > details, .cxmore > input, .cxmore > div { margin-top: 10px; }
@@ -512,7 +513,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </div>
       </details>
 
-      <details class="card fold" id="events" open>
+      <details class="card fold" id="events" hidden>
         <summary>일정 · D-day</summary>
         <div class="fbody">
           <p class="hsub">청약 접수일, 현재 집 계약 만료일, 상담 예약일 같은 날짜를 넣어 두세요.</p>
@@ -568,8 +569,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <p class="note">묶인 돈의 이자는 그 돈을 예금에 넣었다면 받았을 이자예요(가정값 예금금리 기준). 집값 변화나 이사 비용은 넣지 않았어요.</p>
       </div>
 
-      <div class="card">
-        <h3>⚙️ 우리 조건 (설정)</h3>
+      <div class="card" id="setCard">
+        <h3 id="setTitle">⚙️ 우리 조건 (설정)</h3>
         <p class="hsub">지금 가진 돈은 넣지 않아요. 대출을 받고도 입주 때 최소 얼마가 모여 있어야 하는지(필수 저축액)를 보여 드려요.</p>
         <div class="fields">
           <label class="f"><span class="lbl">연소득 · <b data-nm="A">A</b></span><span class="in"><input id="f-incomeA" data-f="incomeA" type="number" inputmode="decimal" min="0" step="100"><em>만원</em></span><span class="hint" data-h="incomeA"></span></label>
@@ -638,36 +639,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <div id="regForms" class="stack" style="margin-top:12px"></div>
       </div>
 
-      <div class="card" id="cmpCard">
-        <div class="mhead"><h3>📊 한눈에 비교</h3><button type="button" class="ghost sm" id="cmpSave" hidden>이미지로 저장</button></div>
-        <div id="cmpBody"><div class="empty">후보 단지에 전세가를 넣으면 비교 그림이 나와요.</div></div>
-      </div>
-
-
-
-
-      <div class="card">
-        <h3>📝 시세 기록 · 단지 추가</h3>
-        <p class="hsub">기록할 날짜를 고르고, 아래 단지 카드에 그 날의 가격을 넣어요.</p>
-        <div class="toolrow">
-          <label class="f"><span class="lbl">기록 날짜</span><input id="pxDate" type="date"></label>
-          <form class="addrow" id="addForm">
-            <input id="addName" placeholder="단지명 (예: 래미안당산1차)" maxlength="40" autocomplete="off" aria-label="추가할 단지명">
-            <button type="submit" id="addBtn">추가</button>
-          </form>
-        </div>
-      </div>
-      <div id="cxlist" class="stack"><div class="empty">아직 후보 단지가 없어요. 위에 단지명을 적고 추가하면 시세를 적을 카드가 생겨요.</div></div>
-      <div class="card" id="rank">
-        <h3>AI 추이 분석</h3>
-        <p class="hsub">저축 부담 30 · 월 이자 20 · 보증금 안전 25 · 시세 추세 15 · 면적 10점으로 합쳐요. 기록 날짜에 가격이 없으면 가장 최근 기록을 써요.</p>
-        <div id="ranklist"><div class="empty">전세가를 입력한 후보 단지가 있으면 순위가 나와요.</div></div>
-        <div class="ai-acts" id="aiActs" hidden>
-          <button type="button" class="ai-btn" id="aiBtn">AI로 추이 분석·추천 순서 받기</button>
-          <button type="button" class="ghost" id="aiStop" hidden>취소</button>
-        </div>
-        <div class="ai-out" id="aiOut" hidden></div>
-      </div>
       <details class="card guide" id="guide">
         <summary>매물 찾는 법과 기록 루틴</summary>
         <p class="hsub" style="margin-top:6px">처음이면 읽어 보세요. 사이트마다 보는 것이 달라요.</p>
@@ -725,6 +696,36 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
           </ul>
         </div>
       </details>
+      <div class="card" id="cmpCard">
+        <div class="mhead"><h3>📊 한눈에 비교</h3><button type="button" class="ghost sm" id="cmpSave" hidden>이미지로 저장</button></div>
+        <div id="cmpBody"><div class="empty">후보 단지에 전세가를 넣으면 비교 그림이 나와요.</div></div>
+      </div>
+
+
+
+
+      <div class="card">
+        <h3>📝 시세 기록 · 단지 추가</h3>
+        <p class="hsub">기록할 날짜를 고르고, 아래 단지 카드에 그 날의 가격을 넣어요.</p>
+        <div class="toolrow">
+          <label class="f"><span class="lbl">기록 날짜</span><input id="pxDate" type="date"></label>
+          <form class="addrow" id="addForm">
+            <input id="addName" placeholder="단지명 (예: 래미안당산1차)" maxlength="40" autocomplete="off" aria-label="추가할 단지명">
+            <button type="submit" id="addBtn">추가</button>
+          </form>
+        </div>
+      </div>
+      <div id="cxlist" class="stack"><div class="empty">아직 후보 단지가 없어요. 위에 단지명을 적고 추가하면 시세를 적을 카드가 생겨요.</div></div>
+      <div class="card" id="rank">
+        <h3>AI 추이 분석</h3>
+        <p class="hsub">저축 부담 30 · 월 이자 20 · 보증금 안전 25 · 시세 추세 15 · 면적 10점으로 합쳐요. 기록 날짜에 가격이 없으면 가장 최근 기록을 써요.</p>
+        <div id="ranklist"><div class="empty">전세가를 입력한 후보 단지가 있으면 순위가 나와요.</div></div>
+        <div class="ai-acts" id="aiActs" hidden>
+          <button type="button" class="ai-btn" id="aiBtn">AI로 추이 분석·추천 순서 받기</button>
+          <button type="button" class="ghost" id="aiStop" hidden>취소</button>
+        </div>
+        <div class="ai-out" id="aiOut" hidden></div>
+      </div>
     </div>
   </section>
 
@@ -1489,6 +1490,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   /* ---------- plan render ---------- */
   function renderPlan() {
     core = calcCore();
+    var sc0 = $('#setCard'); if (sc0) { var need0 = !(core.ready && core.canTotal > 0); sc0.style.order = need0 ? '-1' : '99'; $('#setTitle').textContent = need0 ? '먼저 우리 조건을 입력해요' : '⚙️ 우리 조건 (설정)'; }
     $$('[data-f]').forEach(function (e) {
       if (e === document.activeElement) return;
       var k = e.dataset.f, v = plan[k], show = v == null ? '' : String(v);
@@ -1676,13 +1678,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '<div class="cx-grid cx3">' +
       '<label class="f"><span class="lbl">전세 호가 (만원)</span><input data-pk="jeonse" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hj></span></label>' +
       '<label class="f"><span class="lbl">매매가 (만원)</span><input data-pk="sale" type="number" inputmode="decimal" min="0" step="500"><span class="hint" data-hs></span></label>' +
-      '<label class="f"><span class="lbl">매물 수</span><span class="in"><input data-pk="cnt" type="number" inputmode="numeric" min="0" step="1"><em>개</em></span></label>' +
-      '</div><div class="chips" data-chips></div>' +
+      '</div><div class="cx-area" data-areatxt></div><div class="chips" data-chips></div>' +
       '<details class="cxmore"><summary>면적 · 임장 · 메모 · 삭제</summary>' +
       '<div class="cx-grid">' +
       '<label class="f"><span class="lbl">전용면적</span><span class="in"><input data-k="area" type="number" inputmode="decimal" min="0" step="0.01"><em>㎡</em></span><span class="hint" data-ha></span></label>' +
       '<label class="f"><span class="lbl">공급 평형 (네이버 표기)</span><span class="in"><input data-k="py" type="number" inputmode="decimal" min="0" step="1"><em>평</em></span></label>' +
-      '<label class="f"><span class="lbl">희망 전세가 (만원)</span><input data-k="want" type="number" inputmode="decimal" min="0" step="500"></label>' +
+      '<label class="f"><span class="lbl">전세 매물 수 (늘면 협상 신호)</span><span class="in"><input data-pk="cnt" type="number" inputmode="numeric" min="0" step="1"><em>개</em></span></label>' +
       '</div><div class="cx-last" data-last></div><div class="spark" data-spark></div><div class="mini" data-mini></div>' +
       '<details class="visit"><summary>본 매물 <span class="chip plain" data-sn>0</span></summary><div class="seenlist" data-seen></div></details>' +
       '<details class="visit"><summary>임장 체크 <span class="chip plain" data-vc>0/' + VISIT.length + '</span></summary><div class="vlist">' +
@@ -1694,6 +1695,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var id = card.dataset.id, d = cxData.get(id) || {}, dt = pxDate(), c = core;
     var rec = (priceMap[id] || {})[dt] || {}, j = Number(rec.jeonse) || 0, s = Number(rec.sale) || 0, dep = num('deposit');
     card.classList.toggle('out', d.status === '탈락');
+    var at = card.querySelector('[data-areatxt]'), ar0 = Number(d.area) || 0, py0 = Number(d.py) || 0;
+    at.textContent = ar0 ? '전용 ' + ar0 + '㎡ · ' + pyeong(ar0) + '평' + (py0 ? ' (공급 ' + py0 + '평)' : '') : (py0 ? '공급 ' + py0 + '평' : '평수를 넣으면 여기에 보여요 (아래 더보기)'); at.className = 'cx-area' + (ar0 || py0 ? '' : ' none');
     card.querySelector('[data-hj]').textContent = j ? fmt(j) : '';
     card.querySelector('[data-hs]').textContent = s ? fmt(s) : '';
     var ser = seriesOf(id);
@@ -1886,7 +1889,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function refreshCompare(r) {
     var box = $('#cmpBody'); if (!box) return; box.textContent = ''; cmpRows = [];
     var sv = $('#cmpSave'); if (sv) sv.hidden = true;
-    if (!core.ready || !r.scored.length) { box.appendChild(el('div', 'empty', core.ready ? '후보 단지에 전세가를 넣으면 비교 그림이 나와요.' : '모으기 탭에 연소득을 넣으면 비교 그림이 나와요.')); return; }
+    var cc0 = $('#cmpCard'), rk0 = $('#rank'); if (cc0) cc0.hidden = !(core.ready && r.scored.length); if (rk0) rk0.hidden = !(core.ready && r.scored.length);
+    if (!core.ready || !r.scored.length) return;
     var maxJ = Math.max.apply(null, r.scored.map(function (x) { return x.lp.j; }));
     r.scored.forEach(function (sc, i) {
       var ser = seriesOf(sc.id), tr = trendOf(ser), row = el('div', 'cmp');
@@ -2200,7 +2204,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function refreshOnboard() {
     var rows = { me: !!getMe(), inc: has('incomeA') && has('incomeB') && has('canA') && has('canB'), dep: has('deposit'), cx: cxData.size > 0 }, n = 0;
     Object.keys(rows).forEach(function (k) { var r = $('.quest[data-ob="' + k + '"]'); r.classList.toggle('done', rows[k]); if (rows[k]) n++; });
-    $('#obProg').textContent = n + ' / 4'; $('#onboard').hidden = n === 4 || getPref('hideOb') === 'true';
+    $('#obProg').textContent = n + ' / 4'; $('#onboard').hidden = n === 4 || getPref('hideOb') === 'true'; var tc = $('#todayCard'); if (tc) tc.hidden = !$('#onboard').hidden ? true : false;
   }
   function refreshHomework() {
     refreshOnboard();
