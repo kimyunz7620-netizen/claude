@@ -61,7 +61,7 @@ def in_regions(d, regions):
     return any(region.startswith(r) or addr.startswith(r) for r in regions)
 
 
-def fetch_models(key, details):
+def fetch_models(key, details, endpoint="getAPTLttotPblancMdl"):
     """공고마다 주택형(면적·세대수·분양가)을 따로 조회한다."""
     models = {}
     for d in details:
@@ -72,7 +72,7 @@ def fetch_models(key, details):
         rows = []
         for params in ({"cond[HOUSE_MANAGE_NO::EQ]": hm, "cond[PBLANC_NO::EQ]": pb}, {"cond[HOUSE_MANAGE_NO::EQ]": hm}):
             try:
-                rows = fetch_all("getAPTLttotPblancMdl", key, params)
+                rows = fetch_all(endpoint, key, params)
             except SystemExit as e:
                 print(f"  주택형 조회 오류({hm}): {e}")
                 rows = []
@@ -83,11 +83,34 @@ def fetch_models(key, details):
     return models
 
 
+def d_begin(d):
+    return d.get("RCEPT_BGNDE") or d.get("SUBSCRPT_RCEPT_BGNDE") or d.get("GNRL_RNK1_CRSPAREA_RCPTDE") or ""
+
+
+def d_end(d):
+    return d.get("RCEPT_ENDDE") or d.get("SUBSCRPT_RCEPT_ENDDE") or d.get("GNRL_RNK1_CRSPAREA_ENDDE") or ""
+
+
 def fetch_notices(key, today, horizon_days, regions):
     details = fetch_all("getAPTLttotPblancDetail", key, {"cond[RCEPT_ENDDE::GTE]": today.isoformat()})
     limit = (today + dt.timedelta(days=horizon_days)).isoformat()
-    details = [d for d in details if (not d.get("RCEPT_BGNDE") or d["RCEPT_BGNDE"] <= limit) and in_regions(d, regions)]
-    return details, fetch_models(key, details)
+    details = [d for d in details if (not d_begin(d) or d_begin(d) <= limit) and in_regions(d, regions)]
+    models = fetch_models(key, details)
+    # 무순위·잔여세대: 청약통장 없이 신청하는 경우가 많아서 따로 가져온다(실패해도 계속 진행)
+    try:
+        rem = fetch_all("getRemndrLttotPblancDetail", key, {})
+        rem = [d for d in rem if (not d_end(d) or d_end(d) >= today.isoformat()) and (not d_begin(d) or d_begin(d) <= limit) and in_regions(d, regions)]
+        for d in rem:
+            d["__kind"] = "무순위·잔여세대"
+        print(f"무순위·잔여세대 공고 {len(rem)}건")
+        rm = fetch_models(key, rem, "getRemndrLttotPblancMdl") if rem else {}
+        details += rem
+        models.update(rm)
+    except SystemExit as e:
+        print(f"무순위·잔여세대 조회는 건너뛰었어요: {e}")
+    except Exception as e:  # noqa: BLE001
+        print(f"무순위·잔여세대 조회 중 문제가 있었어요: {e}")
+    return details, models
 
 
 # ------------------------------------------------------------ transform ----
@@ -178,12 +201,12 @@ def build_item(d, models, area_min, area_max, regions):
     link = d.get("PBLANC_URL") or ""
     return {
         "no": no, "name": name, "location": addr or region, "supply": supply, "areas": areas, "price": price,
-        "applyStart": d.get("RCEPT_BGNDE") or "", "applyEnd": d.get("RCEPT_ENDDE") or "",
+        "applyStart": d_begin(d), "applyEnd": d_end(d),
         "winnerDate": d.get("PRZWNER_PRESNATN_DE") or "",
         "link": link if link.startswith("https://") else "",
         "fit": fit, "fitReason": reason, "areaFit": area_fit, "regionFit": region_fit, "source": "청약홈 API",
         "types": type_groups, "moveIn": move_in, "notes": notes,
-        "kind": str(d.get("HOUSE_DTL_SECD_NM") or d.get("HOUSE_SECD_NM") or "")[:10],
+        "kind": str(d.get("__kind") or d.get("HOUSE_DTL_SECD_NM") or d.get("HOUSE_SECD_NM") or "")[:10],
     }
 
 
