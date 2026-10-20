@@ -418,7 +418,8 @@ body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .regtag { font-weight: 800; font-size: 13.5px; padding: 6px 10px; border-radius: 10px; margin-bottom: 10px; } .regtag.upd { background: var(--mint-soft); color: var(--mint-ink); } .regtag.new { background: var(--sun-soft); color: var(--sun-ink); }
 .cmp-t { display: flex; flex-wrap: wrap; gap: 6px; } .cmp-n { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
 #regOut:empty, #regOut:has(#regMsg:empty):not(:has(.regf)) { display: none; }
-.mentorbtn { width: 100%; height: 48px; background: var(--ink); color: #fff; font-weight: 800; font-size: 15px; }
+.sub .links { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mentorbtn { height: 40px; padding: 0 16px; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 800; font-size: 14px; }
 .bpanel { margin-top: 10px; padding: 12px 14px; background: var(--bg); border-radius: 14px; font-size: 14px; } .bpanel ol { margin: 0 0 10px; padding-left: 20px; line-height: 1.6; } .bpanel input[type=file] { width: 100%; }
 .mentor { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 16px; border: 2px solid var(--ink); background: #fff; } .mentor .mh { font-weight: 800; font-size: 15px; }
 .mone { padding: 10px 12px; border-radius: 12px; font-weight: 800; font-size: 14.5px; line-height: 1.5; } .mone.go { background: var(--mint-soft); color: var(--mint-ink); } .mone.mid { background: var(--sun-soft); color: var(--sun-ink); } .mone.no { background: var(--coral-soft); color: var(--coral-ink); }
@@ -1339,8 +1340,6 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var again = el('button', 'ghost sm', '공고문 다시 읽혀서 업데이트'); again.type = 'button'; again.dataset.bopen = id; w.appendChild(again);
       box.appendChild(w); if (briefOpen[id]) box.appendChild(briefPanel(id)); return;
     }
-    if (x.status !== 'interest' && x.status !== 'plan') { box.appendChild(el('p', 'note', '관심 있는 공고는 상태를 “관심”으로 바꾸면 멘토 요약을 요청할 수 있어요.')); return; }
-    var btn = el('button', 'mentorbtn', '🧑‍🏫 공고 요약 요청하기'); btn.type = 'button'; btn.dataset.bopen = id; box.appendChild(btn);
     if (briefOpen[id] || briefBusy[id] || briefMsg[id]) box.appendChild(briefPanel(id));
   }
   function briefPanel(id) {
@@ -1379,7 +1378,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     
     var links = row.querySelector('[data-sl]'); links.textContent = '';
     var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고 보기'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; links.appendChild(a); }
-    links.hidden = !u;
+    var mb = el('button', 'mentorbtn', x.brief ? '🧑‍🏫 멘토 요약 다시 받기' : '🧑‍🏫 공고 요약 요청'); mb.type = 'button'; mb.dataset.bopen = row.dataset.id; links.appendChild(mb);
+    links.hidden = false;
     $$('[data-cn]', row).forEach(function (n) { n.textContent = (n.dataset.cn === 'a' ? nameA() : nameB()) + ' 확인'; });
     $$('[data-ck]', row).forEach(function (cb) { var on = !!x['chk' + cb.dataset.ck.toUpperCase()]; if (cb.checked !== on) cb.checked = on; });
     $$('[data-sk]', row).forEach(function (e) { if (e === document.activeElement) return; var v = x[e.dataset.sk] || ''; if (e.value !== v) e.value = v; });
