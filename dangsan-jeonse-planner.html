@@ -344,8 +344,9 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .hs .hh b { flex: 1; font-size: 15.5px; font-weight: 800; min-width: 0; }
 .hs .hh .rk { flex: none; width: 24px; height: 24px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
 .hs .hh a { font-size: 12.5px; color: var(--accent); border: 1px solid var(--line); padding: 3px 10px; border-radius: 999px; text-decoration: none; }
-.hs .hl { display: flex; gap: 10px; font-size: 13.5px; } .hs .hl small { flex: none; width: 64px; white-space: nowrap; color: var(--muted); } .hs .hl span { font-weight: 700; } .hs .hl.mute span { color: var(--muted); font-weight: 500; }
-.hs .hcp { margin: 4px 0 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 1px; }
+.hs .hl { display: flex; gap: 10px; font-size: 13.5px; } .hs .medal { flex: none; font-size: 22px; line-height: 1; }
+.hs .hl small { flex: none; width: 92px; white-space: nowrap; color: var(--muted); } .hs .hl span { font-weight: 700; } .hs .hl.mute span { color: var(--muted); font-weight: 500; }
+.hs .hcp { margin: 6px 0 0; padding: 8px 10px; list-style: none; background: var(--bg); border-radius: 12px; gap: 3px !important; font-size: 13px; display: flex; flex-direction: column; gap: 1px; }
 .hs .hcp li.b { color: var(--coral-ink); font-weight: 700; } .hs .hcp li.g { color: var(--mint-ink); font-weight: 700; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
@@ -1402,17 +1403,17 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 가져온 공고가 없어요. “전체 보기 · 공고 찾기”에서 가져오세요.')); return; }
     ids.slice(0, 12).forEach(function (id) {
       var x = subsState[id], ev = evalSub(x), box2 = el('div', 'hs'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
-      var head = el('div', 'hh'); head.appendChild(el('span', 'rk', String(subRank[id] || '–')));
+      var head = el('div', 'hh'); var rkn = subRank[id] || 0; head.appendChild(el('span', rkn && rkn <= 3 ? 'medal' : 'rk', rkn === 1 ? '🥇' : rkn === 2 ? '🥈' : rkn === 3 ? '🥉' : String(rkn || '–')));
       head.appendChild(el('b', null, x.name || '(이름 없음)'));
       if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
       var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
       box2.appendChild(head);
       function line(k, v, cls) { if (!v) return; var r = el('div', 'hl ' + (cls || '')); r.appendChild(el('small', null, k)); r.appendChild(el('span', null, v)); box2.appendChild(r); }
-      line('지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
-      if (ev.T.length) line('평형·금액', ev.T.slice().sort(function (p, q) { return p.a - q.a; }).map(function (t) { return t.a + '㎡(' + pyeong(t.a) + '평) ' + (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정'); }).join(' · '));
-      else line('금액', String(x.price || '').slice(0, 40));
+      line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
+      if (ev.T.length) line('💰 평형·금액', ev.T.slice().sort(function (p, q) { return p.a - q.a; }).map(function (t) { return t.a + '㎡(' + pyeong(t.a) + '평) ' + (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정'); }).join(' · '));
+      else line('💰 금액', String(x.price || '').slice(0, 40));
       var cps = ev.cau.slice().sort(function (p, q) { return (q.b ? 2 : q.g ? 1 : 0) - (p.b ? 2 : p.g ? 1 : 0); }).slice(0, 4);
-      if (cps.length) { var ul = el('ul', 'hcp'); cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
+      if (cps.length) { var ul = el('ul', 'hcp');  cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', (c.b ? (/토지임대/.test(c.t) ? '🌱 ' : /투기과열/.test(c.t) ? '🔥 ' : /분양가/.test(c.t) ? '💸 ' : /마감/.test(c.t) ? '⏰ ' : '🚨 ') : c.g ? '✅ ' : /평형/.test(c.t) ? '📐 ' : /지역/.test(c.t) ? '🗺️ ' : /입주/.test(c.t) ? '🏠 ' : /혼인/.test(c.t) ? '💍 ' : 'ℹ️ ') + String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
       box.appendChild(box2);
     });
   }
