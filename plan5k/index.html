@@ -1368,7 +1368,7 @@ function catBudget(c,r){
 /* tapping a category in 카테고리 opens what was bought: date · memo · how paid · amount (tap a row to edit it) */
 const BDOPEN=new Set();
 function catDetail(list){if(!list.length)return '<div class="cdet"><p class="tiny muted">이 기간엔 기록이 없어요.</p></div>';
-  const real=id=>S.entries.some(x=>x.id===id),how=e=>e.part>0?"할부 몫":e.method==="cash"?"체크·현금":e.method==="inst"?"할부":"카드";
+  const real=id=>S.entries.some(x=>x.id===id),how=e=>fundOut(e)?"🎁 저금통에서":e.part>0?"할부 몫":e.method==="cash"?"체크·현금":e.method==="inst"?"할부":"카드";
   return `<div class="cdet">${list.map(e=>`<${real(e.id)?`button type="button" class="cdr" data-edit="${esc(e.id)}"`:'div class="cdr"'}><span class="d">${md(bDate(e))}</span><span class="m">${esc(e.memo||"(메모 없음)")} <span class="tiny muted">${how(e)}</span></span><b class="${e.amount<0?"good-t":""}">${e.amount<0?"−":""}${num(Math.abs(e.amount))}</b></${real(e.id)?"button":"div"}>`).join("")}<p class="tiny muted" style="margin:6px 0 0">${list.length}건 · 누르면 고칠 수 있어요</p></div>`}
 function renderWeek(){
   $("wkSunday").hidden=parse(TODAY).getDay()!==0;if(!$("wkDate").value)$("wkDate").value=TODAY;
@@ -1412,7 +1412,9 @@ function renderWeek(){
     const op=BDOPEN.has(c.id),list=es.filter(e=>e.cat===c.id).sort((a,b)=>bDate(a)<bDate(b)?1:bDate(a)>bDate(b)?-1:b.amount-a.amount);
     return{lvl,ratio,html:`<button type="button" class="crow${over?" over":fast?" fast":""}" data-bdcat="${esc(c.id)}" aria-expanded="${op}"><span class="e">${em}</span><span class="nm">${esc(c.name)}${c.accumulate&&bdMode==="cycle"?' <span class="tiny muted">적립</span>':""}<span class="amt">${s?manC(s):"0원"} / ${manC(b)}</span></span><span class="rt small">${right}</span>
       <span class="cbar"><i style="width:${b>0?Math.min(100,s/b*100):s>0?100:0}%"></i>${live&&b>0?`<b style="left:${f*100}%"></b>`:""}</span></button>${op?catDetail(list):""}`}}).sort((a,b)=>a.lvl-b.lvl||b.ratio-a.ratio);
-  $("bdCats").innerHTML=`<div class="clist">${rows.map(x=>x.html).join("")}</div>`+(other?`<p class="small muted">미분류 ${won(other)}</p>`:"")+(()=>{const own=sum(es.filter(e=>FUNDCAT(e.cat)&&!fundOut(e)),e=>e.amount);return own?`<p class="small muted">🎁 경조사/선물 중 내 돈으로 낸 것 ${won(own)} (생활비에 포함)</p>`:""})();
+  $("bdCats").innerHTML=`<div class="clist">${rows.map(x=>x.html).join("")}</div>`+(other?`<p class="small muted">미분류 ${won(other)}</p>`:"")+CATS().filter(c=>c.fund).map(c=>{/* 경조사: what came from its own account plus what I paid myself (that part is in 생활비) */
+    const list=LIV().filter(e=>e.cat===c.id&&!e.excl&&inRange(bDate(e),r)).sort((a,b)=>bDate(a)<bDate(b)?1:-1),own=sum(list.filter(e=>!fundOut(e)),e=>e.amount),fromF=sum(list.filter(e=>fundOut(e)),e=>e.amount),op=BDOPEN.has(c.id),[em]=look(c.id);
+    return `<div class="clist"><button type="button" class="crow" data-bdcat="${esc(c.id)}" aria-expanded="${op}"><span class="e">${em}</span><span class="nm">${esc(c.name)}<span class="amt">${list.length?manC(own+fromF):"0원"}</span></span><span class="rt small muted">${[own?`내 돈 ${man1(own)}`:"",fromF?`저금통 ${man1(fromF)}`:""].filter(Boolean).join(" · ")||"없음"}</span></button>${op?catDetail(list):""}</div>`}).join("");
   $("bdAll").parentElement.hidden=true;
 }
 
