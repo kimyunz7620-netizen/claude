@@ -140,6 +140,29 @@ def build_item(d, models, area_min, area_max, regions):
     if good:
         bits.append("신혼특공 물량 있음")
     reason = " · ".join(bits) + " (소득·자격은 공고문 확인)"
+    groups = {}
+    for t in types:
+        if t["area"] is None:
+            continue
+        g = groups.setdefault(round(t["area"]), {"a": round(t["area"]), "u": 0, "n": 0, "b": 0, "pmin": 0, "pmax": 0})
+        g["u"] += t["units"]; g["n"] += t["nwwds"]
+        if t["price"]:
+            g["pmin"] = t["price"] if not g["pmin"] else min(g["pmin"], t["price"])
+            g["pmax"] = max(g["pmax"], t["price"])
+    for m in models:
+        a = parse_area(m.get("HOUSE_TY"))
+        if a is not None and round(a) in groups:
+            groups[round(a)]["b"] += to_int(m.get("NWBB_HSHLDCO"))
+    type_groups = [groups[k] for k in sorted(groups)]
+    notes = []
+    if "토지임대" in name:
+        notes.append("토지임대부: 건물만 분양받고 토지는 임대료를 내는 방식이에요. 매달 토지 임대료가 따로 붙어요")
+    if str(d.get("SPECLT_RDN_EARTH_AT", "")).upper() == "Y":
+        notes.append("투기과열지구: 전매제한·재당첨 제한·대출 규제가 강해요 (공고문 확인)")
+    if str(d.get("PUBLIC_HOUSE_SPCLW_APPLC_AT", "")).upper() == "Y":
+        notes.append("공공택지 공급: 소득·자산 기준이 공고마다 따로 있어요")
+    mv = str(d.get("MVN_PREARNGE_YM") or "")
+    move_in = f"{mv[:4]}-{mv[4:6]}" if re.fullmatch(r"\d{6}", mv) else ""
     supply = " · ".join(x for x in [
         f"총 {to_int(d.get('TOT_SUPLY_HSHLDCO'))}세대" if d.get("TOT_SUPLY_HSHLDCO") else "",
         f"신혼 {nwwds}" if nwwds else "", f"신생아 {nwbb}" if nwbb else "", f"생애최초 {frst}" if frst else ""] if x)
@@ -158,6 +181,7 @@ def build_item(d, models, area_min, area_max, regions):
         "winnerDate": d.get("PRZWNER_PRESNATN_DE") or "",
         "link": link if link.startswith("https://") else "",
         "fit": fit, "fitReason": reason, "areaFit": area_fit, "regionFit": region_fit, "source": "청약홈 API",
+        "types": type_groups, "moveIn": move_in, "notes": notes,
     }
 
 
