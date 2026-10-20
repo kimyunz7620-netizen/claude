@@ -343,6 +343,7 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .hs:first-child { border-top: 0; padding-top: 2px; }
 .hs .hh { display: flex; align-items: center; gap: 8px; }
 .hs .hh b { flex: 1; font-size: 15.5px; font-weight: 800; min-width: 0; }
+.hs .hchips { display: flex; gap: 6px; flex-wrap: wrap; margin: -2px 0 2px 34px; }
 .hs .hh .rk { flex: none; width: 24px; height: 24px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
 .hs .hh a { font-size: 12.5px; color: var(--accent); border: 1px solid var(--line); padding: 3px 10px; border-radius: 999px; text-decoration: none; }
 .hs .hl { display: flex; gap: 10px; font-size: 13.5px; } .hs .medal { flex: none; font-size: 22px; line-height: 1; }
@@ -436,6 +437,10 @@ body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .setbox { padding: 10px 14px !important; margin: 6px 0 0 !important; gap: 4px !important; }
 .setbox > summary { font-size: 13px !important; font-weight: 700 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; list-style: none; } .setbox > summary::-webkit-details-marker { display: none; }
 .setbox[open] > summary { white-space: normal; }
+.hero { padding: 12px 16px !important; } .hero > .hero-k { display: inline-block; } #hKicker { margin-left: 8px; }
+.hero .hero-l { display: none; } .hero .hero-v { font-size: 22px; margin-top: 4px; }
+.hero .hero-s { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.hero-more > summary { margin-top: 6px !important; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -1304,10 +1309,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var ev = evalSub(x), box2 = el('div', 'hs'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
       var head = el('div', 'hh'); var rkn = subRank[id] || 0; head.appendChild(el('span', rkn && rkn <= 3 ? 'medal' : 'rk', rkn === 1 ? '🥇' : rkn === 2 ? '🥈' : rkn === 3 ? '🥉' : String(rkn || '–')));
       head.appendChild(el('b', null, x.name || '(이름 없음)'));
-      if (ev.el.noAcc) head.appendChild(el('span', 'chip ok', '🆓 통장 없이 가능'));
-      var ndl = nextDl(x, ev); if (ndl) { var d2 = dayNum(ndl.d) - dayNum(todayStr()); head.appendChild(el('span', 'chip ' + (d2 <= 3 ? 'bad' : d2 <= 7 ? 'warn' : 'plain'), ndl.label + (d2 === 0 ? ' D-day' : ' D-' + d2))); } else if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
+      var hch = el('div', 'hchips');
+      if (ev.el.noAcc) hch.appendChild(el('span', 'chip ok', '🆓 통장 없이 가능'));
+      var ndl = nextDl(x, ev); if (ndl) { var d2 = dayNum(ndl.d) - dayNum(todayStr()); hch.appendChild(el('span', 'chip ' + (d2 <= 3 ? 'bad' : d2 <= 7 ? 'warn' : 'plain'), ndl.label + (d2 === 0 ? ' D-day' : ' D-' + d2))); } else if (dd != null) hch.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
       var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
-      box2.appendChild(head);
+      box2.appendChild(head); if (hch.children.length) box2.appendChild(hch);
       var okParts = []; if (ev.aOk === 'yes') okParts.push('평형'); if (ev.pOk === 'yes' || (ev.land && ev.T.length)) okParts.push(ev.land ? '금액(건물값)' : '금액'); if (ev.el.anyOk) okParts.push('자격');
       var tri;
       if (ev.pOk === 'no' || ev.el.allBad) tri = ['no', '🙅 패스해도 돼요 · ' + (ev.pOk === 'no' ? '분양가가 상한을 넘어요' : '지금 정보로는 신청이 어려워요')];
@@ -1682,7 +1688,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     subSort(ids);
     $('#subsHomeCount').textContent = ids.length + '건';
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 가져온 공고가 없어요. “전체 보기”에서 가져오세요.')); return; }
-    ids.slice(0, 3).forEach(function (id) {
+    ids.slice(0, 2).forEach(function (id) {
       box.appendChild(subSummary(subsState[id], id, true));
     });
   }
