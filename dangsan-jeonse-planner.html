@@ -759,7 +759,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <details class="setbox"><summary id="setSum">⚙️ 내 기준</summary>
         <div class="ai-acts"><label class="chkp"><input type="checkbox" id="subsPast"> 마감된 공고도 보기</label><label class="chkp"><input type="checkbox" id="subsMatch"> 관심 지역만 보기</label><label class="chkp"><input type="checkbox" id="subsAll"> 조건 안 맞는 공고도 보기</label></div>
         <div class="ai-acts" style="margin-top:8px"><label class="chkp">정렬 <select id="subsSort" style="height:32px;font-size:13px"><option value="fit">순위 순</option><option value="end">마감 빠른 순</option></select></label></div>
-        <div class="subcap"><label class="f"><span class="lbl">💰 내 분양가 상한 (순위·초과 표시 기준)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="비우면 자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></div>
+        <div class="subcap"><label class="f"><span class="lbl">🏦 집값 대비 대출 비율 (LTV)</span><select id="f-subsLtv" data-f="subsLtv" data-t="text"><option value="">기본 50% (서울·규제지역 무주택)</option><option value="40">40% (다주택·고가 등 보수적)</option><option value="60">60%</option><option value="70">70% (생애최초 등 우대)</option></select></label>
+        <label class="f"><span class="lbl">💰 내 분양가 상한 (순위·초과 표시 기준)</span><span class="in"><input id="f-subsMax" data-f="subsMax" type="number" inputmode="decimal" min="0" step="1000" placeholder="비우면 자동"><em>만원</em></span></label><p class="note" id="subsCapHint" style="margin:0"></p></div>
         </details>
         <h4 class="lh" style="margin:18px 0 6px">📋 공고 리스트</h4>
         <div id="subsList" class="stack"><div class="empty">표시할 공고가 없어요. 노트북에서 공고 가져오기를 실행하면 채워져요.</div></div>
@@ -1162,7 +1163,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function subTodo(x, me) { return subActive(x) && subShown(x) && x.fit !== 'no' && !x.status; }
   function subCap() {
     if (has('subsMax')) return [num('subsMax'), false];
-    var c = core; return c && c.canTotal > 0 ? [Math.floor(c.canTotal / 0.3 / 100) * 100, true] : [0, true];
+    var c = core, ltv = has('subsLtv') ? num('subsLtv') / 100 : 0.5;
+    if (!(c && c.canTotal > 0)) return [0, true];
+    var p = c.canTotal / (1 - ltv), loan = Math.min(p * ltv, 60000);
+    return [Math.floor((c.canTotal + loan) / 100) * 100, true];
   }
   function subTypes(x) { return Array.isArray(x.types) ? x.types.filter(function (t) { return t && isFinite(t.a); }) : []; }
   function myR1(x) {
@@ -1376,7 +1380,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '- 사는 곳: ' + ((plan.resid || '미입력') + (plan.residGu ? ' ' + plan.residGu : '')) + ' · 최근 10년 내 당첨 이력: ' + (plan.winPast === 'yes' ? '있음' : plan.winPast === 'no' ? '없음' : '미입력'),
       '- 혼인신고 예정월: ' + (validYm(plan.marriageDate) ? plan.marriageDate : '미정'), '- 출산 계획: ' + (plan.babyPlan === 'soon' ? '입주 후 2년 안' : plan.babyPlan === 'none' ? '당분간 없음' : '미정'),
       '- 찾는 전용면적: ' + areaRange()[0] + '~' + areaRange()[1] + '㎡',
-      '- 내가 정한 분양가 상한(자기 돈 30% 가정): ' + (ev.cap > 0 ? fmt(ev.cap) : '미정')].join('\n');
+      '- 감당 가능한 분양가 상한(모은 돈 + 대출, LTV ' + (has('subsLtv') ? num('subsLtv') : 50) + '% 가정): ' + (ev.cap > 0 ? fmt(ev.cap) : '미정')].join('\n');
   }
   function briefPrompt(x, ev, text) {
     return ['너는 신혼부부 윤지·성빈의 "부동산 멘토"야. 아래 입주자모집공고문(PDF 일부 텍스트)을 꼼꼼히 읽고, 두 사람이 이 공고를 신청할지 판단하고 준비할 수 있게 쉬운 말로 요약해 줘.',
@@ -1491,7 +1495,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       es.textContent = '🧾 내 자격 · ' + (parts.length ? parts.join(' · ') : '입력하면 자격에 안 맞는 공고를 걸러요');
     }
     var cp = subCap(), ch = $('#subsCapHint'); var ss0 = $('#setSum'); if (ss0) ss0.textContent = '💰 분양가 상한 ' + (cp[0] > 0 ? fmt(cp[0]) + (cp[1] ? ' (자동)' : '') : '미정') + ' · ' + ($('#subsSort').value === 'end' ? '마감 빠른 순' : '순위 순') + ' · 눌러서 바꾸기';
-     if (ch) ch.textContent = cp[0] > 0 ? (cp[1] ? '지금은 “둘이 모을 수 있는 금액 ÷ 30%” 로 자동 계산한 ' + fmt(cp[0]) + '을 쓰고 있어요(분양가의 약 30%를 자기 돈으로 낸다는 가정). 정확히 알면 직접 입력하세요.' : '직접 입력한 상한 ' + fmt(cp[0]) + '을 쓰고 있어요.') : '저축 가능 금액을 입력하면 자동으로 분양가 상한을 계산해요.';
+     if (ch) ch.textContent = cp[0] > 0 ? (cp[1] ? '지금은 “모은 돈 + 대출(집값의 ' + (has('subsLtv') ? num('subsLtv') : 50) + '%, 최대 6억)”으로 자동 계산한 ' + fmt(cp[0]) + '을 쓰고 있어요. 소득(DSR)·규제는 반영하지 않은 대략값이에요. 정확히 알면 직접 입력하세요.' : '직접 입력한 상한 ' + fmt(cp[0]) + '을 쓰고 있어요.') : '저축 가능 금액을 입력하면 자동으로 분양가 상한을 계산해요.';
     var ids = Object.keys(subsState).filter(function (id) { var x = subsState[id]; if (!(showPast || subActive(x)) || !subShown(x)) return false; if (!onlyMine) return true; return !!evalSub(x).rOk; });
     var hid = Object.keys(subsState).filter(function (id) { return (showPast || subActive(subsState[id])) && !subShown(subsState[id]); }).length;
     var allr = Object.keys(subsState).filter(function (id) { return subActive(subsState[id]) && subShown(subsState[id]) && subsState[id].status !== 'pass'; }), fs = $('#subsSort').value; $('#subsSort').value = 'fit'; subSort(allr); $('#subsSort').value = fs;
