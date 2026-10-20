@@ -261,10 +261,50 @@ def import_to_app(url, items, profile, headless=False, chrome_path=None, init_sc
             ctx.close()
 
 
+PLIST = Path.home() / "Library" / "LaunchAgents" / "com.ttangkong.subs.plist"
+
+
+def cmd_schedule(args):
+    """맥에서 매일 정해진 시각에 `run` 을 자동 실행하도록 등록한다."""
+    if platform.system() != "Darwin":
+        raise SystemExit("자동 실행 등록은 맥에서만 지원해요.")
+    if not args.key:
+        raise SystemExit("인증키가 없어요. 같은 터미널에서 export ODCLOUD_KEY=\"키\" 를 먼저 하세요.")
+    here = Path(__file__).resolve().parent
+    log = here / "out" / "schedule.log"
+    log.parent.mkdir(exist_ok=True)
+    plist = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>Label</key><string>com.ttangkong.subs</string>
+<key>ProgramArguments</key><array><string>{sys.executable}</string><string>{here / "subs_sync.py"}</string><string>run</string></array>
+<key>WorkingDirectory</key><string>{here}</string>
+<key>EnvironmentVariables</key><dict><key>ODCLOUD_KEY</key><string>{args.key}</string></dict>
+<key>StartCalendarInterval</key><dict><key>Hour</key><integer>{args.hour}</integer><key>Minute</key><integer>{args.minute}</integer></dict>
+<key>StandardOutPath</key><string>{log}</string>
+<key>StandardErrorPath</key><string>{log}</string>
+</dict></plist>
+"""
+    PLIST.parent.mkdir(parents=True, exist_ok=True)
+    PLIST.write_text(plist, encoding="utf-8")
+    PLIST.chmod(0o600)
+    os.system(f'launchctl unload "{PLIST}" 2>/dev/null; launchctl load "{PLIST}"')
+    print(f"등록했어요. 매일 {args.hour:02d}:{args.minute:02d}에 자동 실행돼요(노트북이 켜져 있고 로그인된 상태일 때).")
+    print(f"결과 기록: {log}")
+    print("해제하려면: python3 subs_sync.py unschedule")
+
+
+def cmd_unschedule(args):
+    if PLIST.exists():
+        os.system(f'launchctl unload "{PLIST}" 2>/dev/null')
+        PLIST.unlink()
+    print("자동 실행을 해제했어요.")
+
+
 # ---------------------------------------------------------------- main ----
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["login", "fetch", "run", "import"])
+    ap.add_argument("command", choices=["login", "fetch", "run", "import", "schedule", "unschedule"])
     ap.add_argument("file", nargs="?", help="import 할 JSON 파일")
     ap.add_argument("--key", default=os.environ.get("ODCLOUD_KEY"), help="공공데이터포털 일반 인증키(Decoding). 환경변수 ODCLOUD_KEY 도 가능")
     ap.add_argument("--url", default=os.environ.get("SUBS_ARTIFACT_URL", DEFAULT_ARTIFACT), help="땅콩집 플래너 주소")
@@ -275,11 +315,17 @@ def main():
     ap.add_argument("--profile", default=str(DEFAULT_PROFILE), help="로그인 정보를 저장할 크롬 프로필 폴더")
     ap.add_argument("--chrome", default=os.environ.get("CHROME_PATH"), help="크롬 실행 파일 경로(비워 두면 설치된 크롬 사용)")
     ap.add_argument("--headless", action="store_true", help="창 없이 실행(로그인이 풀릴 수 있어요)")
+    ap.add_argument("--hour", type=int, default=8, help="schedule: 자동 실행 시(0~23)")
+    ap.add_argument("--minute", type=int, default=30, help="schedule: 자동 실행 분")
     ap.add_argument("--raw", action="store_true", help="API 응답의 첫 항목 필드를 출력(필드 이름이 안 맞을 때 확인용)")
     args = ap.parse_args()
 
     if args.command == "login":
         return cmd_login(args)
+    if args.command == "schedule":
+        return cmd_schedule(args)
+    if args.command == "unschedule":
+        return cmd_unschedule(args)
     if args.command == "import":
         if not args.file:
             raise SystemExit("import 할 JSON 파일을 알려 주세요.")

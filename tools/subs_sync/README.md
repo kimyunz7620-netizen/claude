@@ -54,3 +54,14 @@ python3 subs_sync.py run       # 가져와서 앱에 넣기
 - `로그인이 풀린 것 같아요`: `login`을 다시 실행하세요.
 - `앱 화면을 찾지 못했어요`: 앱 주소가 맞는지(`--url`)와 해당 계정으로 앱이 열리는지 확인하세요.
 - `--headless`(창 없이)는 로그인이 풀리기 쉬워서 권하지 않습니다.
+
+## 매일 자동으로 실행하기 (맥)
+
+한 번만 하면 됩니다. 같은 터미널에서 인증키를 등록한 뒤 실행하세요.
+```
+export ODCLOUD_KEY="복사한키"
+python3 subs_sync.py schedule            # 매일 08:30 (바꾸려면 --hour 7 --minute 0)
+```
+- 노트북이 켜져 있고 로그인된 상태일 때 실행돼요. 결과는 `out/schedule.log`에 남아요.
+- 인증키는 `~/Library/LaunchAgents/com.ttangkong.subs.plist`에 저장돼요(본인만 읽을 수 있게 설정).
+- 해제: `python3 subs_sync.py unschedule`
