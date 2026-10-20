@@ -443,6 +443,8 @@ body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .hero-more > summary { margin-top: 6px !important; }
 .hprog { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; } .hp-h { font-size: 12px; opacity: .9; font-weight: 700; } .hp-r { background: rgba(255,255,255,.14); border-radius: 12px; padding: 8px 12px; display: flex; flex-direction: column; gap: 1px; } .hp-r b { font-size: 13.5px; } .hp-r span { font-size: 13px; font-weight: 700; } .hp-r small { font-size: 11.5px; opacity: .85; } .hp-r.off { opacity: .6; }
 .pbox { background: var(--surface); border-radius: 14px; padding: 10px 12px 12px; margin-top: 8px; border: 1px solid var(--line); } .pbox h5 { margin: 0 0 8px; font-size: 14px; }
+details.msec > summary { cursor: pointer; font-weight: 800; font-size: 14px; list-style: none; } details.msec > summary::-webkit-details-marker { display: none; } details.msec > summary::after { content: ' ▾'; color: var(--muted); } details.msec[open] > summary { margin-bottom: 6px; } details.msec[open] > summary::after { content: ' ▴'; }
+.mel b { line-height: 1.4; } .mel span { word-break: keep-all; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -1458,19 +1460,25 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '- 현금 준비는 계약금, 중도금, 잔금 순서와 시기, 그리고 두 사람이 모을 수 있는 현금과 비교한 과부족을 알려줘. 중도금·잔금 대출이 가능한지, 대략 얼마까지인지는 공고문에 있는 내용과 일반 원칙으로 설명하되 확정 표현은 피해.',
       '- 청약통장은 이 공고에 필요한 가입기간·납입횟수·예치금(면적·지역 기준 표)을 공고문에서 찾아서, 지금 부족하면 뭘 어떻게 하면 되는지(예: 얼마를 언제까지 입금) 구체적으로 말해 줘.',
       '- 우리 상황에서 신청 가능한 유형과 어려운 유형을 구분해 줘. 소득·자산 기준은 공고문 표 숫자와 우리 정보를 비교해서 말해 줘.', '',
+      '[길이 규칙] 폰 화면에서 읽을 거라 아주 짧게 써. oneLine은 45자 안쪽 한 문장, eligibility의 why는 60자 안쪽 한 문장(핵심 숫자 하나만), cash.steps의 what은 25자 안쪽, loan·bankbook은 120자 안쪽, todo·watch·missing 항목은 각 40자 안쪽. 모든 문장은 끝까지 완성해서 끝맺고, 중간에 끊지 마. 공고문에서 길게 인용하지 마.',
       '[출력] 코드 블록 없이 JSON 객체 하나만:',
       '{"oneLine":"우리에게 이 공고가 어떤지 한 줄","fit":"good|check|hard","eligibility":[{"type":"유형 이름","status":"ok|warn|bad","why":"짧은 이유"}],"cash":{"steps":[{"when":"시기","what":"무엇","amount":"금액"}],"total":"입주까지 현금 합계 요약","gap":"우리 현금과 비교한 과부족"},"loan":"대출 설명","bankbook":"청약통장 조언","todo":["지금 할 일 최대 6개"],"watch":["유의할 점 최대 5개"],"missing":["공고문에서 못 찾은 정보"]}', '',
       '[공고문 텍스트]', text].join('\n');
   }
   function cleanBrief(o) {
-    function S(v, n) { return String(v == null ? '' : v).slice(0, n || 300); }
+    function S(v, n) {
+      var z = String(v == null ? '' : v).trim(); n = n || 300; if (z.length <= n) return z;
+      var cut = z.slice(0, n), k1 = Math.max(cut.lastIndexOf('요.'), cut.lastIndexOf('다.'), cut.lastIndexOf('. ')), k2 = Math.max(cut.lastIndexOf('요 '), cut.lastIndexOf(', '));
+      if (k1 > n * 0.4) return cut.slice(0, k1 + 1);
+      return (k2 > n * 0.5 ? cut.slice(0, k2) : cut.replace(/\s+\S*$/, '')).replace(/[,\s]+$/, '') + '…';
+    }
     function A(v, n, k) { return (Array.isArray(v) ? v : []).slice(0, n).map(function (z) { return S(z, k || 200); }).filter(Boolean); }
     if (!o || typeof o !== 'object') return null;
     var cash = o.cash && typeof o.cash === 'object' ? o.cash : {};
-    return { oneLine: S(o.oneLine, 200), fit: ['good', 'check', 'hard'].indexOf(o.fit) >= 0 ? o.fit : 'check',
-      eligibility: (Array.isArray(o.eligibility) ? o.eligibility : []).slice(0, 8).map(function (e) { return { type: S(e && e.type, 40), status: ['ok', 'warn', 'bad'].indexOf(e && e.status) >= 0 ? e.status : 'warn', why: S(e && e.why, 220) }; }),
-      cash: { steps: (Array.isArray(cash.steps) ? cash.steps : []).slice(0, 8).map(function (z) { return { when: S(z && z.when, 40), what: S(z && z.what, 80), amount: S(z && z.amount, 40) }; }), total: S(cash.total, 240), gap: S(cash.gap, 240) },
-      loan: S(o.loan, 500), bankbook: S(o.bankbook, 500), todo: A(o.todo, 6), watch: A(o.watch, 5), missing: A(o.missing, 6) };
+    return { oneLine: S(o.oneLine, 90), fit: ['good', 'check', 'hard'].indexOf(o.fit) >= 0 ? o.fit : 'check',
+      eligibility: (Array.isArray(o.eligibility) ? o.eligibility : []).slice(0, 8).map(function (e) { return { type: S(e && e.type, 40), status: ['ok', 'warn', 'bad'].indexOf(e && e.status) >= 0 ? e.status : 'warn', why: S(e && e.why, 130) }; }),
+      cash: { steps: (Array.isArray(cash.steps) ? cash.steps : []).slice(0, 8).map(function (z) { return { when: S(z && z.when, 40), what: S(z && z.what, 60), amount: S(z && z.amount, 40) }; }), total: S(cash.total, 140), gap: S(cash.gap, 140) },
+      loan: S(o.loan, 260), bankbook: S(o.bankbook, 260), todo: A(o.todo, 6, 90), watch: A(o.watch, 5, 90), missing: A(o.missing, 6, 70) };
   }
   async function runBrief(id, file) {
     var x = subsState[id]; if (!x || !file) return;
@@ -1492,9 +1500,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (box.dataset.sig === sig) return; box.dataset.sig = sig; box.textContent = '';
     if (b) {
       var w = el('details', 'mentor'); w.open = !!briefJust[id]; var sm = el('summary', 'mh'); sm.appendChild(document.createTextNode('🧑‍🏫 멘토 요약' + (x.briefAt ? ' · ' + dotD(x.briefAt) : ''))); sm.appendChild(el('span', 'mone ' + (b.fit === 'good' ? 'go' : b.fit === 'hard' ? 'no' : 'mid'), b.oneLine)); w.appendChild(sm);
-      function sec(title, body) { if (!body || (Array.isArray(body) && !body.length)) return; var s2 = el('div', 'msec'); s2.appendChild(el('h5', null, title)); if (Array.isArray(body)) { var ul = el('ul'); body.forEach(function (z) { ul.appendChild(el('li', null, z)); }); s2.appendChild(ul); } else s2.appendChild(el('p', null, body)); w.appendChild(s2); }
+      function sec(title, body, open) { if (!body || (Array.isArray(body) && !body.length)) return; var s2 = el('details', 'msec'); s2.open = !!open; s2.appendChild(el('summary', null, title)); if (Array.isArray(body)) { var ul = el('ul'); body.forEach(function (z) { ul.appendChild(el('li', null, z)); }); s2.appendChild(ul); } else s2.appendChild(el('p', null, body)); w.appendChild(s2); }
       if (b.eligibility && b.eligibility.length) { var s3 = el('div', 'msec'); s3.appendChild(el('h5', null, '🧾 내가 신청할 수 있는 유형')); b.eligibility.forEach(function (e) { var r = el('div', 'mel ' + e.status); r.appendChild(el('b', null, (e.status === 'ok' ? '✅ ' : e.status === 'bad' ? '❌ ' : '⚠️ ') + e.type)); r.appendChild(el('span', null, e.why)); s3.appendChild(r); }); w.appendChild(s3); }
-      if (b.cash && (b.cash.steps.length || b.cash.total || b.cash.gap)) { var s4 = el('div', 'msec'); s4.appendChild(el('h5', null, '💵 현금은 이렇게 필요해요')); b.cash.steps.forEach(function (z) { var r = el('div', 'mel'); r.appendChild(el('b', null, z.when + ' · ' + z.what)); r.appendChild(el('span', null, z.amount)); s4.appendChild(r); }); if (b.cash.total) s4.appendChild(el('p', null, b.cash.total)); if (b.cash.gap) s4.appendChild(el('p', 'mgap', b.cash.gap)); w.appendChild(s4); }
+      if (b.cash && (b.cash.steps.length || b.cash.total || b.cash.gap)) { var s4 = el('details', 'msec'); s4.open = true; s4.appendChild(el('summary', null, '💵 현금은 이렇게 필요해요')); b.cash.steps.forEach(function (z) { var r = el('div', 'mel'); r.appendChild(el('b', null, z.when + ' · ' + z.what)); r.appendChild(el('span', null, z.amount)); s4.appendChild(r); }); if (b.cash.total) s4.appendChild(el('p', null, b.cash.total)); if (b.cash.gap) s4.appendChild(el('p', 'mgap', b.cash.gap)); w.appendChild(s4); }
       sec('🏦 대출은요', b.loan); sec('📒 청약통장', b.bankbook); sec('✅ 지금 할 일', b.todo); sec('⚠️ 유의할 점', b.watch); sec('❓ 공고문에서 못 찾은 것', b.missing);
       w.appendChild(el('p', 'mnote', 'AI가 공고문을 읽고 정리한 내용이에요. 숫자와 자격은 신청 전에 공고문 원문으로 꼭 다시 확인하세요.'));
       var again = el('button', 'ghost sm', '공고문 다시 읽혀서 업데이트'); again.type = 'button'; again.dataset.bopen = id; w.appendChild(again);
