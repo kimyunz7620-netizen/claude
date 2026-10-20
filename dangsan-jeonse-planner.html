@@ -1155,7 +1155,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     pool.forEach(function (t) { if (t.pmin) pmin = pmin ? Math.min(pmin, t.pmin) : t.pmin; pmax = Math.max(pmax, t.pmax || t.pmin || 0); });
     var allMin = 0, allMax = 0; T.forEach(function (t) { if (t.pmin) allMin = allMin ? Math.min(allMin, t.pmin) : t.pmin; allMax = Math.max(allMax, t.pmax || t.pmin || 0); });
     var pOk = 'unknown', ps = 17;
-    if (pmin && cap > 0) { if (pmin <= cap) { pOk = 'yes'; ps = 35; } else if (pmin <= cap * 1.3) { pOk = 'near'; ps = 12; } else { pOk = 'no'; ps = 0; } }
+    var land = (Array.isArray(x.notes) ? x.notes : []).some(function (n) { return /토지임대/.test(n); });
+    if (pmin && cap > 0 && !land) { if (pmin <= cap) { pOk = 'yes'; ps = 35; } else if (pmin <= cap * 1.3) { pOk = 'near'; ps = 12; } else { pOk = 'no'; ps = 0; } }
     sc += ps; br.push('금액 ' + ps + '/35');
     var sp = T.reduce(function (n, t) { return n + (t.n || 0) + (t.b || 0); }, 0), ss = sp > 0 ? 10 : 0; sc += ss; br.push('신혼·신생아 특공 ' + ss + '/10');
     var mv = 5, my = /^\d{4}-\d{2}$/.test(x.moveIn || '') ? x.moveIn : '';
@@ -1172,7 +1173,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); if (dd >= 0 && dd <= 3) cau.push({ b: 1, t: '접수 마감이 ' + (dd === 0 ? '오늘' : dd + '일 뒤') + '예요.' }); }
     (Array.isArray(x.notes) ? x.notes : []).forEach(function (n) {
       n = String(n);
-      if (/토지임대/.test(n)) cau.push({ b: 1, t: '토지임대부예요. 땅은 빌리는 거라 매달 토지 임대료를 내고, 되팔 때 제한이 있어요.' });
+      if (/토지임대/.test(n)) cau.push({ b: 1, t: '토지임대부예요. 보이는 분양가는 건물값뿐이고 땅값은 매달 임대료로 내요. 되팔 때 제한도 있어요.' });
       else if (/투기과열/.test(n)) cau.push({ b: 1, t: '투기과열지구예요. 대출과 전매(되팔기) 규제가 강해요.' });
       else if (/공공택지/.test(n)) cau.push({ t: '공공택지예요. 전매 제한 기간이 길 수 있어요.' });
       else cau.push({ t: n });
@@ -1196,7 +1197,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var ban = el('div', 'verdict2 ' + (ev.pos.length >= 2 && ev.pOk !== 'no' ? 'go' : 'mid')); ban.appendChild(el('b', null, vtxt)); box2.appendChild(ban);
       function line(k, v, cls) { if (!v) return; var r = el('div', 'hl ' + (cls || '')); r.appendChild(el('small', null, k)); r.appendChild(el('span', null, v)); box2.appendChild(r); }
       line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
-      if (ev.T.length) line('💰 평형·금액', ev.T.slice().sort(function (p, q) { return p.a - q.a; }).map(function (t) { return t.a + '㎡(' + pyeong(t.a) + '평) ' + (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정'); }).join(' · '));
+      if (ev.T.length) ev.T.slice().sort(function (p, q) { return p.a - q.a; }).forEach(function (t) { line('💰 ' + t.a + '㎡ · ' + pyeong(t.a) + '평', (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정') + (t.u ? ' · ' + t.u + '세대' : '')); });
       else line('💰 금액', String(x.price || '').slice(0, 40));
       var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 5);
       if (cps.length) { box2.appendChild(el('div', 'cth', '⚠️ 주의할 점')); var ul = el('ul', 'hcp');  cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', (c.b ? (/토지임대/.test(c.t) ? '🌱 ' : /투기과열/.test(c.t) ? '🔥 ' : /분양가/.test(c.t) ? '💸 ' : /마감/.test(c.t) ? '⏰ ' : '🚨 ') : c.g ? '✅ ' : /평형/.test(c.t) ? '📐 ' : /지역/.test(c.t) ? '🗺️ ' : /입주/.test(c.t) ? '🏠 ' : /혼인/.test(c.t) ? '💍 ' : 'ℹ️ ') + String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
