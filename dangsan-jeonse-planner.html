@@ -635,7 +635,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <div class="fields">
           <label class="f"><span class="lbl">찾고 싶은 전세가 (대략)</span><span class="in"><input id="f-deposit" data-f="deposit" type="number" inputmode="decimal" min="0" step="500"><em>만원</em></span><span class="hint" data-h="deposit"></span></label>
           <label class="f"><span class="lbl">입주 목표 시기</span><input id="f-targetDate" data-f="targetDate" data-t="text" type="month" value="2028-05" placeholder="YYYY-MM"></label>
-          <label class="f"><span class="lbl">혼인신고 예정월</span><input id="f-marriageDate" data-f="marriageDate" data-t="text" type="month" placeholder="YYYY-MM"></label>
+          <label class="f"><span class="lbl">혼인신고 월 (했으면 그 달, 예정이면 예정월)</span><input id="f-marriageDate" data-f="marriageDate" data-t="text" type="month" placeholder="YYYY-MM"></label>
           <label class="f"><span class="lbl">찾는 전용면적 최소</span><span class="in"><input id="f-areaMin" data-f="areaMin" type="number" inputmode="decimal" min="0" step="1" placeholder="40"><em>㎡</em></span><span class="hint" data-hp="areaMin"></span></label>
           <label class="f"><span class="lbl">찾는 전용면적 최대</span><span class="in"><input id="f-areaMax" data-f="areaMax" type="number" inputmode="decimal" min="0" step="1" placeholder="60"><em>㎡</em></span><span class="hint" data-hp="areaMax"></span></label>
           <label class="f wide"><span class="lbl">월 이자 부담 기준 (자가 전환을 생각해 타이트하게)</span><select id="f-stance" data-f="stance" data-t="text"><option value="tight">타이트 · 월 실수령의 10% 이하</option><option value="normal">보통 · 15% 이하</option><option value="loose">여유 · 20% 이하</option></select></label>
@@ -737,6 +737,12 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <p class="hsub" id="subsMeta">아직 가져온 공고가 없어요.</p>
         <details class="setbox" id="eligBox"><summary id="eligSum">🧾 내 청약 자격</summary>
           <div class="cx-grid">
+            <label class="f"><span class="lbl">생년월 · <b data-nm="A"></b></span><input id="f-birthA" data-f="birthA" data-t="text" type="month" placeholder="YYYY-MM"></label>
+            <label class="f"><span class="lbl">생년월 · <b data-nm="B"></b></span><input id="f-birthB" data-f="birthB" data-t="text" type="month" placeholder="YYYY-MM"></label>
+            <label class="f"><span class="lbl">세대주</span><select id="f-head" data-f="head" data-t="text"><option value="">아직 몰라요</option><option value="A">윤지</option><option value="B">성빈</option><option value="none">아직 세대 분리 전</option></select></label>
+            <label class="f"><span class="lbl">혼인 상태</span><select id="f-married" data-f="married" data-t="text"><option value="">아직 몰라요</option><option value="done">혼인신고 했어요</option><option value="plan">혼인신고 예정이에요</option></select></label>
+            <label class="f"><span class="lbl">부양가족 수 (배우자 포함, 본인 제외)</span><span class="in"><input id="f-dependents" data-f="dependents" type="number" inputmode="numeric" min="0" step="1" placeholder="예: 1"><em>명</em></span></label>
+            <label class="f"><span class="lbl">무주택으로 지낸 기간</span><span class="in"><input id="f-hlYears" data-f="hlYears" type="number" inputmode="numeric" min="0" step="1" placeholder="예: 3"><em>년</em></span></label>
             <label class="f" style="grid-column:1/-1"><span class="lbl">청약통장</span><select id="f-accHas" data-f="accHas" data-t="text"><option value="">아직 입력 안 했어요</option><option value="yes">있어요 (아래에 적어 주세요)</option><option value="none">둘 다 없어요</option></select></label>
             <label class="f"><span class="lbl">가입 기간 · <b data-nm="A"></b></span><span class="in"><input id="f-accA" data-f="accA" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>개월</em></span></label>
             <label class="f"><span class="lbl">가입 기간 · <b data-nm="B"></b></span><span class="in"><input id="f-accB" data-f="accB" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>개월</em></span></label>
@@ -752,6 +758,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
             <label class="f"><span class="lbl">무주택 여부</span><select id="f-homeless" data-f="homeless" data-t="text"><option value="">아직 몰라요</option><option value="yes">둘 다 무주택</option><option value="no">집이 있어요</option></select></label>
             <label class="f"><span class="lbl">생애최초 (집을 가진 적 없음)</span><select id="f-firstHome" data-f="firstHome" data-t="text"><option value="">아직 몰라요</option><option value="yes">둘 다 맞아요</option><option value="no">아니에요</option></select></label>
           </div>
+          <p class="note" id="gajeomNote" style="margin:6px 0 0"></p>
           <p class="note" style="margin:6px 0 0">한 번만 적어 두면 돼요. 조건이 안 맞는 공고는 목록에서 숨겨요(“조건 안 맞는 공고도 보기”로 볼 수 있어요). 혼인신고 예정월은 모으기 탭 설정에 있어요. 일반적인 기준이라 공고문 확인은 꼭 필요해요.</p>
         </details>
         <details class="setbox"><summary id="setSum">⚙️ 내 기준</summary>
@@ -1156,6 +1163,20 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     return [Math.floor((c.canTotal + loan) / 100) * 100, true];
   }
   function subTypes(x) { return Array.isArray(x.types) ? x.types.filter(function (t) { return t && isFinite(t.a); }) : []; }
+  function ageOf(ym) {
+    if (!validYm(ym)) return null; var t = new Date(), y = +ym.slice(0, 4), m = +ym.slice(5);
+    return t.getFullYear() - y - ((t.getMonth() + 1) < m ? 1 : 0);
+  }
+  function gajeom() {
+    function pn(k) { return plan[k] != null && plan[k] !== '' && isFinite(Number(plan[k])) ? Number(plan[k]) : null; }
+    var dep = pn('dependents'), hy = pn('hlYears'), none = plan.accHas === 'none', best = null, married = plan.married === 'done';
+    ['A', 'B'].forEach(function (w) {
+      var raw = none ? 0 : pn('acc' + w), age = ageOf(plan['birth' + w]); if (raw == null || dep == null || hy == null) return;
+      var hs = (age != null && age < 30 && !married) ? 0 : hy >= 15 ? 32 : 2 + 2 * Math.floor(hy), ds = Math.min(35, 5 + 5 * Math.min(6, dep)), as = raw < 6 ? 1 : raw < 12 ? 2 : Math.min(17, 2 + Math.floor(raw / 12));
+      var tot = hs + ds + as; if (!best || tot > best.total) best = { total: tot, hs: hs, ds: ds, as: as, who: w };
+    });
+    return best;
+  }
   function myR1(x) {
     var resid = plan.resid || '', gu = String(plan.residGu || '').trim().replace(/[시군구]$/, ''), loc = String(x.location || '');
     if (!resid) return '';
@@ -1229,7 +1250,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       chip(sn, (sn === 'ok' ? '✅ ' : sn === 'bad' ? '❌ ' : '⚠️ ') + '무순위 · 통장 없이 신청', '남은 집을 다시 파는 무순위(잔여세대) 청약이에요. 청약통장 없이 신청하는 경우가 많고, 보통 무주택이어야 해요. ' + (hl === 'yes' ? '둘 다 무주택으로 입력돼 있어요.' : hl === 'no' ? '집이 있다고 입력돼 있어서 어려워요.' : '무주택 여부를 아직 안 적었어요.') + ' 거주지·소득 요건은 공고문에서 꼭 확인하세요.', true);
     } else if (gen > 0 || !T.length) {
       var sg = !known ? 'warn' : acc >= reqGen ? (depSt === 'ok' ? 'ok' : 'warn') : 'bad';
-      chip(sg, (sg === 'ok' ? '✅ ' : sg === 'bad' ? '❌ ' : '⚠️ ') + '일반공급 1순위', '일반공급은 청약통장 가입 ' + reqGen + '개월·납입 ' + reqGen + '회 이상이면 1순위예요(이 지역 일반적 기준, 공고문 확인). 가점제는 무주택 기간·부양가족·통장 기간을 점수로 매겨서 신혼 초에는 점수가 낮은 편이에요.' + accTxt, true);
+      chip(sg, (sg === 'ok' ? '✅ ' : sg === 'bad' ? '❌ ' : '⚠️ ') + '일반공급 1순위', '일반공급은 청약통장 가입 ' + reqGen + '개월·납입 ' + reqGen + '회 이상이면 1순위예요(이 지역 일반적 기준, 공고문 확인). 가점제는 무주택 기간·부양가족·통장 기간을 점수로 매겨서 신혼 초에는 점수가 낮은 편이에요.' + (gajeom() ? ' 내 가점 추정은 ' + gajeom().total + '점(84점 만점)이에요.' : ' 가점은 설정에서 무주택 기간·부양가족을 적으면 추정해 줘요.') + accTxt, true);
     }
     var r1k = myR1(x);
     if (!noAcc) chip(!r1k ? 'warn' : r1k === 'r1' ? 'ok' : 'warn', '📍 ' + (r1k ? R1NAME[r1k] + ' 거주' : '거주지 입력'), '청약은 공고 지역에 사는 사람이 먼저 당첨자를 뽑는 "해당지역 우선공급"이 있어요. ' + (!r1k ? '내 거주지를 입력하면 내 접수 일정과 우선순위를 알려줄 수 있어요.' : r1k === 'r1' ? '내 거주지는 이 공고의 해당지역이라 먼저 접수·추첨돼요(거주 기간 요건은 공고문 확인).' : '내 거주지는 해당지역이 아니라서 해당지역 거주자보다 접수가 늦거나 물량이 남아야 기회가 와요. 접수일을 꼭 확인하세요.'));
@@ -1364,6 +1385,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var c = core || {}, ac = [plan.accA, plan.accB].map(function (v, i) { return v != null && v !== '' ? (i ? nameB() : nameA()) + ' ' + v + '개월' + ((i ? plan.accCntB : plan.accCntA) != null && (i ? plan.accCntB : plan.accCntA) !== '' ? ' ' + (i ? plan.accCntB : plan.accCntA) + '회 납입' : '') : ''; }).filter(Boolean).join(', ');
     return ['- 합산 연소득 ' + (c.income > 0 ? fmt(c.income) : '미입력') + ' (맞벌이 신혼부부)', '- 입주 때까지 모을 수 있는 현금 ' + (c.canTotal > 0 ? fmt(c.canTotal) : '미입력'), '- 청약통장 가입기간: ' + (ac || '미입력'),
       '- 무주택: ' + (plan.homeless === 'yes' ? '둘 다 무주택' : plan.homeless === 'no' ? '집이 있음' : '미입력'), '- 생애최초: ' + (plan.firstHome === 'yes' ? '해당' : plan.firstHome === 'no' ? '비해당' : '미입력'),
+      '- 세대주: ' + (plan.head === 'A' ? nameA() : plan.head === 'B' ? nameB() : plan.head === 'none' ? '아직 세대 분리 전' : '미입력') + ' · 나이: ' + [['A', nameA()], ['B', nameB()]].map(function (p) { var a = ageOf(plan['birth' + p[0]]); return p[1] + ' ' + (a == null ? '미입력' : '만 ' + a + '세'); }).join(', ') + ' · 혼인: ' + (plan.married === 'done' ? '혼인신고 완료' : plan.married === 'plan' ? '혼인신고 예정' : '미입력'),
+      '- 부양가족 수(배우자 포함): ' + (plan.dependents != null && plan.dependents !== '' ? plan.dependents + '명' : '미입력') + ' · 무주택 기간: ' + (plan.hlYears != null && plan.hlYears !== '' ? plan.hlYears + '년' : '미입력') + ' · 가점 추정: ' + (gajeom() ? gajeom().total + '점/84점' : '미계산'),
       '- 사는 곳: ' + ((plan.resid || '미입력') + (plan.residGu ? ' ' + plan.residGu : '')) + ' · 최근 10년 내 당첨 이력: ' + (plan.winPast === 'yes' ? '있음' : plan.winPast === 'no' ? '없음' : '미입력'),
       '- 혼인신고 예정월: ' + (validYm(plan.marriageDate) ? plan.marriageDate : '미정'),
       '- 찾는 전용면적: ' + areaRange()[0] + '~' + areaRange()[1] + '㎡',
@@ -1479,6 +1502,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (plan.accHas === 'none') parts.push('청약통장 없음');
       else { if (pv('accA') != null) parts.push(nameA() + ' ' + pv('accA') + '개월' + (pv('accCntA') != null ? '·' + pv('accCntA') + '회' : '') + (pv('accTotA') != null ? '·' + pv('accTotA') + '만원' : '')); if (pv('accB') != null) parts.push(nameB() + ' ' + pv('accB') + '개월' + (pv('accCntB') != null ? '·' + pv('accCntB') + '회' : '') + (pv('accTotB') != null ? '·' + pv('accTotB') + '만원' : '')); }
       if (plan.homeless === 'yes') parts.push('무주택'); else if (plan.homeless === 'no') parts.push('집 있음');
+      var gj = gajeom(), gn = $('#gajeomNote'); if (gn) gn.textContent = gj ? '가점 추정 ' + gj.total + '점 / 84점 (무주택기간 ' + gj.hs + ' + 부양가족 ' + gj.ds + ' + 통장 ' + gj.as + ', ' + (gj.who === 'A' ? nameA() : nameB()) + ' 기준). 일반공급 가점제는 이 점수로 순위를 정해요.' : '무주택 기간·부양가족 수·통장 가입 기간을 적으면 일반공급 가점을 추정해요.';
       es.textContent = '🧾 내 자격 · ' + (parts.length ? parts.join(' · ') : '입력하면 자격에 안 맞는 공고를 걸러요');
     }
     var cp = subCap(), ch = $('#subsCapHint'); var ss0 = $('#setSum'); if (ss0) ss0.textContent = '💰 분양가 상한 ' + (cp[0] > 0 ? fmt(cp[0]) + (cp[1] ? ' (자동)' : '') : '미정') + ' · ' + ($('#subsSort').value === 'end' ? '마감 빠른 순' : '순위 순') + ' · 눌러서 바꾸기';
