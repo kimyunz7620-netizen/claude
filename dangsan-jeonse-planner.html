@@ -362,8 +362,8 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .hs .cth { margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--coral-ink); }
 .hs .verdict2 b { line-height: 1.5; }
 .cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.cat { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px 14px; border-radius: 18px; border: 0; background: var(--bg); text-align: left; cursor: pointer; font: inherit; color: var(--ink);  }
-.cat .ce { font-size: 28px; line-height: 1; } .cat b { font-size: 18px; font-weight: 800; } .cat small { color: var(--muted); font-size: 12.5px; }
+button.cat { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 4px; padding: 16px 14px; height: auto; min-height: 104px; width: 100%; border-radius: 18px; border: 0; background: var(--surface); box-shadow: 0 10px 30px -24px rgba(30,34,53,.35); text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
+.cat .ce { font-size: 28px; line-height: 1; } .cat b { font-size: 17px; font-weight: 800; } .cat small { color: var(--muted); font-size: 12px; font-weight: 500; line-height: 1.35; }
 .setbox { background: var(--bg); border-radius: 16px; padding: 14px; margin: 10px 0 4px; display: flex; flex-direction: column; gap: 8px; }
 .setbox h4 { margin: 0 0 2px; font-size: 14px; font-weight: 800; }
 .polread { display: flex; gap: 14px; align-items: center; margin: 8px 0 0; padding: 8px 12px; background: var(--bg); border-radius: 12px; font-size: 13.5px; }
@@ -376,6 +376,13 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 #polWrap .pol { box-shadow: none; border: 1px solid var(--line); margin-top: 10px; }
 #hw-all .addtask, #hw-all .grp-h { display: none; }
 #studyProg { margin-bottom: 14px; }
+[data-h] { display: none !important; }
+#rank .hsub, #ranklist, [data-mini] { display: none; }
+#hw-all { background: var(--surface); border-radius: 20px; padding: 6px 16px 14px; box-shadow: 0 10px 30px -24px rgba(30,34,53,.35); gap: 0; }
+#hw-all .phase { box-shadow: none; border-radius: 0; padding: 12px 0 4px; background: none; border-top: 1px solid var(--line); } #hw-all .phase:first-child { border-top: 0; }
+#hw-all .ph-sub, #hw-all .prog, #hw-all .badge { display: none; }
+#hw-all .ph-head h3 { font-size: 15px; color: var(--accent); }
+.more2 { margin: 8px 0 0; } .more2 > summary { color: var(--accent); font-weight: 700; font-size: 13px; cursor: pointer; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -426,7 +433,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   <!-- 홈 -->
   <section class="pane" id="tab-home" data-tab="home">
     <h2 class="vtitle">모아보기</h2>
-    <p class="vsub">네 가지를 한눈에</p>
+    
     <div class="stack">
       <div class="card" id="onboard" hidden>
         <div class="mhead"><h3>처음 시작하기</h3><span style="display:flex;gap:8px;align-items:center"><span class="chip" id="obProg">0 / 4</span><button type="button" class="ghost sm" data-hideob>숨기기</button></span></div>
@@ -455,7 +462,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         </details>
       </div>
 
-      <div class="card" id="catCard"><div class="mhead"><h3>모아보기</h3></div><div class="cats" id="cats"></div></div>
+      <div class="cats" id="cats"></div>
 
       <div class="card" id="subsHome">
         <div class="mhead"><h3>청약 공고</h3><span class="chip" id="subsHomeCount">0건</span></div>
@@ -463,14 +470,11 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
         <div class="ai-acts"><button type="button" class="ghost" data-tab-go="subs">전체 보기</button></div>
       </div>
 
-      <div class="card" id="regHome"><div class="mhead"><h3>발품 매물 올리기</h3></div><p class="hsub">네이버 지도·부동산 화면을 캡처해서 올리면 자동으로 읽어요.</p><div class="ai-acts"><button type="button" data-tab-go="homes">📷 사진으로 올리러 가기</button></div></div>
-
       <div class="card" id="monthly">
-        <div class="mhead"><h3>이번 달 숙제 · <span id="moLabel"></span></h3><span class="chip" id="moProg">0 / 3</span></div>
+        <div class="mhead"><h3>이번 달 할 일 · <span id="moLabel"></span></h3><span class="chip" id="moProg">0 / 3</span></div>
         <div id="moRows">
           <div class="quest" data-m="px"><span class="qi">🏢</span><div><b>후보 단지 시세 기록하기</b><small id="moPxSub"></small></div><button type="button" class="ghost" data-tab-go="homes">입력</button></div>
           <label class="quest" data-m="pol"><span class="qi">📣</span><div><b>정책·청약 새 공고 확인하기</b><small>서울주거포털, 청약홈, 마이홈포털에서 새 공고와 기준 변경을 봐요.</small></div><input type="checkbox" id="moPolicy" aria-label="정책 공고 확인 완료"></label>
-          <div class="quest" data-m="tk"><span class="qi">📚</span><div><b>숙제 진행하기</b><small id="moTkSub"></small></div><button type="button" class="ghost" data-tab-go="study">숙제</button></div>
         </div>
       </div>
 
@@ -692,7 +696,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       </div>
 
       <div class="card" id="rank">
-        <h3>종합 순위</h3>
+        <h3>AI 추이 분석</h3>
         <p class="hsub">저축 부담 30 · 월 이자 20 · 보증금 안전 25 · 시세 추세 15 · 면적 10점으로 합쳐요. 기록 날짜에 가격이 없으면 가장 최근 기록을 써요.</p>
         <div id="ranklist"><div class="empty">전세가를 입력한 후보 단지가 있으면 순위가 나와요.</div></div>
         <div class="ai-acts" id="aiActs" hidden>
@@ -734,7 +738,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     <div class="card" id="studyProg"></div>
     <div class="stack" id="hw-all"></div>
     <div class="card" id="polWrap" style="margin-top:14px"><div class="mhead"><h3>💰 정부 대출·지원 제도</h3></div>
-      <p class="vsub" style="margin-top:0">우리에게 맞을 만한 제도예요. 아래 기준은 인터넷 자료를 요약한 것이라 틀릴 수 있어요. 링크의 공식 사이트에서 꼭 확인하세요.</p>
+      
       <div class="tabs" id="polTabs" role="group" aria-label="분류">
         <button type="button" data-kind="" aria-pressed="true">전체</button>
         <button type="button" data-kind="대출" aria-pressed="false">대출</button>
@@ -1935,8 +1939,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var c = el('article', 'card pol'); c.dataset.id = p.id; c.dataset.kind = p.k; c.dataset.status = PSTATUS[0];
       var head = el('div', 'pol-head'); head.appendChild(el('h3', null, p.n)); head.appendChild(el('span', 'chip plain', p.k)); if (p.star) head.appendChild(el('span', 'badge', '★ 추천')); c.appendChild(head);
       c.appendChild(el('p', 'pol-sum', p.sum));
-      var b = el('p', 'pol-basis'); b.appendChild(el('b', null, '자료 기준 · 공식 확인 필요  ')); b.appendChild(document.createTextNode(p.basis)); c.appendChild(b);
-      var ul = el('ul', 'pol-chk'); p.chk.forEach(function (x) { ul.appendChild(el('li', null, x)); }); c.appendChild(ul);
+      var dt = el('details', 'more2'); dt.appendChild(el('summary', null, '기준과 확인할 것'));
+      var b = el('p', 'pol-basis'); b.appendChild(el('b', null, '자료 기준 · 공식 확인 필요  ')); b.appendChild(document.createTextNode(p.basis)); dt.appendChild(b);
+      var ul = el('ul', 'pol-chk'); p.chk.forEach(function (x) { ul.appendChild(el('li', null, x)); }); dt.appendChild(ul); c.appendChild(dt);
       var fit = el('div', 'chips'); fit.dataset.fit = '1'; c.appendChild(fit);
       c.appendChild(linkChips(p.l));
       var rd = el('div', 'polread'); rd.appendChild(el('b', null, '읽었어요'));
@@ -2139,8 +2144,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     $('.quest[data-m="pol"]').classList.toggle('done', polDone); if (polDone) n++;
     var cb = $('#moPolicy'); if (cb.checked !== polDone) cb.checked = polDone;
     var left = allTasks().filter(function (t) { return true && !isDone(t); });
-    mark('tk', left.length === 0); $('#moTkSub').textContent = left.length === 0 ? '숙제를 모두 끝냈어요.' : left.length + '개 남음';
-    $('#moProg').textContent = n + ' / 3'; refreshOnboard(); refreshNext();
+    
+    $('#moProg').textContent = n + ' / 2'; refreshOnboard(); refreshNext();
   }
   function refreshOnboard() {
     var rows = { me: !!getMe(), inc: has('incomeA') && has('incomeB') && has('canA') && has('canB'), dep: has('deposit'), cx: cxData.size > 0 }, n = 0;
