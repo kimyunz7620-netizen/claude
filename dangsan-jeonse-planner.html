@@ -1375,6 +1375,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       '- 무주택: ' + (plan.homeless === 'yes' ? '둘 다 무주택' : plan.homeless === 'no' ? '집이 있음' : '미입력'), '- 생애최초: ' + (plan.firstHome === 'yes' ? '해당' : plan.firstHome === 'no' ? '비해당' : '미입력'),
       '- 사는 곳: ' + ((plan.resid || '미입력') + (plan.residGu ? ' ' + plan.residGu : '')) + ' · 최근 10년 내 당첨 이력: ' + (plan.winPast === 'yes' ? '있음' : plan.winPast === 'no' ? '없음' : '미입력'),
       '- 혼인신고 예정월: ' + (validYm(plan.marriageDate) ? plan.marriageDate : '미정'), '- 출산 계획: ' + (plan.babyPlan === 'soon' ? '입주 후 2년 안' : plan.babyPlan === 'none' ? '당분간 없음' : '미정'),
+      '- 찾는 전용면적: ' + areaRange()[0] + '~' + areaRange()[1] + '㎡',
       '- 내가 정한 분양가 상한(자기 돈 30% 가정): ' + (ev.cap > 0 ? fmt(ev.cap) : '미정')].join('\n');
   }
   function briefPrompt(x, ev, text) {
