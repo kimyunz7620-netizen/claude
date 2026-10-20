@@ -438,8 +438,8 @@ body[data-tab="home"] footer, body[data-tab="homes"] footer { display: none; }
 .setbox > summary { font-size: 13px !important; font-weight: 700 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; list-style: none; } .setbox > summary::-webkit-details-marker { display: none; }
 .setbox[open] > summary { white-space: normal; }
 .hero { padding: 12px 16px !important; } .hero > .hero-k { display: inline-block; } #hKicker { margin-left: 8px; }
-.hero .hero-l { display: none; } .hero .hero-v { font-size: 22px; margin-top: 4px; }
-.hero .hero-s { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.hero .hero-l { font-size: 12px; margin-top: 6px; } .hero .hero-v { font-size: 22px; margin-top: 4px; }
+.hero .hero-s { font-size: 12.5px; line-height: 1.45; margin-top: 4px; }
 .hero-more > summary { margin-top: 6px !important; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
@@ -501,7 +501,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       <div class="card hero" id="hero">
         <div class="hero-k" style="font-weight:800;font-size:15px;opacity:1">💰 모으기</div>
         <div class="hero-k" id="hKicker">입주 목표</div>
-        <div class="hero-l">둘이 모을 돈으로 찾아볼 전세가</div>
+        <div class="hero-l">찾아볼 전세가 (둘이 모은 돈 + 대출)</div>
         <div class="hero-v" id="hNeed">–</div>
         <div class="hero-s" id="hSub">역산 탭에 연소득과 목표 전세가를 넣어 보세요</div>
         <details class="hero-more"><summary>자세히 보기</summary>
@@ -1920,8 +1920,8 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var dl = fl500(lo.D), dh = fl500(hi.D);
     $('#hNeed').textContent = dh - dl >= 500 ? fmtS(dl) + ' ~ ' + fmt(dh) : fmt(dl);
     var inte = interestOf(lo.p, lo.L);
-    $('#hSub').textContent = lo.p.full + ' 기준 · 이자 부담 ' + st.l + '(' + Math.round(st.r * 100) + '%)' + (dh - dl >= 500 ? '부터 여유(20%)까지의 범위' : '');
-    $('#hDep').textContent = fmt(c.canTotal); $('#hLoan').textContent = fmt(lo.L); $('#hInt').textContent = fmt(inte);
+    $('#hSub').textContent = dh - dl >= 500 ? '월급의 ' + Math.round(st.r * 100) + '%를 대출 이자로 쓰면 ' + fmt(dl) + ', 20%까지 쓰면 ' + fmt(dh) + ' 전세까지 가능해요' : '월급의 ' + Math.round(st.r * 100) + '%를 대출 이자로 쓰는 기준이에요';
+    $('#hBarText').dataset.p = lo.p.full; $('#hDep').textContent = fmt(c.canTotal); $('#hLoan').textContent = fmt(lo.L); $('#hInt').textContent = fmt(inte);
     $('#hMon').textContent = c.N > 0 ? (inte / c.N * 100).toFixed(1) + '%' : '–';
     var D = num('deposit'), b = D > 0 ? bestFor(c, D) : null;
     if (b) {
