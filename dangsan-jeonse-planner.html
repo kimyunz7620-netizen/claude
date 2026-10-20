@@ -327,12 +327,13 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .sub .tile.ok { background: var(--mint-soft); } .sub .tile.warn { background: var(--sun-soft); } .sub .tile.bad { background: var(--coral-soft); }
 .sub .tl { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
 .sub .tl span.in { color: var(--mint-ink); font-weight: 700; } .sub .tl span { color: var(--muted); }
-.sub .cau { border-radius: 12px; padding: 12px 14px; background: var(--sun-soft); border-left: 5px solid var(--sun-ink); font-size: 14px; }
+.sub .cau { border-radius: 12px; padding: 12px 14px; background: var(--bg); border-left: 5px solid var(--sun-ink); font-size: 14px; }
 .sub .cau.red { border-left-color: var(--coral-ink); }
 .sub .cau .foot { margin: 8px 0 0; font-size: 11.5px; color: var(--muted); }
-.sub .cau.red { background: var(--coral-soft); }
+.sub .cau.red { border-left-color: var(--coral-ink); }
 .sub .cau h4 { margin: 0 0 6px; font-size: 14px; font-weight: 800; }
 .sub .cau ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+.sub .cau li.g { font-weight: 700; color: var(--mint-ink); }
 .sub .cau li.b { font-weight: 700; color: var(--coral-ink); }
 .sub .brk { font-size: 11.5px; color: var(--muted); }
 .subcap { margin: 10px 0 0; display: grid; grid-template-columns: 1fr; gap: 6px; }
@@ -1103,15 +1104,22 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var mv = 5, my = /^\d{4}-\d{2}$/.test(x.moveIn || '') ? x.moveIn : '';
     if (my) { var gap = Math.abs((+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5)))); mv = gap <= 6 ? 10 : gap <= 12 ? 5 : 0; }
     sc += mv; br.push('입주시기 ' + mv + '/10');
-    if (pOk === 'no') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')을 넘어요 — 최저 ' + fmt(pmin) });
-    else if (pOk === 'near') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')보다 조금 높아요 — 최저 ' + fmt(pmin) });
-    
-    if (aOk === 'no') cau.push({ t: '희망 평형(' + ar[0] + '~' + ar[1] + '㎡)이 없어요 — 있는 평형 ' + T.map(function (t) { return t.a; }).join('·') + '㎡' });
-    if (!rOk) cau.push({ t: '관심 지역(영등포·마포·강서·양천·동작)이 아니에요' });
-    if (my) { var g2 = (+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5))); if (Math.abs(g2) > 6) cau.push({ t: '입주 ' + dotYm(my) + ' — 목표(' + dotYm(targetYm()) + ')보다 ' + Math.abs(g2) + '개월 ' + (g2 > 0 ? '늦어요' : '빨라요') }); }
-    if (sp > 0 && !validYm(plan.marriageDate)) cau.push({ t: '신혼부부 특별공급은 혼인 기간 요건이 있어요 — 혼인신고 예정월이 비어 있어요' });
-    if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); if (dd >= 0 && dd <= 3) cau.push({ b: 1, t: '접수 마감까지 ' + (dd === 0 ? '오늘' : dd + '일') }); }
-    (Array.isArray(x.notes) ? x.notes : []).forEach(function (n) { cau.push({ b: /토지임대|투기과열/.test(n), t: String(n) }); });
+    if (sp > 0) cau.push({ g: 1, t: '우리 같은 신혼 케이스에 맞아요 — 신혼부부 특별공급 ' + T.reduce(function (n, t) { return n + (t.n || 0); }, 0) + '세대, 신생아 특별공급 ' + T.reduce(function (n, t) { return n + (t.b || 0); }, 0) + '세대가 있어요.' });
+    else if (T.length) cau.push({ t: '신혼·신생아 특별공급 물량이 없어요. 일반공급만 노려볼 수 있어요.' });
+    if (sp > 0 && !validYm(plan.marriageDate)) cau.push({ t: '신혼부부 특별공급은 혼인 기간 요건이 있어요. 혼인신고 예정월을 아직 안 적었어요.' });
+    if (pOk === 'no') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')을 넘어요. 가장 싼 평형이 ' + fmt(pmin) + '이에요.' });
+    else if (pOk === 'near') cau.push({ b: 1, t: '분양가가 상한(' + fmt(cap) + ')보다 조금 높아요. 가장 싼 평형이 ' + fmt(pmin) + '이에요.' });
+    if (aOk === 'no') cau.push({ t: '희망 평형(' + ar[0] + '~' + ar[1] + '㎡)이 없어요. 있는 평형은 ' + T.map(function (t) { return t.a; }).join('·') + '㎡예요.' });
+    if (!rOk) cau.push({ t: '관심 지역(영등포·마포·강서·양천·동작)이 아니에요.' });
+    if (my) { var g2 = (+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5))); if (Math.abs(g2) > 6) cau.push({ t: '입주는 ' + dotYm(my) + '이에요. 목표(' + dotYm(targetYm()) + ')보다 ' + Math.abs(g2) + '개월 ' + (g2 > 0 ? '늦어요.' : '빨라요.') }); }
+    if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); if (dd >= 0 && dd <= 3) cau.push({ b: 1, t: '접수 마감이 ' + (dd === 0 ? '오늘' : dd + '일 뒤') + '예요.' }); }
+    (Array.isArray(x.notes) ? x.notes : []).forEach(function (n) {
+      n = String(n);
+      if (/토지임대/.test(n)) cau.push({ b: 1, t: '토지임대부예요. 땅은 빌리는 거라 매달 토지 임대료를 내고, 되팔 때 제한이 있어요.' });
+      else if (/투기과열/.test(n)) cau.push({ b: 1, t: '투기과열지구예요. 대출과 전매(되팔기) 규제가 강해요.' });
+      else if (/공공택지/.test(n)) cau.push({ t: '공공택지예요. 전매 제한 기간이 길 수 있어요.' });
+      else cau.push({ t: n });
+    });
     return { score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
   }
   function makeSubRow(id) {
@@ -1158,10 +1166,10 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       });
     } else if (x.price) kv('금액', String(x.price).slice(0, 40), ev.pOk === 'no' ? 'bad' : '');
     tiles.hidden = !tiles.children.length;
-    var cau = row.querySelector('[data-cau]'); cau.textContent = ''; cau.className = 'cau' + (ev.cau.some(function (c) { return c.b; }) ? ' red' : '');
-    cau.appendChild(el('h4', null, '⚠ 주의할 점'));
-    var ul = el('ul'); ev.cau.sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : '', c.t)); }); cau.appendChild(ul);
-    cau.appendChild(el('p', 'foot', '소득·자산·청약통장 요건은 평가에 안 넣었어요. 공고문에서 꼭 확인하세요.'));
+    var cau = row.querySelector('[data-cau]'); cau.textContent = ''; cau.className = 'cau' + (ev.cau.some(function (c) { return c.b; }) ? ' red' : ev.cau.length ? '' : ' none'); cau.hidden = !ev.cau.length;
+    cau.appendChild(el('h4', null, '체크포인트'));
+    var ul = el('ul'); ev.cau.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', c.t)); }); cau.appendChild(ul);
+    cau.appendChild(el('p', 'foot', '소득·자산·청약통장 요건은 따로 확인하세요.'));
     var info = row.querySelector('[data-info]'); info.textContent = '';
     [['공급', x.supply], ['접수', (validD(x.applyStart) || validD(x.applyEnd)) ? (x.applyStart || '?') + ' ~ ' + (x.applyEnd || '?') : ''], ['당첨자 발표', x.winnerDate], ['입주', ev.my ? dotYm(ev.my) : '']].forEach(function (p) {
       if (!p[1]) return; var line = el('span'); line.appendChild(document.createTextNode(p[0] + ' ')); line.appendChild(el('b', null, String(p[1]))); info.appendChild(line);
