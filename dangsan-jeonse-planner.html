@@ -357,8 +357,10 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .hs .verdict2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; margin: 2px 0 6px; font-size: 15px; }
 .hs .verdict2.go { background: var(--mint-soft); color: var(--mint-ink); } .hs .verdict2.mid { background: var(--sun-soft); color: var(--sun-ink); } .hs .verdict2.no { background: var(--coral-soft); color: var(--coral-ink); }
 .hs .pills { display: flex; gap: 6px; } .hs .pill { font-size: 12.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.75); color: var(--muted); } .hs .pill.y { color: var(--mint-ink); } .hs .pill.n { color: var(--coral-ink); }
-.hs .hl { padding: 2px 0; } .hs .hcp { background: none; padding: 0; margin-top: 8px; gap: 5px !important; border-top: 1px solid var(--line); padding-top: 8px; border-radius: 0; }
+.hs .hl { padding: 2px 0; } .hs .hcp { background: none; padding: 0; margin-top: 8px; gap: 5px !important; border-top: 1px solid var(--line); padding-top: 0; border-top: 0; border-radius: 0; }
 .hs .verdict2 b { font-size: 14.5px; }
+.hs .cth { margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--coral-ink); }
+.hs .verdict2 b { line-height: 1.5; }
 .subs-how { margin-top: 12px; }
 .subs-how ol { margin: 6px 0 8px; padding-left: 20px; }
 textarea.pr { width: 100%; min-height: 150px; font: inherit; font-size: 12.5px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -1132,7 +1134,13 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       else if (/공공택지/.test(n)) cau.push({ t: '공공택지예요. 전매 제한 기간이 길 수 있어요.' });
       else cau.push({ t: n });
     });
-    return { sp: sp, score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
+    var pos = [];
+    if (pOk === 'yes') pos.push('금액이 상한(' + fmt(cap) + ') 안이에요');
+    if (aOk === 'yes') pos.push('희망 평형(' + inR.map(function (t) { return t.a + '㎡'; }).join('·') + ')이 있어요');
+    if (rOk) pos.push('관심 지역이에요');
+    if (sp > 0) pos.push('신혼·신생아 특별공급 물량이 있어요');
+    if (my) { var g3 = Math.abs((+my.slice(0, 4)) * 12 + (+my.slice(5)) - ((+targetYm().slice(0, 4)) * 12 + (+targetYm().slice(5)))); if (g3 <= 6) pos.push('입주 시기(' + dotYm(my) + ')가 목표와 맞아요'); }
+    return { pos: pos, sp: sp, score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
   }
   function subSummary(x, id) {
       var ev = evalSub(x), box2 = el('div', 'hs'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
@@ -1141,19 +1149,14 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
       var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
       box2.appendChild(head);
-      var bad1 = [];
-      if (ev.pOk === 'no') bad1.push('💸 분양가가 상한을 넘어요'); else if (ev.pOk === 'near') bad1.push('💸 분양가가 상한보다 조금 높아요');
-      if (ev.aOk === 'no') bad1.push('📐 희망 평형이 없어요');
-      if (!ev.rOk) bad1.push('🗺️ 관심 지역이 아니에요');
-      var vcls = !ev.T.length && !bad1.length ? 'mid' : ev.pOk === 'no' ? 'no' : bad1.length ? 'mid' : 'go';
-      var vtxt = bad1.length ? bad1[0] : (ev.T.length ? '👍 지역·평형·금액이 모두 맞아요' : '📋 평형·금액 정보가 아직 없어요');
-      var ban = el('div', 'verdict2 ' + vcls); ban.appendChild(el('b', null, vtxt)); box2.appendChild(ban);
+      var vtxt = ev.pos.length ? '💡 ' + ev.pos.slice(0, 3).join(' · ') : (ev.T.length ? '💡 딱 맞는 조건은 아직 없어요' : '💡 평형·금액 정보가 아직 없어요');
+      var ban = el('div', 'verdict2 ' + (ev.pos.length >= 2 && ev.pOk !== 'no' ? 'go' : 'mid')); ban.appendChild(el('b', null, vtxt)); box2.appendChild(ban);
       function line(k, v, cls) { if (!v) return; var r = el('div', 'hl ' + (cls || '')); r.appendChild(el('small', null, k)); r.appendChild(el('span', null, v)); box2.appendChild(r); }
       line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
       if (ev.T.length) line('💰 평형·금액', ev.T.slice().sort(function (p, q) { return p.a - q.a; }).map(function (t) { return t.a + '㎡(' + pyeong(t.a) + '평) ' + (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정'); }).join(' · '));
       else line('💰 금액', String(x.price || '').slice(0, 40));
-      var cps = ev.cau.slice().sort(function (p, q) { return (q.b ? 2 : q.g ? 1 : 0) - (p.b ? 2 : p.g ? 1 : 0); }).slice(0, 4);
-      if (cps.length) { var ul = el('ul', 'hcp');  cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', (c.b ? (/토지임대/.test(c.t) ? '🌱 ' : /투기과열/.test(c.t) ? '🔥 ' : /분양가/.test(c.t) ? '💸 ' : /마감/.test(c.t) ? '⏰ ' : '🚨 ') : c.g ? '✅ ' : /평형/.test(c.t) ? '📐 ' : /지역/.test(c.t) ? '🗺️ ' : /입주/.test(c.t) ? '🏠 ' : /혼인/.test(c.t) ? '💍 ' : 'ℹ️ ') + String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
+      var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 5);
+      if (cps.length) { box2.appendChild(el('div', 'cth', '⚠️ 주의할 점')); var ul = el('ul', 'hcp');  cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', (c.b ? (/토지임대/.test(c.t) ? '🌱 ' : /투기과열/.test(c.t) ? '🔥 ' : /분양가/.test(c.t) ? '💸 ' : /마감/.test(c.t) ? '⏰ ' : '🚨 ') : c.g ? '✅ ' : /평형/.test(c.t) ? '📐 ' : /지역/.test(c.t) ? '🗺️ ' : /입주/.test(c.t) ? '🏠 ' : /혼인/.test(c.t) ? '💍 ' : 'ℹ️ ') + String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
       return box2;
   }
   function makeSubRow(id) {
