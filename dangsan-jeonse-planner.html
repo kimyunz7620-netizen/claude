@@ -313,6 +313,7 @@ label.vi input:checked + span { color: var(--mint-ink); font-weight: 600; }
 .sub label.ckl { display: flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; }
 
 .sub { gap: 10px; }
+.sub .hs { border: 0; padding: 0; }
 .sub .top { display: flex; gap: 10px; align-items: center; }
 .sub .score { flex: none; width: 56px; height: 56px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); line-height: 1.1; }
 .sub .score b { font-size: 20px; font-weight: 800; } .sub .score small { font-size: 10.5px; color: var(--muted); }
@@ -1133,14 +1134,24 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     });
     return { score: sc, aOk: aOk, rOk: rOk, pOk: pOk, pmin: pmin || allMin, pmax: pmax || allMax, inR: inR, T: T, cau: cau, br: br, cap: cap, my: my };
   }
+  function subSummary(x, id) {
+      var ev = evalSub(x), box2 = el('div', 'hs'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
+      var head = el('div', 'hh'); var rkn = subRank[id] || 0; head.appendChild(el('span', rkn && rkn <= 3 ? 'medal' : 'rk', rkn === 1 ? '🥇' : rkn === 2 ? '🥈' : rkn === 3 ? '🥉' : String(rkn || '–')));
+      head.appendChild(el('b', null, x.name || '(이름 없음)'));
+      if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
+      var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
+      box2.appendChild(head);
+      function line(k, v, cls) { if (!v) return; var r = el('div', 'hl ' + (cls || '')); r.appendChild(el('small', null, k)); r.appendChild(el('span', null, v)); box2.appendChild(r); }
+      line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
+      if (ev.T.length) line('💰 평형·금액', ev.T.slice().sort(function (p, q) { return p.a - q.a; }).map(function (t) { return t.a + '㎡(' + pyeong(t.a) + '평) ' + (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정'); }).join(' · '));
+      else line('💰 금액', String(x.price || '').slice(0, 40));
+      var cps = ev.cau.slice().sort(function (p, q) { return (q.b ? 2 : q.g ? 1 : 0) - (p.b ? 2 : p.g ? 1 : 0); }).slice(0, 4);
+      if (cps.length) { var ul = el('ul', 'hcp');  cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', (c.b ? (/토지임대/.test(c.t) ? '🌱 ' : /투기과열/.test(c.t) ? '🔥 ' : /분양가/.test(c.t) ? '💸 ' : /마감/.test(c.t) ? '⏰ ' : '🚨 ') : c.g ? '✅ ' : /평형/.test(c.t) ? '📐 ' : /지역/.test(c.t) ? '🗺️ ' : /입주/.test(c.t) ? '🏠 ' : /혼인/.test(c.t) ? '💍 ' : 'ℹ️ ') + String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
+      return box2;
+  }
   function makeSubRow(id) {
     var row = el('article', 'sub'); row.dataset.id = id;
-    var top = el('div', 'top'); var sc = el('div', 'score'); sc.dataset.sco = '1'; sc.appendChild(el('b')); sc.appendChild(el('small', null, '순위')); top.appendChild(sc);
-    var st = el('div', 'st'); st.appendChild(el('b')); st.appendChild(el('small')); top.appendChild(st); row.appendChild(top);
-    var chips = el('div', 'chips'); chips.dataset.sc = '1'; row.appendChild(chips);
-    var tiles = el('div', 'tiles'); tiles.dataset.tiles = '1'; row.appendChild(tiles);
-    var tl = el('div', 'tl'); tl.dataset.tl = '1'; row.appendChild(tl);
-    var cau = el('div', 'cau'); cau.dataset.cau = '1'; row.appendChild(cau);
+    var sum = el('div'); sum.dataset.sum = '1'; row.appendChild(sum);
     var more = el('details', 'more'); more.appendChild(el('summary', null, '접수일·공급·링크 자세히'));
     var info = el('div', 'info'); info.dataset.info = '1'; more.appendChild(info);
     var why = el('div', 'why'); why.dataset.why = '1'; more.appendChild(why);
@@ -1157,30 +1168,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
   function eok(v) { return String(Math.round(v / 1000) / 10).replace(/\.0$/, '') + '억'; }
   function priceTxt(e) { return e.pmin ? (e.pmax && e.pmax !== e.pmin ? eok(e.pmin) + '~' + eok(e.pmax) : eok(e.pmin)) : ''; }
   function fillSubRow(row, x) {
-    var ev = evalSub(x), chips = row.querySelector('[data-sc]'); chips.textContent = '';
-    var sco = row.querySelector('[data-sco]'); var rk = subRank[x._id] || 0; sco.className = 'score ' + (rk === 1 ? 'hi' : rk === 2 || rk === 3 ? 'mid' : 'lo'); sco.firstChild.textContent = rk ? rk : '–';
-    var fit = SUBFIT[x.fit] || ['확인 필요', 'warn'];
-    chips.appendChild(el('span', 'chip ' + fit[1], fit[0]));
-    if (validD(x.applyEnd)) { var dd = dayNum(x.applyEnd) - dayNum(todayStr()); chips.appendChild(el('span', 'chip ' + (dd < 0 ? 'plain' : dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd < 0 ? '마감됨' : '마감 ' + (dd === 0 ? 'D-day' : 'D-' + dd))); }
-    if (validD(x.applyStart) && dayNum(x.applyStart) > dayNum(todayStr())) chips.appendChild(el('span', 'chip grape', '접수 시작 D-' + (dayNum(x.applyStart) - dayNum(todayStr()))));
-    var st = row.querySelector('.st'); st.firstChild.textContent = x.name || '(이름 없음)'; st.lastChild.textContent = x.location || '';
-    var ar = areaRange(), tiles = row.querySelector('[data-tiles]'); tiles.textContent = '';
-    row.querySelector('[data-tl]').hidden = true;
-    var loc = String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 ');
-    function kv(lab, val, cls) { var r = el('div', 'kv ' + (cls || '')); r.appendChild(el('small', null, lab)); r.appendChild(el('b', null, val)); tiles.appendChild(r); }
-    if (loc) kv('지역', loc, ev.rOk ? 'ok' : 'warn');
-    if (ev.T.length) {
-      ev.T.slice().sort(function (p, q) { return p.a - q.a; }).forEach(function (t) {
-        var ok = t.a >= ar[0] - 0.5 && t.a <= ar[1] + 0.5, pr = t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '';
-        var cls = !t.pmin ? '' : ev.cap > 0 && t.pmin > ev.cap * 1.3 ? 'bad' : ev.cap > 0 && t.pmin > ev.cap ? 'warn' : 'ok';
-        kv(t.a + '㎡ · ' + pyeong(t.a) + '평', (pr || '금액 정보 없음') + (t.u ? ' · ' + t.u + '세대' : ''), cls);
-      });
-    } else if (x.price) kv('금액', String(x.price).slice(0, 40), ev.pOk === 'no' ? 'bad' : '');
-    tiles.hidden = !tiles.children.length;
-    var cau = row.querySelector('[data-cau]'); cau.textContent = ''; cau.className = 'cau' + (ev.cau.some(function (c) { return c.b; }) ? ' red' : ev.cau.length ? '' : ' none'); cau.hidden = !ev.cau.length;
-    cau.appendChild(el('h4', null, '체크포인트'));
-    var ul = el('ul'); ev.cau.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', c.t)); }); cau.appendChild(ul);
-    cau.appendChild(el('p', 'foot', '소득·자산·청약통장 요건은 따로 확인하세요.'));
+    var ev = evalSub(x); x._id = x._id || row.dataset.id; row.querySelector('[data-sum]').replaceChildren(subSummary(x, row.dataset.id));
     var info = row.querySelector('[data-info]'); info.textContent = '';
     [['공급', x.supply], ['접수', (validD(x.applyStart) || validD(x.applyEnd)) ? (x.applyStart || '?') + ' ~ ' + (x.applyEnd || '?') : ''], ['당첨자 발표', x.winnerDate], ['입주', ev.my ? dotYm(ev.my) : '']].forEach(function (p) {
       if (!p[1]) return; var line = el('span'); line.appendChild(document.createTextNode(p[0] + ' ')); line.appendChild(el('b', null, String(p[1]))); info.appendChild(line);
@@ -1402,19 +1390,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     $('#subsHomeCount').textContent = ids.length + '건';
     if (!ids.length) { box.appendChild(el('div', 'empty', '아직 가져온 공고가 없어요. “전체 보기 · 공고 찾기”에서 가져오세요.')); return; }
     ids.slice(0, 12).forEach(function (id) {
-      var x = subsState[id], ev = evalSub(x), box2 = el('div', 'hs'), dd = validD(x.applyEnd) ? dayNum(x.applyEnd) - dayNum(todayStr()) : null;
-      var head = el('div', 'hh'); var rkn = subRank[id] || 0; head.appendChild(el('span', rkn && rkn <= 3 ? 'medal' : 'rk', rkn === 1 ? '🥇' : rkn === 2 ? '🥈' : rkn === 3 ? '🥉' : String(rkn || '–')));
-      head.appendChild(el('b', null, x.name || '(이름 없음)'));
-      if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
-      var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
-      box2.appendChild(head);
-      function line(k, v, cls) { if (!v) return; var r = el('div', 'hl ' + (cls || '')); r.appendChild(el('small', null, k)); r.appendChild(el('span', null, v)); box2.appendChild(r); }
-      line('📍 지역', String(x.location || '').replace(/^(서울|경기)(특별시|도)?\s*/, '$1 '), ev.rOk ? '' : 'mute');
-      if (ev.T.length) line('💰 평형·금액', ev.T.slice().sort(function (p, q) { return p.a - q.a; }).map(function (t) { return t.a + '㎡(' + pyeong(t.a) + '평) ' + (t.pmin ? priceTxt({ pmin: t.pmin, pmax: t.pmax }) : '금액 미정'); }).join(' · '));
-      else line('💰 금액', String(x.price || '').slice(0, 40));
-      var cps = ev.cau.slice().sort(function (p, q) { return (q.b ? 2 : q.g ? 1 : 0) - (p.b ? 2 : p.g ? 1 : 0); }).slice(0, 4);
-      if (cps.length) { var ul = el('ul', 'hcp');  cps.forEach(function (c) { ul.appendChild(el('li', c.b ? 'b' : c.g ? 'g' : '', (c.b ? (/토지임대/.test(c.t) ? '🌱 ' : /투기과열/.test(c.t) ? '🔥 ' : /분양가/.test(c.t) ? '💸 ' : /마감/.test(c.t) ? '⏰ ' : '🚨 ') : c.g ? '✅ ' : /평형/.test(c.t) ? '📐 ' : /지역/.test(c.t) ? '🗺️ ' : /입주/.test(c.t) ? '🏠 ' : /혼인/.test(c.t) ? '💍 ' : 'ℹ️ ') + String(c.t).split(/ — |\. /)[0].replace(/\.$/, ''))); }); box2.appendChild(ul); }
-      box.appendChild(box2);
+      box.appendChild(subSummary(subsState[id], id));
     });
   }
   function dDay(d) { var diff = dayNum(d) - dayNum(todayStr()); return diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : 'D+' + (-diff); }
