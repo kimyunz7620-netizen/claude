@@ -740,6 +740,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
             <label class="f"><span class="lbl">총 납입액 · <b data-nm="B"></b></span><span class="in"><input id="f-accTotB" data-f="accTotB" type="number" inputmode="numeric" min="0" step="10" placeholder="모름"><em>만원</em></span></label>
             <label class="f"><span class="lbl">매달 납입 · <b data-nm="A"></b></span><span class="in"><input id="f-accMonA" data-f="accMonA" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>만원</em></span></label>
             <label class="f"><span class="lbl">매달 납입 · <b data-nm="B"></b></span><span class="in"><input id="f-accMonB" data-f="accMonB" type="number" inputmode="numeric" min="0" step="1" placeholder="모름"><em>만원</em></span></label>
+            <label class="f"><span class="lbl">사는 곳 (시·도)</span><select id="f-resid" data-f="resid" data-t="text"><option value="">아직 입력 안 했어요</option><option value="서울">서울</option><option value="경기">경기</option><option value="인천">인천</option><option value="기타">그 밖의 지역</option></select></label>
+            <label class="f"><span class="lbl">사는 곳 (시·군·구)</span><input id="f-residGu" data-f="residGu" data-t="text" type="text" maxlength="12" placeholder="예: 영등포구, 화성시"></label>
+            <label class="f"><span class="lbl">최근 10년 내 당첨 이력</span><select id="f-winPast" data-f="winPast" data-t="text"><option value="">아직 몰라요</option><option value="no">없어요</option><option value="yes">있어요</option></select></label>
             <label class="f"><span class="lbl">무주택 여부</span><select id="f-homeless" data-f="homeless" data-t="text"><option value="">아직 몰라요</option><option value="yes">둘 다 무주택</option><option value="no">집이 있어요</option></select></label>
             <label class="f"><span class="lbl">생애최초 (집을 가진 적 없음)</span><select id="f-firstHome" data-f="firstHome" data-t="text"><option value="">아직 몰라요</option><option value="yes">둘 다 맞아요</option><option value="no">아니에요</option></select></label>
           </div>
@@ -1154,6 +1157,26 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var c = core; return c && c.canTotal > 0 ? [Math.floor(c.canTotal / 0.3 / 100) * 100, true] : [0, true];
   }
   function subTypes(x) { return Array.isArray(x.types) ? x.types.filter(function (t) { return t && isFinite(t.a); }) : []; }
+  function myR1(x) {
+    var resid = plan.resid || '', gu = String(plan.residGu || '').trim().replace(/[시군구]$/, ''), loc = String(x.location || '');
+    if (!resid) return '';
+    var seoul = /^서울/.test(loc), inch = /^인천/.test(loc), gg = /^경기/.test(loc);
+    if (seoul) return resid === '서울' ? 'r1' : (resid === '경기' || resid === '인천') ? 'r1g' : 'r1e';
+    if (gu && loc.indexOf(gu) >= 0) return 'r1';
+    if (inch) return resid === '인천' ? 'r1' : (resid === '서울' || resid === '경기') ? 'r1g' : 'r1e';
+    if (gg) return resid === '경기' ? 'r1g' : 'r1e';
+    return 'r1e';
+  }
+  var R1NAME = { r1: '해당지역', r1g: '경기·수도권 기타', r1e: '기타 지역' };
+  function nextDl(x, ev) {
+    var today = dayNum(todayStr()), sc = x.sched || {}, cand = [];
+    var spSt = ev.el && ev.el.chips.some(function (c) { return /특공|생애최초/.test(c.label) && c.st !== 'bad'; });
+    if (sc.sp && spSt) cand.push(['특공', sc.sp[1]]);
+    var k = myR1(x); if (k && sc[k]) cand.push(['1순위', sc[k][1]]); else if (sc.r1 && !k) cand.push(['1순위', sc.r1[1]]);
+    cand = cand.filter(function (c) { return dayNum(c[1]) >= today; }).sort(function (a, b) { return a[1] < b[1] ? -1 : 1; });
+    if (cand.length) return { label: cand[0][0], d: cand[0][1] };
+    return validD(x.applyEnd) ? { label: '마감', d: x.applyEnd } : null;
+  }
   function eligOf(x, T) {
     var n = 0, b = 0, f = 0, u = 0; T.forEach(function (t) { n += t.n || 0; b += t.b || 0; f += t.f || 0; u += t.u || 0; });
     var noAcc = /무순위|잔여|임의/.test((x.kind || '') + ' ' + (x.name || '')); if (noAcc) { n = 0; b = 0; f = 0; }
@@ -1202,6 +1225,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var sg = !known ? 'warn' : acc >= reqGen ? (depSt === 'ok' ? 'ok' : 'warn') : 'bad';
       chip(sg, (sg === 'ok' ? '✅ ' : sg === 'bad' ? '❌ ' : '⚠️ ') + '일반공급 1순위', '일반공급은 청약통장 가입 ' + reqGen + '개월·납입 ' + reqGen + '회 이상이면 1순위예요(이 지역 일반적 기준, 공고문 확인). 가점제는 무주택 기간·부양가족·통장 기간을 점수로 매겨서 신혼 초에는 점수가 낮은 편이에요.' + accTxt, true);
     }
+    var r1k = myR1(x);
+    if (!noAcc) chip(!r1k ? 'warn' : r1k === 'r1' ? 'ok' : 'warn', '📍 ' + (r1k ? R1NAME[r1k] + ' 거주' : '거주지 입력'), '청약은 공고 지역에 사는 사람이 먼저 당첨자를 뽑는 "해당지역 우선공급"이 있어요. ' + (!r1k ? '내 거주지를 입력하면 내 접수 일정과 우선순위를 알려줄 수 있어요.' : r1k === 'r1' ? '내 거주지는 이 공고의 해당지역이라 먼저 접수·추첨돼요(거주 기간 요건은 공고문 확인).' : '내 거주지는 해당지역이 아니라서 해당지역 거주자보다 접수가 늦거나 물량이 남아야 기회가 와요. 접수일을 꼭 확인하세요.'));
+    if (plan.winPast === 'yes') chip(hot ? 'bad' : 'warn', '♻️ 당첨 이력 확인', '최근 당첨된 적이 있으면 재당첨 제한(투기과열지구는 최대 10년)에 걸릴 수 있어요. ' + (hot ? '이 공고는 투기과열지구라 특히 조심해야 해요.' : '공고문의 재당첨 제한 항목을 확인하세요.'));
     chip('warn', '💰 소득·자산 확인', (pub ? '공공 분양이라 ' : '') + '특별공급과 공공 분양은 소득(도시근로자 월평균소득 비율)과 자산(부동산·자동차) 기준이 있어요. 공고문의 표와 비교하세요. 우리 합산 연소득은 ' + (core && core.income > 0 ? fmt(core.income) : '아직 미입력') + '이에요.');
     var specOk = paths.some(function (p) { return p.st === 'ok' && /특공|생애최초/.test(p.label); });
     var anyOk = paths.some(function (p) { return p.st === 'ok'; });
@@ -1269,7 +1295,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var head = el('div', 'hh'); var rkn = subRank[id] || 0; head.appendChild(el('span', rkn && rkn <= 3 ? 'medal' : 'rk', rkn === 1 ? '🥇' : rkn === 2 ? '🥈' : rkn === 3 ? '🥉' : String(rkn || '–')));
       head.appendChild(el('b', null, x.name || '(이름 없음)'));
       if (ev.el.noAcc) head.appendChild(el('span', 'chip ok', '🆓 통장 없이 가능'));
-      if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
+      var ndl = nextDl(x, ev); if (ndl) { var d2 = dayNum(ndl.d) - dayNum(todayStr()); head.appendChild(el('span', 'chip ' + (d2 <= 3 ? 'bad' : d2 <= 7 ? 'warn' : 'plain'), ndl.label + (d2 === 0 ? ' D-day' : ' D-' + d2))); } else if (dd != null) head.appendChild(el('span', 'chip ' + (dd <= 3 ? 'bad' : dd <= 7 ? 'warn' : 'plain'), dd === 0 ? '마감 D-day' : '마감 D-' + dd));
       var u = safeUrl(x.link); if (u) { var a = el('a', null, '공고'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; head.appendChild(a); }
       box2.appendChild(head);
       var okParts = []; if (ev.aOk === 'yes') okParts.push('평형'); if (ev.pOk === 'yes' || (ev.land && ev.T.length)) okParts.push(ev.land ? '금액(건물값)' : '금액'); if (ev.el.anyOk) okParts.push('자격');
@@ -1285,6 +1311,9 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       var spOk = ev.el.chips.filter(function (c) { return c.st === 'ok' && /특공|생애최초/.test(c.label); })[0];
       var elTxt = spOk ? '신혼 특공 등 특별공급으로 신청 가능성이 있어요' : ev.el.anyOk ? '일반공급 1순위로 신청할 수 있어요' : ev.el.allBad ? '지금 입력한 정보로는 신청이 어려워요' : '자격은 아직 확인이 필요해요';
       var eln = el('div', 'hl ' + (spOk || ev.el.anyOk ? '' : ev.el.allBad ? 'bad' : 'mute')); eln.appendChild(el('small', null, '🧾 자격')); eln.appendChild(el('span', null, elTxt)); box2.appendChild(eln);
+      var scx = x.sched || {}, fm = function (p) { return p ? dotD(p[0]) + (p[1] !== p[0] ? '~' + dotD(p[1]) : '') : ''; }, sp2 = [];
+      if (scx.sp) sp2.push('특공 ' + fm(scx.sp)); var k1 = myR1(x); if (k1 && scx[k1]) sp2.push('1순위(' + R1NAME[k1] + ') ' + fm(scx[k1])); else if (scx.r1) sp2.push('1순위 ' + fm(scx.r1)); if (scx.ct) sp2.push('계약 ' + fm(scx.ct));
+      if (sp2.length && !compact) { var sr = el('div', 'hl'); sr.appendChild(el('small', null, '📅 일정')); sr.appendChild(el('span', null, sp2.join(' · '))); box2.appendChild(sr); }
       if (compact) return box2;
       var cps = ev.cau.filter(function (c) { return !c.g; }).sort(function (p, q) { return (q.b ? 1 : 0) - (p.b ? 1 : 0); }).slice(0, 5);
       var must = ev.el.chips.filter(function (c) { return /통장 필요|무주택 필요/.test(c.label); }), mst = must.some(function (c) { return c.st === 'bad'; }) ? 'bad' : must.some(function (c) { return c.st === 'warn'; }) ? 'warn' : 'ok';
@@ -1328,6 +1357,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
     var c = core || {}, ac = [plan.accA, plan.accB].map(function (v, i) { return v != null && v !== '' ? (i ? nameB() : nameA()) + ' ' + v + '개월' : ''; }).filter(Boolean).join(', ');
     return ['- 합산 연소득 ' + (c.income > 0 ? fmt(c.income) : '미입력') + ' (맞벌이 신혼부부)', '- 입주 때까지 모을 수 있는 현금 ' + (c.canTotal > 0 ? fmt(c.canTotal) : '미입력'), '- 청약통장 가입기간: ' + (ac || '미입력'),
       '- 무주택: ' + (plan.homeless === 'yes' ? '둘 다 무주택' : plan.homeless === 'no' ? '집이 있음' : '미입력'), '- 생애최초: ' + (plan.firstHome === 'yes' ? '해당' : plan.firstHome === 'no' ? '비해당' : '미입력'),
+      '- 사는 곳: ' + ((plan.resid || '미입력') + (plan.residGu ? ' ' + plan.residGu : '')) + ' · 최근 10년 내 당첨 이력: ' + (plan.winPast === 'yes' ? '있음' : plan.winPast === 'no' ? '없음' : '미입력'),
       '- 혼인신고 예정월: ' + (validYm(plan.marriageDate) ? plan.marriageDate : '미정'), '- 출산 계획: ' + (plan.babyPlan === 'soon' ? '입주 후 2년 안' : plan.babyPlan === 'none' ? '당분간 없음' : '미정'),
       '- 내가 정한 분양가 상한(자기 돈 30% 가정): ' + (ev.cap > 0 ? fmt(ev.cap) : '미정')].join('\n');
   }
@@ -1525,6 +1555,7 @@ footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
       if (Array.isArray(it.types)) rec.types = it.types.slice(0, 40).map(function (t) { if (!t || typeof t !== 'object') return null; var N = function (v) { v = Number(v); return isFinite(v) && v >= 0 ? v : 0; }; return isFinite(Number(t.a)) ? { a: N(t.a), u: N(t.u), n: N(t.n), b: N(t.b), f: N(t.f), pmin: N(t.pmin), pmax: N(t.pmax) } : null; }).filter(Boolean);
       if (/^\d{4}-(0[1-9]|1[0-2])$/.test(String(it.moveIn || ''))) rec.moveIn = it.moveIn;
       if (it.kind) rec.kind = T(it.kind, 10);
+      if (it.sched && typeof it.sched === 'object') { var sch = {}; ['sp', 'r1', 'r1g', 'r1e', 'r2', 'ct'].forEach(function (k) { var v = it.sched[k]; if (Array.isArray(v) && validD(v[0]) && validD(v[1])) sch[k] = [v[0], v[1]]; }); rec.sched = sch; }
       if (Array.isArray(it.notes)) rec.notes = it.notes.slice(0, 6).map(function (n) { return T(n, 80); }).filter(Boolean);
       var existed = !!subsState[id];
       try { if (existed) await db.doc('subs/' + id).update(rec); else { await db.doc('subs/' + id).set(rec); fresh++; } n++; } catch (e) { skip++; }

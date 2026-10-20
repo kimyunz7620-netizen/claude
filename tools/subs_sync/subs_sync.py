@@ -133,6 +133,24 @@ def won(man):
     return f"{man / 10000:.1f}억".replace(".0억", "억")
 
 
+def sched_of(d):
+    """접수·계약 일정을 유형별로 모은다. {키: [시작, 끝]} (값이 없으면 빼요)"""
+    pairs = {
+        "sp": ("SPSPLY_RCEPT_BGNDE", "SPSPLY_RCEPT_ENDDE"),
+        "r1": ("GNRL_RNK1_CRSPAREA_RCPTDE", "GNRL_RNK1_CRSPAREA_ENDDE"),
+        "r1g": ("GNRL_RNK1_ETC_GG_RCPTDE", "GNRL_RNK1_ETC_GG_ENDDE"),
+        "r1e": ("GNRL_RNK1_ETC_AREA_RCPTDE", "GNRL_RNK1_ETC_AREA_ENDDE"),
+        "r2": ("GNRL_RNK2_CRSPAREA_RCPTDE", "GNRL_RNK2_CRSPAREA_ENDDE"),
+        "ct": ("CNTRCT_CNCLS_BGNDE", "CNTRCT_CNCLS_ENDDE"),
+    }
+    out = {}
+    for k, (a, b) in pairs.items():
+        va, vb = str(d.get(a) or ""), str(d.get(b) or "")
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", va) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", vb or va):
+            out[k] = [va, vb or va]
+    return out
+
+
 def build_item(d, models, area_min, area_max, regions):
     name = (d.get("HOUSE_NM") or "").strip()
     addr = (d.get("HSSPLY_ADRES") or "").strip()
@@ -205,7 +223,7 @@ def build_item(d, models, area_min, area_max, regions):
         "winnerDate": d.get("PRZWNER_PRESNATN_DE") or "",
         "link": link if link.startswith("https://") else "",
         "fit": fit, "fitReason": reason, "areaFit": area_fit, "regionFit": region_fit, "source": "청약홈 API",
-        "types": type_groups, "moveIn": move_in, "notes": notes,
+        "types": type_groups, "moveIn": move_in, "notes": notes, "sched": sched_of(d),
         "kind": str(d.get("__kind") or d.get("HOUSE_DTL_SECD_NM") or d.get("HOUSE_SECD_NM") or "")[:10],
     }
 
