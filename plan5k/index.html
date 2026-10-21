@@ -1511,9 +1511,7 @@ function renderMonth(){
   if(!$("nwMonth").value)$("nwMonth").value=ymOf(TODAY);
   {const fc=CATS().find(c=>c.fund);$("acLGift").textContent=`🎁 ${fc&&fc.fund.bank||"경조사 통장"}`}
   /* 토스뱅크 only passes money through: what is still due to leave by auto-debit this month shouldn't count as savings */
-  {const end=dom(TODAY)>=PAY()?ymDay(ymAdd(ymOf(TODAY),1),PAY()):ymDay(ymOf(TODAY),PAY()),M0=dom(TODAY)>=PAY()?ymOf(TODAY):ymAdd(ymOf(TODAY),-1);
-   /* auto-debits from 토스뱅크 between today and the next payday (the money for them was moved in on payday) */
-   const due=fixedAt(M0).filter(x=>x.acct==="토스뱅크"&&!x.card&&x.amount>0).map(x=>{if(!x.day)return{x,d:null};let d=ymDay(ymOf(TODAY),x.day);if(d<TODAY)d=ymDay(ymAdd(ymOf(TODAY),1),x.day);return{x,d}}).filter(o=>!o.d||o.d<end).sort((a,b)=>(a.d||"9")<(b.d||"9")?-1:1);
+  {const due=tossDue(TODAY);
    const t=sum(due,o=>o.x.amount),el=$("acTossHint");el.hidden=!t;
    if(t)el.innerHTML=`↳ 다음 월급날 전에 <b>${won(t)}</b>이 더 빠져요. 아직 안 빠졌으면 뺀 금액을 적어요.<details><summary>빠질 항목 ${due.length}건</summary>${due.map(o=>`${o.d?md(o.d):"날짜 미정"} ${esc(o.x.name)} ${num(o.x.amount)}`).join("<br>")}</details>`}
   $("fundHint").textContent=CATS().filter(c=>c.fund).map(c=>`🎁 ${c.fund.bank} 예상 잔액 ${num(fundBalance(c))} (매달 이체 + 모자랄 때 채운 돈 − 쓴 돈)`).join(" · ");
