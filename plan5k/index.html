@@ -827,17 +827,18 @@ const BONUS=()=>(ST().bonuses||[]).filter(x=>x&&x.ym&&x.amount>0);
 const bonusAt=ym=>sum(BONUS().filter(x=>x.ym===ym),x=>x.amount);
 function incomeAt(ym){return baseIncomeAt(ym)+bonusAt(ym)}
 function baseIncomeAt(ym){const s=ST();if(s.incomeActual&&s.incomeActual[ym]!=null)return s.incomeActual[ym];const b=s.income||0;if(!(s.raiseFromYm&&ym>=s.raiseFromYm))return b;return Math.round(b*(1+(s.raisePct||0)/100))+(ym===s.raiseFromYm?backPay():0)}
-function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amount||0;(it.changes||[]).slice().sort((x,y)=>x.fromYm<y.fromYm?-1:1).forEach(c=>{if(c.fromYm<=ym)a=c.amount});const ov=it.overrides&&it.overrides[ym]!=null;if(ov)a=it.overrides[ym];if(it.saving&&it.startYm&&(ym<it.startYm||(it.term&&ym>=ymAdd(it.startYm,it.term))))a=0;return{id:it.id,name:it.name,amount:a,card:!!it.card,acct:it.acct||"",note:it.note||"",day:it.day||null,saving:!!it.saving,match:it.match||0,how:it.how||"",ov}})}
+function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amount||0;(it.changes||[]).slice().sort((x,y)=>x.fromYm<y.fromYm?-1:1).forEach(c=>{if(c.fromYm<=ym)a=c.amount});const ov=it.overrides&&it.overrides[ym]!=null;if(ov)a=it.overrides[ym];if(it.saving&&it.startYm&&(ym<it.startYm||(it.term&&ym>=ymAdd(it.startYm,it.term))))a=0;return{id:it.id,name:it.name,amount:a,card:!!it.card,acct:it.acct||"",note:it.note||"",day:it.day||null,saving:!!it.saving,match:it.match||0,how:it.how||"",src:(it.paidFrom&&it.paidFrom[ym])||"",ov}})}
 /* 적금 (saving) plans: deposits month by month over the term; the government match is paid only at maturity and is lost on early cancellation */
 const SAVINGS=()=>((S.fixed&&S.fixed.items)||[]).filter(x=>x.saving&&x.startYm&&x.term);
 function savePlan(x){const end=ymAdd(x.startYm,x.term),months=[];for(let m=x.startYm;m<end;m=ymAdd(m,1)){const it=fixedAt(m).find(y=>y.id===x.id);months.push({ym:m,amt:it?it.amount:0})}
   const total=sum(months,m=>m.amt);return{x,end,months,total,match:Math.round(total*(x.match||0))}}
 /* fixed costs that leave on a given date (a day past the month's end falls on its last day; salary deductions are not shown) */
 function fixedOn(d){const last=Number(ymDay(ymOf(d),31).slice(8));return fixedAt(ymOf(d)).filter(x=>x.day&&x.amount>0&&x.acct!=="급여 공제"&&Math.min(x.day,last)===dom(d))}
-const fxWhere=x=>x.card?"💳 카드":x.acct?esc(x.acct):"🏦 통장";
+const fxWhere=x=>x.card?"💳 카드":x.src?`${esc(x.src)}에서 냄`:x.acct?esc(x.acct):"🏦 통장";
 const fixedTotal=ym=>sum(fixedAt(ym),x=>x.amount);
 // fixed costs charged to the Lotte card are part of the card bill, not paid from salary separately
-const fixedCash=ym=>sum(fixedAt(ym).filter(x=>!x.card),x=>x.amount),fixedCard=ym=>sum(fixedAt(ym).filter(x=>x.card),x=>x.amount);
+/* src: that month it was paid from another account (e.g. 케뱅), so it doesn't leave the salary account */
+const fixedCash=ym=>sum(fixedAt(ym).filter(x=>!x.card&&!x.src),x=>x.amount),fixedCard=ym=>sum(fixedAt(ym).filter(x=>x.card),x=>x.amount);
 
 /* ---------- entries ---------- */
 // cardIn: everything that hits the card; entriesIn: what counts against the living budget (excl = 계모임·회사 경비 등)
@@ -994,7 +995,7 @@ const CARDACC=()=>ST().cardAcct||SALARY; /* where the Lotte card is paid from */
 const FIXACCTS_=()=>[...new Set(["","토스뱅크","하나은행","우리은행","모임통장",...((S.fixed&&S.fixed.items)||[]).map(x=>x.acct).filter(Boolean),...CATS().filter(c=>c.fund&&c.fund.bank).map(c=>c.fund.bank),"급여 공제"])];
 function fixedDest(x){if(x.acct)return x.acct===SALARY||x.acct==="급여 공제"?null:x.acct;const t=(x.name||"")+" "+(x.note||"");if(/모임통장|계모임/.test(t))return GROUPACC;const fc=CATS().find(c=>c.fund&&t.includes((c.fund.bank||"").split(" ")[0]));if(fc||/경조사/.test(t))return fc?fc.fund.bank:"경조사 통장";return null}
 function payTxSteps(M,pl){
-  const early=!!ST().payEarly,pd=early?ymDay(M,PAY()):ymDay(M,CARD()),steps=[],fx=fixedAt(M).filter(x=>!x.card&&x.amount>0);
+  const early=!!ST().payEarly,pd=early?ymDay(M,PAY()):ymDay(M,CARD()),steps=[],fx=fixedAt(M).filter(x=>!x.card&&!x.src&&x.amount>0);
   const bm=balMode(M),rows=bm?allocate(bm.room,TODAY):pl.avail>0?allocate(pl.avail,pd):[],items=rows.filter(r=>r.kind==="item"),loans=rows.filter(r=>r.kind==="loan"),pots=rows.filter(r=>r.kind==="pot");
   const prepay=sum(items,r=>r.amt),savePot=sum(pots,r=>r.amt),rest=bm?0:Math.max(0,pl.avail-sum(rows,r=>r.amt)),fundAcc=(CATS().find(c=>c.fund)||{fund:{}}).fund.bank||"경조사 통장";
   /* the card is paid from CARDACC: move money there only if it isn't the salary account; the check-card allowance goes to 케이뱅크 */
@@ -1038,7 +1039,7 @@ function renderPayTx(M,pl,phase){
 function balMode(M){const a=S.accounts||{},pd=ymDay(M,PAY());if(!(a.hana>0)||!a.updatedAt||iso(new Date(a.updatedAt))<pd||TODAY<pd||TODAY>=ymDay(ymAdd(M,1),PAY()))return null;
   /* prepayments recorded after the balance was saved have already left it */
   const paid=S.payments.filter(p=>(p.createdAt||"")>a.updatedAt),hana=a.hana-sum(paid,p=>p.amount);
-  const stay=sum(fixedAt(M).filter(x=>!x.card&&!fixedDest(x)&&x.acct!=="급여 공제"&&x.amount>0&&x.day&&x.day>dom(TODAY)),x=>x.amount),
+  const stay=sum(fixedAt(M).filter(x=>!x.card&&!x.src&&!fixedDest(x)&&x.acct!=="급여 공제"&&x.amount>0&&x.day&&x.day>dom(TODAY)),x=>x.amount),
     held=sum(S.entries.filter(e=>e.back&&e.excl&&e.method==="lotte"&&e.amount>0&&S.tasks["back-"+e.id]&&payYmOf(e.date)>M),e=>e.amount);
   return{hana,saved:a.hana,paid,stay,held,room:Math.max(0,hana-stay-held),at:iso(new Date(a.updatedAt))}}
 /* a long transfer note folds: "주거비 686,000원 외 6건 ›" and the full list on tap */
