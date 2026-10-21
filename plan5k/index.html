@@ -2018,7 +2018,11 @@ async function saveIncome(ym,amount){
   S.settings={...ST(),incomeActual:ia};render();
   try{await put("config/settings",S.settings);toast(amount==null?"예상 실수령으로 돌렸어요":`${ymKo(ym)} 실수령 ${won(amount)}로 고쳤어요`)}catch(_){}
 }
-document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("incin")){const v=parseNum(el.value);if(v>0)saveIncome(el.dataset.ym,v)}});
+/* 실수령 saves itself: a second after typing stops, and again on leaving the field (phones often never fire change) */
+const incSave=el=>{const v=parseNum(el.value),cur=ST().incomeActual&&ST().incomeActual[el.dataset.ym];if(v>0&&v!==cur)saveIncome(el.dataset.ym,v)};
+document.addEventListener("input",e=>{const el=e.target;if(!(el.classList&&el.classList.contains("incin")))return;const v=parseNum(el.value);el.value=v?num(v):"";clearTimeout(incSave.t);incSave.t=setTimeout(()=>incSave(el),1000)});
+document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("incin")){clearTimeout(incSave.t);incSave(el)}});
+document.addEventListener("visibilitychange",()=>{const el=document.activeElement;if(document.hidden&&el&&el.classList&&el.classList.contains("incin")){clearTimeout(incSave.t);incSave(el)}});
 document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("fxin"))saveFixedOverride(el.dataset.fx,el.dataset.ym,parseNum(el.value))});
 $("habits").addEventListener("change",saveDay);
 $("spDate").addEventListener("input",()=>stepPreview());
