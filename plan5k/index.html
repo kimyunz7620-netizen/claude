@@ -268,6 +268,9 @@ details.fxi .fxn{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-sp
 .mxs .sl,.mxl .sl{background:repeating-linear-gradient(45deg,var(--line),var(--line) 3px,transparent 3px,transparent 6px);box-shadow:inset 0 0 0 1px var(--line)}
 .mxs .pl{opacity:.45}
 .mxk.plan{opacity:.85}
+.wka{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:var(--bg)}
+.wka-in{display:flex;gap:8px}.wka-in input{flex:1;min-width:0;font:inherit;font-size:16px;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card,var(--bg));color:inherit}
+.wka-a{display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:1px solid var(--line);font-size:.9rem;line-height:1.6}
 .qk-box{display:flex;flex-direction:column;gap:6px}
 #entryForm.qmode>:not(.row):not(.qk-box):not(#enMode){display:none!important}#entryForm:not(.qmode)>.qk-box{display:none}
 #qkText{width:100%;min-height:44px;resize:none;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px dashed var(--line);background:var(--bg);color:var(--fg,inherit);field-sizing:content;min-height:5.5em;max-height:12em}
@@ -583,6 +586,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
     <div class="card">
       <h2>가계부와 맞는지 확인</h2>
       <div id="wkResult"></div>
+      <div id="wkAsk" style="margin-top:14px"></div>
     </div>
     <div class="card">
       <div class="row"><h2>이번 주 돌아보기</h2><span class="muted small" id="rvRange"></span></div>
@@ -942,8 +946,9 @@ function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort
   const pend=mine.filter(e=>e.pending&&(e.createdAt||"")<=at),posted=pend.length&&w.lump>0&&Math.abs(w.lump-(lumpEst(ym,w.date)+sum(pend,e=>e.amount)))<=Math.max(ST().warnDiff||30000,w.lump*0.03);
   const late=sum(mine.filter(e=>e.pending?!posted||(e.createdAt||"")>at:(e.confirmedAt||e.createdAt||"")>at),e=>e.amount);
   return (a!=null&&b!=null?w.nextBill+a-b:w.nextBill)+late}
-function cardFixedEst(ym){const c=cycleOf(ym);return sum(fixedAt(ym).filter(x=>x.card&&!S.entries.some(e=>e.fixedId===x.id&&inRange(e.date,c))),x=>x.amount)}
-function lumpEst(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"&&!e.pending),e=>e.amount)+cardFixedEst(ym)}
+/* card fixed costs of a card cycle; with upTo only those already charged by then (the card app shows posted charges only) */
+function cardFixedEst(ym,upTo){const c=cycleOf(ym);return sum(fixedAt(ym).filter(x=>x.card&&!S.entries.some(e=>e.fixedId===x.id&&inRange(e.date,c))&&(!upTo||!x.day||(()=>{const d=[ymDay(ymOf(c.start),x.day),ymDay(ymOf(c.end),x.day)].find(v=>inRange(v,c));return !d||d<=upTo})())),x=>x.amount)}
+function lumpEst(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"&&!e.pending),e=>e.amount)+cardFixedEst(ym,upTo)}
 function estBill(ym,upTo){return lumpEst(ym,upTo)+effSched(ym)}
 
 /* pick the card items to prepay with the money at hand so the fee saved is as large as possible (0/1 knapsack in 1,000원 steps) */
@@ -1426,12 +1431,47 @@ const BDOPEN=new Set();
 function catDetail(list){if(!list.length)return '<div class="cdet"><p class="tiny muted">이 기간엔 기록이 없어요.</p></div>';
   const real=id=>S.entries.some(x=>x.id===id),how=e=>fundOut(e)?"🎁 저금통에서":e.part>0?"할부 몫":e.method==="cash"?"체크·현금":e.method==="inst"?"할부":"카드";
   return `<div class="cdet">${list.map(e=>`<${real(e.id)?`button type="button" class="cdr" data-edit="${esc(e.id)}"`:'div class="cdr"'}><span class="d">${md(bDate(e))}</span><span class="m">${esc(e.memo||"(메모 없음)")} <span class="tiny muted">${how(e)}</span></span><b class="${e.amount<0?"good-t":""}">${e.amount<0?"−":""}${num(Math.abs(e.amount))}</b></${real(e.id)?"button":"div"}>`).join("")}<p class="tiny muted" style="margin:6px 0 0">${list.length}건 · 누르면 고칠 수 있어요</p></div>`}
+/* ---------- 🤖 주간 점검에서 바로 물어보기: the check's numbers and the card cycle's records go to Claude, which explains the gap ---------- */
+let WKA={busy:false,q:"",text:"",key:""};
+function weekAskContext(w){
+  const P=w.payYm,c=cycleOf(P),cmp=weeklyCompare(w).map(x=>`- ${x.k}: 카드 앱 ${x.act} / 가계부 예상 ${x.exp} / 차이 ${x.diff}${x.bad?" (불일치)":""}${x.refunds?` (취소예정 ${x.refunds.n}건이 이미 반영된 걸로 보임)`:""}`),
+    es=cardIn({start:c.start,end:addDays(w.date,0)},e=>e.method!=="cash").sort((a,b)=>cDate(a)<cDate(b)?-1:1).slice(-70).map(e=>`${e.date} ${(e.memo||catName(e.cat)||"").slice(0,24)} ${e.amount}원 [${e.method==="inst"?`할부${e.months||""}${e.cardItem?"·카드앱목록":"·앱할부"}${e.free?"·무이자":""}`:e.method==="cash"?"체크·현금":"일시불"}${e.pending?" ·취소예정":""}${e.excl?" ·예산제외":""}${e.back?" ·돌려받을돈":""}${e.cancelOf?" ·취소":""}${e.cardItem?"":""}]`),
+    fx=fixedAt(P).filter(x=>x.card&&x.amount>0).map(x=>`${x.name} ${x.amount}원(${x.day||"?"}일${x.ov?",실제금액":",예상"})`),
+    bills=ITEMS().map(x=>({n:x.name,b:itemBill(x,P)})).filter(o=>o.b>0).sort((a,b)=>b.b-a.b).slice(0,12).map(o=>`${o.n} ${o.b}원`);
+  return `[점검] ${w.date} · ${Number(P.slice(5))}월 결제분(결제일 ${ymDay(P,CARD())}) · 카드 앱 결제예정금액 ${w.nextBill||0}원 · 그중 일시불 ${w.lump||0}원
+[앱이 계산하는 방식] 결제예정금액 = 이번 카드 주기(${c.start}~${c.end})의 롯데 일시불 기록(취소예정 제외) + 카드로 나가는 고정비 예상 + 그달 할부 청구액. 점검일 이틀 안의 결제는 카드 앱에 늦게 잡혀 비교에서 뺄 수 있음.
+[비교 결과]
+${cmp.join("\n")||"(비교 없음)"}
+[카드로 나가는 고정비 ${P}] ${fx.join(", ")||"없음"}
+[그달 할부 청구 상위] ${bills.join(", ")||"없음"} · 앱에서 새로 기록한 할부 청구 ${newInstAt(P)}원
+[이번 주기 카드 기록(최근 70건)]
+${es.join("\n")||"(없음)"}`}
+async function askWeek(q){
+  if(!sample){toast("Claude 연결을 기다리는 중이에요. 잠시 뒤 다시 눌러 주세요");return}
+  const ws=S.weekly.slice().sort((a,b)=>a.date<b.date?1:-1),w=ws.find(x=>!x.seed);if(!w){toast("점검 숫자를 먼저 저장해 주세요");return}
+  if(WKA.busy)return;WKA={busy:true,q,text:"",key:w.id};renderWkAsk(w);
+  const prompt=`당신은 한국 가계부 앱의 도우미예요. 사용자가 롯데카드 앱의 결제예정금액과 앱 계산이 왜 다른지, 또는 아래 질문을 물어봤어요. 아래 데이터만 근거로 답하세요.
+규칙: 1) 결론부터 한 줄. 2) 의심되는 원인을 금액이 큰 순서로 최대 4개, 각각 구체적인 항목(날짜·메모·금액)을 들어서. 3) 차이를 설명하는 금액들을 더해서 맞는지 확인해 보여 주기. 4) 사용자가 앱이나 카드 앱에서 확인·수정할 일을 마지막에 짧게. 5) 모르는 건 모른다고 하고 추측은 추측이라고 말하기. 6) 이모지 약간, 존댓말, 전체 15줄 이내. 계좌·카드번호는 언급하지 않기.
+
+[질문] ${q}
+
+${weekAskContext(w)}`;
+  try{const r=await sample(prompt,{modelTier:"default",cache:false,onText:({text})=>{WKA.text=text;const el=$("wkAnswer");if(el)el.textContent=text}});WKA.text=r&&r.text?r.text:WKA.text}
+  catch(err){WKA.text=err&&err.code==="not_granted"?"Claude 사용을 허용해야 물어볼 수 있어요.":err&&err.code==="rate_limited"?"요청이 많아요. 잠시 뒤에 다시 해 주세요.":"답을 가져오지 못했어요. 다시 시도해 주세요."}
+  WKA.busy=false;renderWkAsk(w)}
+function renderWkAsk(w){const el=$("wkAsk");if(!el)return;if(!w||w.seed){el.innerHTML="";return}
+  const bad=weeklyCompare(w).some(x=>x.bad);
+  el.innerHTML=`<div class="wka"><div class="row"><strong class="small">🤖 Claude에게 물어보기</strong>${WKA.text?`<button type="button" class="link tiny" data-wka="clear">지우기</button>`:""}</div>
+    <div class="pills"><button type="button" class="pill" data-wka="diff" ${WKA.busy?"disabled":""}>${bad?"🔍 왜 다른지 분석해줘":"🔍 숫자 잘 맞는지 분석해줘"}</button></div>
+    <div class="wka-in"><input type="text" id="wkaQ" placeholder="궁금한 걸 적어 보세요 (예: 11/25 결제액이 왜 이래?)" aria-label="물어보기" ${WKA.busy?"disabled":""}><button type="button" class="btn" data-wka="ask" ${WKA.busy?"disabled":""}>묻기</button></div>
+    ${WKA.busy||WKA.text?`<div class="wka-a"><div class="tiny muted">${esc(WKA.q)}</div><div id="wkAnswer" style="white-space:pre-wrap">${WKA.busy&&!WKA.text?"⏳ 분석 중…":esc(WKA.text)}</div></div>`:""}</div>`}
 function renderWeek(){
   $("wkSunday").hidden=parse(TODAY).getDay()!==0;if(!$("wkDate").value)$("wkDate").value=TODAY;
   const wd=$("wkDate").value||TODAY,wP=billMonthOf(wd),wc=cycleOf(payYmOf(wd));
   $("wkBillLabel").textContent=`결제예정금액 합계 (${md(ymDay(wP,CARD()))} 결제분 · '오늘' 탭)`;
   const ws=S.weekly.slice().sort((a,b)=>a.date<b.date?1:-1);
   if(!$("wkForm").contains(document.activeElement))$("wkResult").innerHTML=ws[0]?`<div class="tiny muted">${mdw(ws[0].date)} 점검 결과</div>`+compareHTML(ws[0]):'<p class="empty">1번에 숫자를 적으면 결과가 여기 나와요.</p>';
+  if(!$("wkAsk").contains(document.activeElement))renderWkAsk(ws[0]);
   $("wkHist").innerHTML=ws.length?ws.slice(0,10).map(w=>{const bad=!w.seed&&weeklyCompare(w).some(x=>x.bad),gap=!w.seed&&weeklyCompare(w).some(x=>x.gap);
     return `<div class="li"><span class="av">${w.seed?"📦":gap?"⏳":bad?"🔍":"✅"}</span><div><div class="t">${w.seed?`${Number(w.payYm.slice(5))}월 카드값 (기존 트래커에서 옮김)`:mdw(w.date)}</div><div class="s">결제예정 ${w.nextBill?num(w.nextBill):"-"}${w.lump?` · 일시불 ${num(w.lump)}`:""}</div></div>${w.seed?"<span></span>":`<button type="button" class="btn danger" data-del-week="${esc(w.id)}">삭제</button>`}</div>`}).join(""):'<p class="empty">일요일마다 카드 앱 숫자를 적으면 여기에 쌓여요.</p>';
   const ref=TODAY,wr=weekRange(ref),W=weekLimit(ref),sp=sum(entriesIn(wr),e=>e.amount);
@@ -1939,6 +1979,9 @@ document.addEventListener("click",async e=>{
     try{await put("config/fixed",{...(S.fixed||{}),items:[...((S.fixed&&S.fixed.items)||[]),it]});toast(`📌 ${name} ${won(amount)} 추가했어요`);renderSettings()}catch(_){}return}
   if(t.dataset.fxdel){if(!confirmTap(t))return;const id=t.dataset.fxdel,it=((S.fixed&&S.fixed.items)||[]).find(x=>x.id===id);
     try{await put("config/fixed",{...(S.fixed||{}),items:((S.fixed&&S.fixed.items)||[]).filter(x=>x.id!==id)});toast(`${it?it.name:"항목"}을 지웠어요`);renderSettings()}catch(_){}return}
+  if(t.dataset.wka){const k=t.dataset.wka;if(k==="clear"){WKA={busy:false,q:"",text:"",key:""};renderWkAsk(S.weekly.slice().sort((a,b)=>a.date<b.date?1:-1)[0]);return}
+    if(k==="diff"){askWeek("카드 앱 결제예정금액과 앱 계산이 왜 다른지 분석해줘. 같으면 맞는 이유와 주의할 점만 짧게.");return}
+    if(k==="ask"){const q=($("wkaQ").value||"").trim();if(!q){toast("궁금한 걸 적어 주세요");return}askWeek(q);return}}
   if(t.dataset.topcat){bdMode="cycle";bdKey=null;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode==="cycle"));BDOPEN.add(t.dataset.topcat);go("week");setTimeout(()=>{const r=document.querySelector(`[data-bdcat="${t.dataset.topcat}"]`);if(r)r.scrollIntoView({block:"center"})},60);return}
   if(t.dataset.bdcat){const id=t.dataset.bdcat;BDOPEN.has(id)?BDOPEN.delete(id):BDOPEN.add(id);renderWeek();return}
   if(t.dataset.mode){bdMode=t.dataset.mode;bdKey=null;document.querySelectorAll("#bdMode button").forEach(b=>b.setAttribute("aria-pressed",b===t));renderWeek();return}
