@@ -256,6 +256,7 @@ details.fxi .fxn{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-sp
 .acr input:focus{outline:none;border-color:var(--grape)}
 .acs{border-top:2px solid var(--line);margin-top:4px}.acs strong{text-align:right;font-size:1.15rem;font-variant-numeric:tabular-nums}
 .acx{padding:0 0 6px;line-height:1.45}
+.vfx{display:flex;flex-direction:column;gap:6px;padding:6px 0}.vch{display:flex;flex-wrap:wrap;gap:6px}.vch .chip i{font-style:normal;font-size:.72rem;font-weight:700;margin-left:2px}
 .qk-box{display:flex;flex-direction:column;gap:6px}
 #entryForm.qmode>:not(.row):not(.qk-box):not(#enMode){display:none!important}#entryForm:not(.qmode)>.qk-box{display:none}
 #qkText{width:100%;min-height:44px;resize:none;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px dashed var(--line);background:var(--bg);color:var(--fg,inherit);field-sizing:content;min-height:5.5em;max-height:12em}
@@ -1579,7 +1580,8 @@ function renderReport(){const el=$("rpCard");if(!el||!S.settings)return;
   ${cyc.length>1?`<div class="rp-sec"><h3>📈 주기별 생활비 흐름</h3><div class="vbars" style="grid-template-columns:repeat(${cyc.length},1fr)">${cyc.map(c=>`<div class="${c.cur?"hi":""}"><b>${manC(c.v)}</b><i style="height:${Math.max(2,c.v/cmx*70)}px"></i><span>${ymShort(c.p)}${c.cur?" (진행)":""}</span></div>`).join("")}</div>
    </div>`:""}${(()=>{/* 고정비 that really varied month to month (an amount was set for a month): actual vs the usual */
     const vs=((S.fixed&&S.fixed.items)||[]).filter(it=>!it.saving&&it.overrides&&Object.keys(it.overrides).some(k=>cyc.some(c=>c.p===k)));if(!vs.length)return"";
-    return `<div class="rp-sec"><h3>📌 달마다 달라진 고정비</h3>${vs.map(it=>`<div class="small"><b>${esc(it.name)}</b> <span class="muted">${cyc.map(c=>{const x=fixedAt(c.p).find(y=>y.id===it.id);return x?`${ymShort(c.p)} ${man1(x.amount)}${x.ov?" ✓":""}`:""}).filter(Boolean).join(" · ")}</span></div>`).join("")}<p class="tiny muted">✓ 실제 금액을 적은 달 · 나머지는 평소 금액</p></div>`})()}`;
+    return `<div class="rp-sec"><h3>📌 달마다 달라진 고정비</h3>${vs.map(it=>{const ms=cyc.map(c=>{const x=fixedAt(c.p).find(y=>y.id===it.id);return x?{p:c.p,a:x.amount,ov:x.ov}:null}).filter(Boolean),fi=ms.findIndex(m=>m.ov),sh=fi<0?ms:ms.slice(fi),base=ms.length?Math.max(...ms.filter(m=>!m.ov).map(m=>m.a),0):0;
+      return `<div class="vfx"><b>${esc(it.name)}</b><div class="vch">${sh.map((m,i)=>{const prev=i?sh[i-1].a:null,d=prev!=null&&m.a!==prev?m.a-prev:null;return `<span class="chip ${m.ov?"good":"plain"}">${ymShort(m.p)} ${num(m.a)}원${m.ov?" ✓":" ~"}${d?` <i class="${d>0?"bad-t":"good-t"}">${d>0?"+":"−"}${num(Math.abs(d))}</i>`:""}</span>`}).join("")}</div></div>`}).join("")}<p class="tiny muted">✓ 실제 금액 · ~ 예상(평소 금액)</p></div>`})()}`;
   renderFixedDday();
 }
 /* 고정비·구독 D-day: every fixed cost with a day, by the next date it leaves */
