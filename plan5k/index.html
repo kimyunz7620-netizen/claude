@@ -257,6 +257,16 @@ details.fxi .fxn{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-sp
 .acs{border-top:2px solid var(--line);margin-top:4px}.acs strong{text-align:right;font-size:1.15rem;font-variant-numeric:tabular-nums}
 .acx{padding:0 0 6px;line-height:1.45}
 .vfx{display:flex;flex-direction:column;gap:6px;padding:6px 0}.vch{display:flex;flex-wrap:wrap;gap:6px}.vch .chip i{font-style:normal;font-size:.72rem;font-weight:700;margin-left:2px}
+.mxc{display:grid;gap:8px;align-items:end;margin-top:6px}
+.mxk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;min-width:0;height:100%}
+.mxk b{font-size:.68rem;font-variant-numeric:tabular-nums;white-space:nowrap}.mxk span{font-size:.7rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;line-height:1.2}.mxk span small{font-size:.6rem}
+.mxk.cur span{color:var(--grape);font-weight:700}
+.mxs{width:100%;max-width:44px;display:flex;flex-direction:column;border-radius:6px 6px 0 0;overflow:hidden;gap:1px}
+.mxs i{display:block;width:100%}.mxl{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:.74rem;color:var(--muted)}.mxl i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.mxs .sv,.mxl .sv{background:var(--grape)}.mxs .sv.over,.mxl .sv.over{background:var(--coral)}.mxs .sf,.mxl .sf{background:#B7BEDA}
+.mxs .sl,.mxl .sl{background:repeating-linear-gradient(45deg,var(--line),var(--line) 3px,transparent 3px,transparent 6px);box-shadow:inset 0 0 0 1px var(--line)}
+.mxs .pl{opacity:.45}
+.mxk.plan{opacity:.85}
 .qk-box{display:flex;flex-direction:column;gap:6px}
 #entryForm.qmode>:not(.row):not(.qk-box):not(#enMode){display:none!important}#entryForm:not(.qmode)>.qk-box{display:none}
 #qkText{width:100%;min-height:44px;resize:none;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px dashed var(--line);background:var(--bg);color:var(--fg,inherit);field-sizing:content;min-height:5.5em;max-height:12em}
@@ -1577,8 +1587,16 @@ function renderReport(){const el=$("rpCard");if(!el||!S.settings)return;
   <div class="rp-sec"><h3>📅 요일별 패턴 <span class="tiny muted" style="font-weight:400">최근 4주</span></h3>
    <div class="vbars" style="grid-template-columns:repeat(7,1fr)">${wk.map((v,i)=>`<div class="${i===wi&&v>0?"hi":""}"><b>${v?manC(v):""}</b><i style="height:${Math.max(2,v/wmx*70)}px"></i><span>${DOW[i]}</span></div>`).join("")}</div>
    <p class="small">${wk[wi]>0?`<b>${DOW[wi]}요일</b>에 지출이 가장 많았어요 (4주 합계 ${man1(wk[wi])})`:"최근 4주 기록이 없어요"}</p></div>
-  ${cyc.length>1?`<div class="rp-sec"><h3>📈 주기별 생활비 흐름</h3><div class="vbars" style="grid-template-columns:repeat(${cyc.length},1fr)">${cyc.map(c=>`<div class="${c.cur?"hi":""}"><b>${manC(c.v)}</b><i style="height:${Math.max(2,c.v/cmx*70)}px"></i><span>${ymShort(c.p)}${c.cur?" (진행)":""}</span></div>`).join("")}</div>
-   </div>`:""}${(()=>{/* 고정비 that really varied month to month (an amount was set for a month): actual vs the usual */
+  <div class="rp-sec" id="mxChart"><h3>📊 월별 지출 <span class="tiny muted" style="font-weight:400">고정비 + 생활비 (카드 결제월 기준)</span></h3>${(()=>{
+    /* per pay month: 고정비 (저축 제외) + 생활비 (variable spend). The running month also shows what's left of its budget, later months are plans. */
+    const fxm=m=>sum(fixedAt(m).filter(x=>!x.saving),x=>x.amount),cols=cyc.map(c=>({p:c.p,fx:fxm(c.p),v:c.v,b:c.b,cur:c.cur,plan:false}));
+    for(let i=1;i<=3;i++){const m=ymAdd(P,i);cols.push({p:m,fx:fxm(m),v:0,b:cycleBudgetFor(m),cur:false,plan:true})}
+    const tot=c=>c.fx+(c.plan?c.b:Math.max(c.v,c.cur?0:0)),mx=Math.max(...cols.map(c=>c.fx+Math.max(c.v,c.b)),1),H=150,px=v=>Math.max(0,Math.round(v/mx*H));
+    const avgFx=cols.filter(c=>!c.plan).length?Math.round(sum(cols.filter(c=>!c.plan),c=>c.fx)/cols.filter(c=>!c.plan).length):0;
+    return `<div class="mxc" style="grid-template-columns:repeat(${cols.length},1fr);height:${H+44}px">${cols.map(c=>{const vv=c.plan?c.b:c.v,over=!c.plan&&!c.cur&&c.v>c.b,left=c.cur?Math.max(0,c.b-c.v):0,total=c.fx+vv+left,tip=`${ymKo(c.p)} 결제 · 고정비 ${num(c.fx)} + 생활비 ${num(vv)}${c.cur?` (예산 ${num(c.b)} 중 ${num(left)} 남음)`:c.plan?" (예산 기준 예상)":` (예산 ${num(c.b)})`} = ${num(c.fx+vv)}원`;
+      return `<button type="button" class="mxk ${c.cur?"cur":""} ${c.plan?"plan":""}" data-tip="${esc(tip)}" data-tipbox="mxTip"><b>${manC(c.fx+vv)}</b><div class="mxs" style="height:${px(c.fx+Math.max(vv+left,0))}px"><i class="sv${over?" over":""}${c.plan?" pl":""}" style="height:${px(vv)}px"></i>${left?`<i class="sl" style="height:${px(left)}px"></i>`:""}<i class="sf${c.plan?" pl":""}" style="height:${px(c.fx)}px"></i></div><span>${ymShort(c.p)}${c.cur?"<small>진행</small>":c.plan?"<small>예상</small>":""}</span></button>`}).join("")}</div>
+    <div class="mxl"><span><i class="sf"></i>고정비</span><span><i class="sv"></i>생활비</span><span><i class="sv over"></i>예산 초과</span><span><i class="sl"></i>남은 예산</span></div>
+    <div class="tiny muted" id="mxTip">막대를 누르면 그 달 숫자가 보여요.</div>`})()}</div>${(()=>{/* 고정비 that really varied month to month (an amount was set for a month): actual vs the usual */
     const vs=((S.fixed&&S.fixed.items)||[]).filter(it=>!it.saving&&it.overrides&&Object.keys(it.overrides).some(k=>cyc.some(c=>c.p===k)));if(!vs.length)return"";
     return `<div class="rp-sec"><h3>📌 달마다 달라진 고정비</h3>${vs.map(it=>{const ms=cyc.map(c=>{const x=fixedAt(c.p).find(y=>y.id===it.id);return x?{p:c.p,a:x.amount,ov:x.ov}:null}).filter(Boolean),fi=ms.findIndex(m=>m.ov),sh=fi<0?ms:ms.slice(fi),base=ms.length?Math.max(...ms.filter(m=>!m.ov).map(m=>m.a),0):0;
       return `<div class="vfx"><b>${esc(it.name)}</b><div class="vch">${sh.map((m,i)=>{const prev=i?sh[i-1].a:null,d=prev!=null&&m.a!==prev?m.a-prev:null;return `<span class="chip ${m.ov?"good":"plain"}">${ymShort(m.p)} ${num(m.a)}원${m.ov?" ✓":" ~"}${d?` <i class="${d>0?"bad-t":"good-t"}">${d>0?"+":"−"}${num(Math.abs(d))}</i>`:""}</span>`}).join("")}</div></div>`}).join("")}<p class="tiny muted">✓ 실제 금액 · ~ 예상(평소 금액)</p></div>`})()}`;
