@@ -961,7 +961,7 @@ function simulateRun(extra,plan){
   for(let i=0;i<120;i++){
     const inst=(ITEMS().length?sum(ITEMS(),x=>bill(x,ym)):baseAt(ym))+newInstAt(ym)-freeOwnAt(ym),liv=budgetIn(ym,plan)+extra-cyclePledge(cycleOf(ym));
     const ab=Object.keys(closed).length?null:appBill(ym);
-    const inc=(ab!=null?incomeAt(ym)-fixedCash(ym)-ab+fundCardIn(ym)-buf:incomeAt(ym)-fixedTotal(ym)-liv-inst-buf)+intBack+extraAt(ym)+(ab!=null?backIn(ym):0)-fundGapAt(ym);
+    const inc=(ab!=null?incomeAt(ym)-fixedCash(ym)-ab+fundCardIn(ym)-buf:incomeAt(ym)-fixedTotal(ym)-liv-inst-buf)+intBack+extraAt(ym)+(ab!=null?backIn(ym)-backGot(ym):-backGot(ym))-fundGapAt(ym);
     pot+=inc;let paid=0;const pre=[],lp=[];
     for(const l of loans){if(!l.d.due||l.bal<=0.5||pot<=0)continue;const a=Math.min(pot,dueShare(l.d,l.bal,ym),l.bal);l.bal-=a;pot-=a;paid+=a;lp.push({n:l.d.name,a});if(l.bal<=0.5){l.done=ym;intBack+=l.int}}
     for(const l of loans)if(l.d.due&&ym===lastPayBefore(l.d))l.short=Math.max(0,Math.round(l.bal));
@@ -1057,7 +1057,8 @@ const ACC=[["hana","acHana"],["kbank","acKbank"],["woori","acWoori"],["toss","ac
 const accTotal=a=>a?sum(ACC,([k])=>a[k]||0):null;
 const readAcc=()=>Object.fromEntries(ACC.map(([k,id])=>[k,parseNum($(id).value)]));
 function cashNow(){const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),last=snaps[snaps.length-1],a=S.accounts;
-  if(a&&(!last||(a.updatedAt||"")>(last.savedAt||"")))return accTotal(a);return last?last.cash:null}
+  /* prepayments recorded after the balances were saved have already left the account */
+  if(a&&(!last||(a.updatedAt||"")>(last.savedAt||"")))return accTotal(a)-sum(S.payments.filter(p=>(p.createdAt||"")>(a.updatedAt||"")),p=>p.amount);return last?last.cash:null}
 
 /* ---------- days, streaks, badges ---------- */
 const HK=["noInst","noRevolve","appCheck","48h"];
@@ -1123,6 +1124,8 @@ const extraHanaAt=ym=>sum(S.wins.filter(w=>w.kind==="sell"&&w.acct!=="kbank"&&pl
 const cashWin=M=>({start:ymDay(ymAdd(M,-1),PAY()),end:addDays(ymDay(M,PAY()),-1)});
 const kbankInAt=c=>sum(S.wins.filter(w=>w.kind==="sell"&&w.acct==="kbank"&&inRange(w.date,c)),w=>w.amount);
 /* money I paid on my card for others (곗돈 등) and get back in cash: it offsets that charge in the same card bill */
+/* the part already received sits in the saved balances, so the plan only owes that charge on its card bill */
+const backGot=ym=>sum(S.entries.filter(e=>e.back&&e.excl&&e.method==="lotte"&&e.amount>0&&S.tasks["back-"+e.id]&&payYmOf(e.date)===ym),e=>e.amount);
 const backIn=ym=>sum(S.entries.filter(e=>e.back&&e.excl&&e.method==="lotte"&&e.amount>0&&payYmOf(e.date)===ym),e=>e.amount);
 function cycleSummary(){
   const c=cycleOf(payYmOf(TODAY)),B=cycleBudgetFor(payYmOf(TODAY))-cyclePledge(c),spent=sum(entriesIn(c),e=>e.amount);
