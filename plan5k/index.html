@@ -1059,9 +1059,16 @@ function payPlan(M){
 const ACC=[["hana","acHana"],["kbank","acKbank"],["woori","acWoori"],["toss","acToss"],["shinhan","acShinhan"],["stock","acStock"],["youth","acYouth"],["housing","acHousing"],["pension","acPension"]];
 const accTotal=a=>a?sum(ACC,([k])=>a[k]||0):null;
 const readAcc=()=>Object.fromEntries(ACC.map(([k,id])=>[k,parseNum($(id).value)]));
+/* money that only passes through: 토스뱅크 holds this month's auto-debits until they leave, and the 경조사 저금통 is gift money
+   (the plan already counts the monthly 경조사 transfer as spent). Neither is free cash for the plan, so balances leave them out. */
+function tossDue(at){const M0=dom(at)>=PAY()?ymOf(at):ymAdd(ymOf(at),-1),end=ymDay(ymAdd(M0,1),PAY());
+  return fixedAt(M0).filter(x=>x.acct==="토스뱅크"&&!x.card&&!x.src&&x.amount>0).map(x=>{if(!x.day)return{x,d:null};let d=ymDay(ymOf(at),x.day);if(d<at)d=ymDay(ymAdd(ymOf(at),1),x.day);return{x,d}}).filter(o=>!o.d||o.d<end).sort((a,b)=>(a.d||"9")<(b.d||"9")?-1:1)}
+const heldIn=(a,at)=>Math.min(a.toss||0,sum(tossDue(at),o=>o.x.amount))+(a.shinhan||0);
+const snapCash=s=>s.hana!=null?accTotal(s)-heldIn(s,iso(new Date(s.savedAt||s.ym+"-28"))):s.cash;
+const snapNet=s=>s.hana!=null?(s.deposit||0)+snapCash(s)-(s.debt||0):s.net;
 function cashNow(){const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),last=snaps[snaps.length-1],a=S.accounts;
   /* prepayments recorded after the balances were saved have already left the account */
-  if(a&&(!last||(a.updatedAt||"")>(last.savedAt||"")))return accTotal(a)-sum(S.payments.filter(p=>(p.createdAt||"")>(a.updatedAt||"")),p=>p.amount);return last?last.cash:null}
+  if(a&&(!last||(a.updatedAt||"")>(last.savedAt||"")))return accTotal(a)-heldIn(a,iso(new Date(a.updatedAt||Date.now())))-sum(S.payments.filter(p=>(p.createdAt||"")>(a.updatedAt||"")),p=>p.amount);return last?snapCash(last)-sum(S.payments.filter(p=>(p.createdAt||"")>(last.savedAt||"")),p=>p.amount):null}
 
 /* ---------- days, streaks, badges ---------- */
 const HK=["noInst","noRevolve","appCheck","48h"];
@@ -1240,7 +1247,7 @@ function renderCal(){
 function questItems(){
   const it=[],d=dom(TODAY),M=ymOf(TODAY),day=S.days[TODAY]||{},todays=S.entries.filter(e=>e.date===TODAY);
   const unc=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).length;
-  {const fxt=fixedOn(TODAY);if(fxt.length){const k="fx-"+TODAY;it.push({e:"📌",task:k,done:!!S.tasks[k],t:`오늘 나가는 고정비 ${man1(sum(fxt,x=>x.amount))}`,s:fxt.map(x=>`${x.name} ${num(x.amount)} ${x.card?"카드":x.acct||"통장"}`).join(" · ")+" · 잘 빠졌는지 확인"})}}
+  {const fxt=fixedOn(TODAY);if(fxt.length){const k="fx-"+TODAY;it.push({e:"📌",task:k,done:!!S.tasks[k],t:`오늘 나가는 고정비 ${man1(sum(fxt,x=>x.amount))}`,s:fxt.map(x=>`${x.name} ${num(x.amount)} ${x.card?"카드":x.src?x.src+"에서":x.acct||"통장"}`).join(" · ")+" · 잘 빠졌는지 확인"})}}
   S.entries.filter(e=>e.back&&e.excl&&e.amount>0&&e.date>=addDays(TODAY,-45)).forEach(e=>{const k="back-"+e.id;if(S.tasks[k]&&e.date<addDays(TODAY,-1))return;
     it.push({e:"💵",task:k,done:!!S.tasks[k],t:`돌려받을 돈 ${man1(e.amount)}${e.memo?` · ${e.memo}`:""}`,s:`${md(e.date)} 내 카드로 대신 결제 · 받으면 ${CARDACC()}에 넣어 카드값에 보태요 (생활비로 쓰지 않기)`})});
   const pnd=S.entries.filter(e=>e.pending&&e.amount<=0);if(pnd.length)it.push({e:"↩️",done:false,t:`결제 취소 예정 ${pnd.length}건`,s:"카드 앱에 취소가 떴는지 확인",btn:["보기","go:records"]});
@@ -1584,7 +1591,7 @@ function renderDash(){
   const startNet=goalBase(),GL=GOALS(),lastG=GL[GL.length-1],target=lastG?lastG.net:startNet+(st.targetGain||0),gain=target-startNet,fin=st.finalTarget||1e8,goalYm=lastG?lastG.ym:st.targetYm||"2027-12";
   const lo=Math.min(startNet,now,0),span=Math.max(1,fin-lo),pos=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
   $("road").innerHTML=`<div class="ln"></div><div class="fill" style="width:${pos(now)}%"></div><div class="mk lo" style="left:${pos(0)}%"><b>🚩</b>0</div>${(GL.length?GL:[{net:target}]).map((g,i)=>`<div class="mk lo" style="left:${pos(g.net)}%"><b>🏁</b>${GL.length>1?`${i+1}차 `:""}${man(g.net)}</div>`).join("")}${GL.some(g=>g.net>=fin-1e6)?"":`<div class="mk lo" style="left:${pos(fin)}%"><b>🏆</b>${man(fin)}</div>`}<div class="me" style="left:${pos(now)}%">🐷</div>`;
-  const yNow=["youth","housing","pension"].reduce((t,k)=>t+((S.accounts&&S.accounts[k])||0),0),chips=[`<span class="chip plain">보증금 ${man(st.deposit||0)} + 통장·증권 ${man((lastCash||0)-yNow)}${yNow?` + 적금 ${man(yNow)}`:""} − 빚 ${man(T)}</span>`];if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip plain">통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
+  const yNow=["youth","housing","pension"].reduce((t,k)=>t+((S.accounts&&S.accounts[k])||0),0),chips=[`<span class="chip plain">보증금 ${man(st.deposit||0)} + 통장·증권 ${man((lastCash||0)-yNow)}${yNow?` + 적금 ${man(yNow)}`:""} − 빚 ${man(T)}</span>`].concat((()=>{const a=S.accounts;if(!a||!a.updatedAt)return[];const hd=heldIn(a,iso(new Date(a.updatedAt)));return hd?[`<span class="chip plain">토스뱅크·경조사 저금통 ${man1(hd)}은 곧 나갈 돈이라 빼고 계산해요</span>`]:[]})());if(lastCash==null)chips.push('<span class="chip warn">통장 잔액을 한 번 기록하면 정확해져요</span>');else if(S.accounts&&!snaps.length)chips.push('<span class="chip plain">통장 중 일부만 적었어요. 월말에 모두 적어 주세요</span>');
   if(snaps.length){const sYm=snaps[0].ym,tYm=goalYm,sp=Math.max(1,ymDiff(sYm,tYm)),k=Math.min(sp,Math.max(0,ymDiff(sYm,ymOf(TODAY)))),gap=now-(startNet+gain*k/sp);chips.push(`<span class="chip ${gap>=0?"good":"bad"}">목표 경로보다 ${signed(gap)}</span>`)}
   $("nwChips").innerHTML=chips.join("");
   /* the next flag on the road, how far it is and when this plan gets there */
@@ -1648,7 +1655,7 @@ function stepPreview(){
   else $("spPreview").innerHTML=a>0?`${r.goal}이 <span class="good-t">${fasterTxt(a)} 빨라져요</span>${stepMode==="sell"?($("spAcct").value==="kbank"?" · 다음 월급날 케뱅 채우기에서 그만큼 덜 보내요":` · ${ymKo(planYmOf((v=>v&&v<=TODAY?v:TODAY)($("spDate").value)))} 선결제에 더해져요`):" · 그 돈은 쓰지 않은 채로 두면 돼요"}`:"";
 }
 /* the goal is measured from a fixed start: the first month-end record, or deposit − debt when the app started */
-function goalBase(){const st=ST(),snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1);return snaps.length?snaps[0].net:(st.deposit||0)+(st.startCash||0)-(st.startDebt||totalDebt())}
+function goalBase(){const st=ST(),snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1);return snaps.length?snapNet(snaps[0]):(st.deposit||0)+(st.startCash||0)-(st.startDebt||totalDebt())}
 /* goals: up to two stages [{ym, gain}] measured from goalBase(). Stage 1 sets 생활비 from now to its month,
    stage 2 sets 생활비 from the month after goal 1 to goal 2. Each is the most a month can take (1천 원 steps) and still arrive, so the goal is passed by as little as possible. */
 let GOALC={sig:null,res:null},GF=null;
@@ -1767,13 +1774,13 @@ function renderProjection(sim,now,target){
     (altAfter?`💰 그 뒤 매달 <b>${man(altAfter.save)}</b> 저축<br>`:"")+
     (h2?`🏆 ${man(fin)} ${ymKo(h2.ym)} <span class="${less?"good-t":"bad-t"}">(${Math.abs(md2)}개월 ${less?"빨리":"늦게"})</span>`:"");
   const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1);let pace="";
-  if(snaps.length>1){const f=snaps[0],l=snaps[snaps.length-1],m=Math.max(1,ymDiff(f.ym,l.ym)),act=(l.net-f.net)/m;pace=` 실제 순자산은 월 ${dm(Math.round(act))}씩 늘고 있어요.`}
+  if(snaps.length>1){const f=snaps[0],l=snaps[snaps.length-1],m=Math.max(1,ymDiff(f.ym,l.ym)),act=(snapNet(l)-snapNet(f))/m;pace=` 실제 순자산은 월 ${dm(Math.round(act))}씩 늘고 있어요.`}
   $("pjNote").textContent=String(pace||"").replace(/^\s*·\s*/,"");
 }
 function drawChart(snaps,startYm,tYm,startNet,target,proj){
   proj=(proj||[]).filter(p=>p.ym<=tYm);const pStart=proj.length?proj[0].ym:startYm;if(!snaps.length)startYm=pStart<startYm?pStart:startYm;
   const W=600,H=220,L=58,R=16,Tp=18,B=28,endYm=[tYm,...snaps.map(s=>s.ym)].sort().pop(),n=Math.max(1,ymDiff(startYm,endYm));
-  const vals=snaps.map(s=>s.net).concat(proj.map(p=>p.net)).concat(target!=null?[target,startNet]:[0,ST().targetGain||0]);
+  const vals=snaps.map(snapNet).concat(proj.map(p=>p.net)).concat(target!=null?[target,startNet]:[0,ST().targetGain||0]);
   let lo=Math.min(0,...vals),hi=Math.max(...vals,1);const step=[1e6,2e6,5e6,1e7,2e7].find(s=>(hi-lo)/s<=5)||5e7;
   lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;if(hi===lo)hi=lo+step;
   const x=ym=>L+(W-L-R)*ymDiff(startYm,ym)/n,y=v=>Tp+(H-Tp-B)*(1-(v-lo)/(hi-lo));let g="";
@@ -1783,9 +1790,9 @@ function drawChart(snaps,startYm,tYm,startNet,target,proj){
   if(proj.length>1){const sw=(W-L-R)/n;proj.forEach((p,i)=>{if(i%3===2||i===proj.length-1)g+=`<circle class="pdot" cx="${x(p.ym)}" cy="${y(p.net)}" r="3.5"/>`;g+=`<rect class="hit" x="${x(p.ym)-sw/2}" y="${Tp}" width="${sw}" height="${H-Tp-B}" data-tip="${esc(mix(p))}"/>`})}
   if(proj.length>1)g+=`<path class="proj" d="M${proj.map(p=>x(p.ym)+","+y(p.net)).join(" L")}"/><text class="axis" x="${x(proj[proj.length-1].ym)-4}" y="${y(proj[proj.length-1].net)+16}" text-anchor="end">예상 ${man(proj[proj.length-1].net)}</text>`;
   if(target!=null)g+=`<path class="target" d="M${x(startYm)},${y(startNet)} L${x(tYm)},${y(target)}"/><text class="axis" x="${x(tYm)-4}" y="${y(target)-8}" text-anchor="end">목표 ${man(target)}</text>`;
-  if(snaps.length){const pts=snaps.map(s=>[x(s.ym),y(s.net)]);
+  if(snaps.length){const pts=snaps.map(s=>[x(s.ym),y(snapNet(s))]);
     if(pts.length>1)g+=`<path class="area" d="M${pts[0][0]},${y(Math.max(lo,0))} L${pts.map(p=>p.join(",")).join(" L")} L${pts[pts.length-1][0]},${y(Math.max(lo,0))} Z"/><path class="line" d="M${pts.map(p=>p.join(",")).join(" L")}"/>`;
-    snaps.forEach((s,i)=>{g+=`<circle class="dot" cx="${pts[i][0]}" cy="${pts[i][1]}" r="${i===snaps.length-1?6:4}"/><circle class="hit" cx="${pts[i][0]}" cy="${pts[i][1]}" r="16" data-tip="${esc(`${ymKo(s.ym)} 실제 순자산 ${man(s.net)} = 보증금 ${man(s.deposit||0)} + 통장 ${man(s.cash||0)} − 빚 ${man(s.debt||0)}`)}"/>`});
+    snaps.forEach((s,i)=>{g+=`<circle class="dot" cx="${pts[i][0]}" cy="${pts[i][1]}" r="${i===snaps.length-1?6:4}"/><circle class="hit" cx="${pts[i][0]}" cy="${pts[i][1]}" r="16" data-tip="${esc(`${ymKo(s.ym)} 실제 순자산 ${man(snapNet(s))} = 보증금 ${man(s.deposit||0)} + 통장 ${man(snapCash(s)||0)} − 빚 ${man(s.debt||0)}`)}"/>`});
     const lp=pts[pts.length-1];g+=`<text class="lbl" x="${Math.min(lp[0]+8,W-R-60)}" y="${lp[1]-10}">${man(snaps[snaps.length-1].net)}</text>`;
   }else g+=`<text class="axis" x="${(L+W-R)/2}" y="${Tp+14}" text-anchor="middle">월말 잔액을 기록하면 실제 순자산 선이 그려져요</text>`;
   $("nwChart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="월별 순자산과 목표 경로">${g}</svg>`;
@@ -2088,7 +2095,7 @@ $("nwForm").addEventListener("input",()=>{$("acSum").textContent=won(accTotal(re
 $("acSave").addEventListener("click",async()=>{try{const a=await saveAccounts();toast(`🏦 잔액 저장 · 합계 ${won(accTotal(a))}`)}catch(_){}});
 $("nwForm").addEventListener("submit",async e=>{
   e.preventDefault();const ym=$("nwMonth").value;if(!ym){toast("월을 골라 주세요");return}
-  const acc=readAcc(),cash=accTotal(acc),debt=totalDebt(),deposit=ST().deposit||0;
+  const acc=readAcc(),cash=accTotal(acc)-heldIn(acc,TODAY),debt=totalDebt(),deposit=ST().deposit||0;
   try{await saveAccounts();await put("networth/"+ym,{ym,...acc,cash,deposit,debt,net:deposit+cash-debt,savedAt:new Date().toISOString()});toast(`🐷 ${ymKo(ym)} 순자산 ${won(deposit+cash-debt)}`)}catch(_){}
 });
 const val=id=>$(id)?$(id).value:"";
