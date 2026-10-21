@@ -1002,7 +1002,7 @@ function payTxSteps(M,pl){
   const fundFix=fx.find(x=>/경조사/.test(x.name+" "+x.note)),gapDest=(fundFix&&fixedDest(fundFix))||fundAcc,gapTxt=`경조사 부족분 ${won(pl.gift)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})${gapDest!==fundAcc?" · 다음 단계에서 직접 옮겨요":""}`;
   if(pl.gift&&!byDest[gapDest])byDest[gapDest]=[];
   const dests=Object.entries(byDest).sort(([a],[b])=>(a===fundAcc)-(b===fundAcc));
-  dests.forEach(([d,xs])=>{const extra=d===gapDest?pl.gift:0;steps.push({k:"fx-"+d,from:SALARY,to:d,amt:sum(xs,x=>x.amount)+extra,sub:xs.map(x=>`${x.name} ${won(x.amount)}`).concat(extra?[gapTxt]:[]).join(" + ")+(d==="토스뱅크"?" · 22일 자동이체 전에":"")})});
+  dests.forEach(([d,xs])=>{const extra=d===gapDest?pl.gift:0;steps.push({k:"fx-"+d,from:SALARY,to:d,amt:sum(xs,x=>x.amount)+extra,sub:xs.map(x=>`${x.name} ${won(x.amount)}`).concat(extra?[gapTxt]:[]).join(" + ")+(d==="토스뱅크"?" · 22일 자동이체 전에":xs.length&&xs.every(x=>x.saving)?" · 🐷 저축":"")})});
   /* only the monthly gift transfer is automatic; the shortfall has to be moved into the gift account by hand */
   if(pl.gift&&gapDest!==fundAcc){const ro=(c=>c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28&&(c-0xAC00)%28!==8?"으로":"로")(fundAcc.charCodeAt(fundAcc.length-1));
     steps.push({k:"giftmove",from:gapDest,to:fundAcc,amt:pl.gift,sub:`✋ 자동이체 아님 · 직접 옮기기 (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")}) · 매달 ${won((fundFix&&fundFix.amount)||0)}은 ${(fundFix&&fundFix.day)||22}일에 자동으로 ${fundAcc}${ro} 들어가요`})}
