@@ -248,6 +248,14 @@ details.fxi .fxn{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-sp
 .calscore .stack .g{background:var(--mint)}.calscore .stack .w{background:var(--sun)}.calscore .stack .b{background:var(--coral)}
 #dayWins .fxin-q{width:6.6rem!important;min-width:0;flex:none;height:auto!important;text-align:right;font:inherit;font-weight:800;font-variant-numeric:tabular-nums;border:0!important;border-bottom:1.5px dashed var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:inherit;padding:4px 2px!important}
 #dayWins .fxin-q:focus{outline:none;border-bottom-color:var(--grape)!important}
+#nwForm{display:flex;flex-direction:column;gap:10px}#nwBox>.row{flex-wrap:nowrap}#nwBox .nwm{font:inherit;font-size:.82rem;padding:4px 8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:inherit;width:8.6rem!important;flex:none;height:auto!important}
+.acl{display:flex;flex-direction:column}.ach{font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:.04em;padding:10px 0 2px}
+.acr{display:grid;grid-template-columns:minmax(0,1fr) 7.4rem;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}.ach+.acr{border-top:0}
+.acr .n{font-weight:600;font-size:.9rem;min-width:0}.acr .n small{font-weight:400;font-size:.72rem;color:var(--muted);margin-left:6px}
+.acr input{width:100%;text-align:right;font:inherit;font-weight:700;font-variant-numeric:tabular-nums;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:inherit}
+.acr input:focus{outline:none;border-color:var(--grape)}
+.acs{border-top:2px solid var(--line);margin-top:4px}.acs strong{text-align:right;font-size:1.15rem;font-variant-numeric:tabular-nums}
+.acx{padding:0 0 6px;line-height:1.45}
 .qk-box{display:flex;flex-direction:column;gap:6px}
 #entryForm.qmode>:not(.row):not(.qk-box):not(#enMode){display:none!important}#entryForm:not(.qmode)>.qk-box{display:none}
 #qkText{width:100%;min-height:44px;resize:none;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px dashed var(--line);background:var(--bg);color:var(--fg,inherit);field-sizing:content;min-height:5.5em;max-height:12em}
@@ -614,20 +622,22 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
       </form>
       <div class="list" id="pmList"></div>
     </div>
-    <div class="card" id="nwBox" data-mpart="nw"><h2>🐷 월말 잔액 기록</h2><form id="nwForm" autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
-      <p class="small muted">통장 잔액을 그대로 적어 주세요. 보증금은 자동으로 더해요.</p><p class="tiny muted" id="fundHint"></p>
-      <label class="field"><span>월</span><input type="month" id="nwMonth"></label>
-      <div class="fields">
-        <label class="field"><span>🏦 하나은행 (급여·카드값)</span><input type="text" inputmode="numeric" id="acHana" placeholder="0"></label>
-        <label class="field"><span>🏦 케이뱅크 (체크카드 생활비)</span><input type="text" inputmode="numeric" id="acKbank" placeholder="0"></label>
-        <label class="field"><span>🐷 우리은행 (저축, 파킹통장 전까지)</span><input type="text" inputmode="numeric" id="acWoori" placeholder="0"></label>
-        <label class="field"><span>🏦 토스뱅크 (자동이체)</span><input type="text" inputmode="numeric" id="acToss" placeholder="0"><span class="tiny muted" id="acTossHint" hidden></span></label>
-        <label class="field"><span id="acLGift">🎁 경조사 통장</span><input type="text" inputmode="numeric" id="acShinhan" placeholder="0"></label>
-        <label class="field"><span>📈 증권 (주식·ISA 평가액 합계)</span><input type="text" inputmode="numeric" id="acStock" placeholder="0"></label>
-        <label class="field"><span>🌱 청년미래적금 (낸 돈 합계)</span><input type="text" inputmode="numeric" id="acYouth" placeholder="0"></label>
-        <label class="field"><span>🏠 주택청약 (우리은행)</span><input type="text" inputmode="numeric" id="acHousing" placeholder="0"></label>
-        <label class="field"><span>💼 연금저축 (신한투자증권 평가액)</span><input type="text" inputmode="numeric" id="acPension" placeholder="0"></label>
-        <div class="field"><span>합계</span><strong class="disp" style="font-size:1.3rem;padding-top:8px" id="acSum">0원</strong></div>
+    <div class="card" id="nwBox" data-mpart="nw"><div class="row"><h2>🐷 월말 잔액 기록</h2><input type="month" id="nwMonth" aria-label="월" class="nwm"></div><form id="nwForm" autocomplete="off">
+      <p class="tiny muted" id="fundHint"></p>
+      <div class="acl">
+        <div class="ach">입출금 통장</div>
+        <label class="acr"><span class="n">🏦 하나은행<small>급여·카드값</small></span><input type="text" inputmode="numeric" id="acHana" placeholder="0"></label>
+        <label class="acr"><span class="n">🏦 케이뱅크<small>체크카드</small></span><input type="text" inputmode="numeric" id="acKbank" placeholder="0"></label>
+        <label class="acr"><span class="n">🐷 우리은행<small>저축</small></span><input type="text" inputmode="numeric" id="acWoori" placeholder="0"></label>
+        <label class="acr"><span class="n">🏦 토스뱅크<small>자동이체</small></span><input type="text" inputmode="numeric" id="acToss" placeholder="0"></label>
+        <div class="acx tiny muted" id="acTossHint" hidden></div>
+        <label class="acr"><span class="n" id="acLGift">🎁 경조사 통장</span><input type="text" inputmode="numeric" id="acShinhan" placeholder="0"></label>
+        <div class="ach">저축·투자</div>
+        <label class="acr"><span class="n">📈 증권<small>주식·ISA 평가액</small></span><input type="text" inputmode="numeric" id="acStock" placeholder="0"></label>
+        <label class="acr"><span class="n">🌱 청년미래적금<small>낸 돈</small></span><input type="text" inputmode="numeric" id="acYouth" placeholder="0"></label>
+        <label class="acr"><span class="n">🏠 주택청약<small>우리은행</small></span><input type="text" inputmode="numeric" id="acHousing" placeholder="0"></label>
+        <label class="acr"><span class="n">💼 연금저축<small>평가액</small></span><input type="text" inputmode="numeric" id="acPension" placeholder="0"></label>
+        <div class="acr acs"><span class="n">합계</span><strong id="acSum">0원</strong></div>
       </div>
       <p class="tiny muted" id="acAsOf"></p>
       <div class="btns"><button class="btn" type="submit" style="flex:1">월말 잔액으로 기록</button><button class="btn ghost" type="button" id="acSave">잔액만 저장</button></div>
@@ -1505,7 +1515,7 @@ function renderMonth(){
    /* auto-debits from 토스뱅크 between today and the next payday (the money for them was moved in on payday) */
    const due=fixedAt(M0).filter(x=>x.acct==="토스뱅크"&&!x.card&&x.amount>0).map(x=>{if(!x.day)return{x,d:null};let d=ymDay(ymOf(TODAY),x.day);if(d<TODAY)d=ymDay(ymAdd(ymOf(TODAY),1),x.day);return{x,d}}).filter(o=>!o.d||o.d<end).sort((a,b)=>(a.d||"9")<(b.d||"9")?-1:1);
    const t=sum(due,o=>o.x.amount),el=$("acTossHint");el.hidden=!t;
-   if(t)el.textContent=`다음 월급날 전까지 자동으로 빠질 돈 ${won(t)} (${due.map(o=>`${o.d?md(o.d):"날짜 미정"} ${o.x.name}`).join(" · ")}). 지금 적을 땐 이만큼 빼고 적어요. 다 빠진 뒤라면 잔액 그대로 적으면 돼요.`}
+   if(t)el.innerHTML=`↳ 다음 월급날 전에 <b>${won(t)}</b>이 더 빠져요. 아직 안 빠졌으면 뺀 금액을 적어요.<details><summary>빠질 항목 ${due.length}건</summary>${due.map(o=>`${o.d?md(o.d):"날짜 미정"} ${esc(o.x.name)} ${num(o.x.amount)}`).join("<br>")}</details>`}
   $("fundHint").textContent=CATS().filter(c=>c.fund).map(c=>`🎁 ${c.fund.bank} 예상 잔액 ${num(fundBalance(c))} (매달 이체 + 모자랄 때 채운 돈 − 쓴 돈)`).join(" · ");
   if(!$("nwForm").contains(document.activeElement)){const a=S.accounts||{};ACC.forEach(([k,id])=>$(id).value=a[k]!=null?num(a[k]):"");}
   $("acSum").textContent=won(accTotal(readAcc()));
