@@ -994,7 +994,7 @@ function fixedDest(x){if(x.acct)return x.acct===SALARY||x.acct==="급여 공제"
 function payTxSteps(M,pl){
   const early=!!ST().payEarly,pd=early?ymDay(M,PAY()):ymDay(M,CARD()),steps=[],fx=fixedAt(M).filter(x=>!x.card&&x.amount>0);
   const bm=balMode(M),rows=bm?allocate(bm.room,TODAY):pl.avail>0?allocate(pl.avail,pd):[],items=rows.filter(r=>r.kind==="item"),loans=rows.filter(r=>r.kind==="loan"),pots=rows.filter(r=>r.kind==="pot");
-  const prepay=sum(items,r=>r.amt),savePot=sum(pots,r=>r.amt),rest=Math.max(0,pl.avail-sum(rows,r=>r.amt)),fundAcc=(CATS().find(c=>c.fund)||{fund:{}}).fund.bank||"경조사 통장";
+  const prepay=sum(items,r=>r.amt),savePot=sum(pots,r=>r.amt),rest=bm?0:Math.max(0,pl.avail-sum(rows,r=>r.amt)),fundAcc=(CATS().find(c=>c.fund)||{fund:{}}).fund.bank||"경조사 통장";
   /* the card is paid from CARDACC: move money there only if it isn't the salary account; the check-card allowance goes to 케이뱅크 */
   const ca=CARDACC(),toCard=ca===SALARY?0:pl.card-pl.giftCard+prepay;
   const byDest={};fx.forEach(x=>{const d=fixedDest(x);if(d)(byDest[d]=byDest[d]||[]).push(x)});
@@ -1011,7 +1011,9 @@ function payTxSteps(M,pl){
     steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,head:auto&&ce.length?`케뱅에서 쓴 생활비 ${ce.length}건 다시 채우기`:"",sub:auto&&ce.length?ce.map(e=>`${md(bDate(e))} ${e.memo||catName(e.cat)} ${won(e.amount)}`).concat(kin?[`케뱅으로 들어온 부수입 −${won(kin)}`]:[]).join(" + "):"체크카드로 쓸 생활비"})}
   if(pl.giftCard)steps.push({k:"gc",from:fundAcc,to:ca,amt:pl.giftCard,sub:"카드로 산 경조사 선물만큼 경조사 통장에서 채워요"});
   steps.push({k:"pay",act:`롯데카드 앱 › ${early?"즉시결제":"결제계좌 확인"}`,amt:pl.card,sub:early?`결제예정금액 › 즉시결제 · ${ca}에서 빠져요`:`${md(pd)}에 ${ca}에서 자동으로 빠져요`});
-  if(items.length)steps.push({k:"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 '선결제·상환 기록'에 적기"});
+  if(bm&&bm.paid.length){const nm=p=>{const it=ITEMS().find(x=>x.id===p.itemId),d=LOANS().find(x=>x.id===p.loanId);return it?it.name:d?d.name:p.memo||"선결제"};
+    steps.push({k:"pre-done",done:true,act:"롯데카드 앱 › 건별 선결제 (기록함)",amt:sum(bm.paid,p=>p.amount),sub:bm.paid.map(p=>`${nm(p)} ${won(p.amount)}`).join(" + ")})}
+  if(items.length)steps.push({k:bm&&bm.paid.length?"pre2":"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 '선결제·상환 기록'에 적기"});
   loans.forEach(r=>steps.push({k:"loan-"+r.d.id,from:SALARY,to:r.d.name,amt:r.amt,sub:`중도상환${r.due?` · ${md(r.d.due)} 만기 전 상환`:""} · 하고 나면 '기록'`}));
   if(rest>0)steps.push({k:"save",from:SALARY,to:SAVEACC,amt:rest,sub:"빚을 다 갚고 남는 돈 · 저축"});
   /* what really stays in the salary account: money saved toward the next prepayment, the buffer, and costs that leave it on their own.
@@ -1023,8 +1025,8 @@ function payTxSteps(M,pl){
 }
 function renderPayTx(M,pl,phase){
   const el=$("payTx");if(!el)return;const {steps,auto,keep,ded,left,pot,bm,prepay}=payTxSteps(M,pl),pre=phase==="before";
-  el.innerHTML=`<div class="row"><h2>💸 ${md(ymDay(M,PAY()))} 월급날 이체 순서</h2>${pre?`<span class="chip">D-${dayDiff(TODAY,ymDay(M,PAY()))}</span>`:""}</div><p class="small muted">위에서부터 하나씩 하고 체크해요.</p>${bm?`<p class="tiny muted">💡 선결제는 ${md(bm.at)}에 저장한 ${SALARY} 잔액 ${won(bm.hana)} 기준으로 골랐어요${bm.held?` · 돌려받은 ${won(bm.held)}은 다음 카드값용이라 빼고`:""}</p>`:""}
-    <ol class="tx">${steps.map((s,i)=>{const id=`tx-${M}-${s.k}`,dn=!!S.tasks[id];return `<li class="${dn?"done":""}"><span class="txn">${dn?"✓":i+1}</span><div><div class="txr">${s.act?`<span>${esc(s.act)}</span>`:`<span class="acc">${esc(s.from)}</span><span>→</span><span class="acc">${esc(s.to)}</span>`}</div>${s.sub?txSub(s.sub,s.head):""}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(Math.round(s.amt))}</span><input type="checkbox" data-task="${id}" ${dn?"checked":""} aria-label="${i+1}번 했어요"></div></li>`}).join("")}
+  el.innerHTML=`<div class="row"><h2>💸 ${md(ymDay(M,PAY()))} 월급날 이체 순서</h2>${pre?`<span class="chip">D-${dayDiff(TODAY,ymDay(M,PAY()))}</span>`:""}</div><p class="small muted">위에서부터 하나씩 하고 체크해요.</p>${bm?`<p class="tiny muted">💡 선결제는 ${md(bm.at)}에 저장한 ${SALARY} 잔액 ${won(bm.saved)}${bm.paid.length?`에서 기록한 선결제를 뺀 ${won(bm.hana)}`:""} 기준으로 골랐어요${bm.held?` · 돌려받은 ${won(bm.held)}은 다음 카드값용이라 빼고`:""}</p>`:""}
+    <ol class="tx">${steps.map((s,i)=>{const id=`tx-${M}-${s.k}`,dn=!!S.tasks[id]||!!s.done;return `<li class="${dn?"done":""}"><span class="txn">${dn?"✓":i+1}</span><div><div class="txr">${s.act?`<span>${esc(s.act)}</span>`:`<span class="acc">${esc(s.from)}</span><span>→</span><span class="acc">${esc(s.to)}</span>`}</div>${s.sub?txSub(s.sub,s.head):""}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(Math.round(s.amt))}</span><input type="checkbox" data-task="${id}" ${dn?"checked":""} aria-label="${i+1}번 했어요"></div></li>`}).join("")}
     ${bm?"":`<li class="${S.tasks[`tx-${M}-keep`]?"done":""}"><span class="txn" style="background:var(--muted)">🏦</span><div><div class="txr"><span class="acc">${SALARY}</span><span>에 그대로 두기</span></div><div class="txs">${auto.map(x=>`${esc(x.name)} ${won(x.amount)}`).join(" · ")||"남는 돈 없음"}${ded.length?`<br>${ded.map(x=>`${esc(x.name)} ${won(x.amount)}`).join(" · ")}은 실수령에서 따로 빠져요`:""}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(keep)}</span>${pot?`<input type="checkbox" data-task="tx-${M}-keep" data-pot="${M}:${Math.round(pot)}" ${S.tasks[`tx-${M}-keep`]?"checked":""} aria-label="모아 둔 돈 확인">`:""}</div></li>`}</ol>
     ${bm?`<p class="small good-t" style="margin-top:10px">✅ 이렇게 하면 ${SALARY}에 ${won(bm.hana-prepay-bm.stay)}이 남아요${bm.held?` (그중 ${won(bm.held)}은 ${md(ymDay(ymAdd(M,1),PAY()))} 카드값용 · 그때까진 비상금)`:""}</p>`:`<p class="small ${Math.abs(left)<1000?"good-t":"bad-t"}" style="margin-top:10px">${Math.abs(left)<1000?`✅ 이렇게 하면 ${SALARY}에 ${won(keep)}이 남아요`:left>0?`${SALARY}에 ${won(left)}이 더 남아요`:`⚠️ ${won(-left)}이 모자라요 · 위 '선결제·상환 가능'이 마이너스예요`}</p>${left<=-1000?balHint(-left):""}`}`;
 }
@@ -1032,10 +1034,11 @@ function renderPayTx(M,pl,phase){
 /* after payday: once a 하나은행 balance is saved, the prepay step works from the real balance instead of the planned surplus.
    Money given back for charges on a later card bill (곗돈·여행 대신 결제) and fixed costs still to leave 하나은행 are held back. */
 function balMode(M){const a=S.accounts||{},pd=ymDay(M,PAY());if(!(a.hana>0)||!a.updatedAt||iso(new Date(a.updatedAt))<pd||TODAY<pd||TODAY>=ymDay(ymAdd(M,1),PAY()))return null;
-  const lastPay=S.payments.map(p=>p.createdAt||p.date||"").sort().pop()||"";if(lastPay>a.updatedAt)return null;
+  /* prepayments recorded after the balance was saved have already left it */
+  const paid=S.payments.filter(p=>(p.createdAt||"")>a.updatedAt),hana=a.hana-sum(paid,p=>p.amount);
   const stay=sum(fixedAt(M).filter(x=>!x.card&&!fixedDest(x)&&x.acct!=="급여 공제"&&x.amount>0&&x.day&&x.day>dom(TODAY)),x=>x.amount),
     held=sum(S.entries.filter(e=>e.back&&e.excl&&e.method==="lotte"&&e.amount>0&&S.tasks["back-"+e.id]&&payYmOf(e.date)>M),e=>e.amount);
-  return{hana:a.hana,stay,held,room:Math.max(0,a.hana-stay-held),at:iso(new Date(a.updatedAt))}}
+  return{hana,saved:a.hana,paid,stay,held,room:Math.max(0,hana-stay-held),at:iso(new Date(a.updatedAt))}}
 /* a long transfer note folds: "주거비 686,000원 외 6건 ›" and the full list on tap */
 function txSub(t,hd){const parts0=t.split(" + ");if(t.length<=60&&!(hd&&parts0.length>1))return `<div class="txs">${esc(t)}</div>`;const parts=parts0,head=hd||(parts.length>1?`${parts[0].replace(/\s*\(.*$/,"")} 외 ${parts.length-1}건`:t.split(" · ")[0].slice(0,40)+"…");
   return `<details class="txs txd"><summary>${esc(head)}</summary>${parts.length>1?`<div class="txl">${parts.map(p=>{const m=p.match(/^(.*?)\s(−?[\d,]+원)(.*)$/);return m?`<div><span>${esc(m[1])}${m[3]?`<small>${esc(m[3].replace(/^\s*[·(]?\s*/,"").replace(/\)$/,""))}</small>`:""}</span><b>${esc(m[2])}</b></div>`:`<div><span>${esc(p)}</span></div>`}).join("")}</div>`:`<p class="txp">${esc(t).replace(/ · /g,"<br>")}</p>`}</details>`}
