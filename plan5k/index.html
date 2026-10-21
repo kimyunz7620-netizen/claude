@@ -1182,8 +1182,10 @@ function renderToday(){
   $("dayList").innerHTML=list.length||parts.length?list.map(entryRow).join("")+parts.map(partRow).join("")
     :`<p class="empty">${isToday?"아직 없어요.":"이날 기록이 없어요."}</p>`;
   const wl=S.wins.filter(w=>w.date===selDate);
-  const fxd=fixedOn(selDate);
-  $("dayWins").innerHTML=(fxd.length?`<div class="li"><span class="av">📌</span><div><div class="t">고정비 나가는 날</div><div class="s">${fxd.map(x=>`${esc(x.name)} ${fxWhere(x)}`).join(" · ")} · 가계부에 안 적어도 돼요</div></div><div style="text-align:right"><div class="a">${num(sum(fxd,x=>x.amount))}</div></div></div>`:"")+wl.map(w=>`<div class="li win"><span class="av">${w.kind==="skip"?"🙅":"💰"}</span><div><div class="t">${w.kind==="skip"?"참았어요":"부수입"}${w.memo?` <span class="muted" style="font-weight:400">· ${esc(w.memo)}</span>`:""}</div><div class="s">지출 아님 · ${fasterTxt(w.amount)} 당겨짐</div></div><div style="text-align:right"><div class="a">+${num(w.amount)}</div><button type="button" class="btn ghost" style="margin-top:4px;padding:4px 10px;font-size:.76rem" data-delwin="${esc(w.id)}">삭제</button></div></div>`).join("");
+  /* a card fixed cost is billed with the card cycle it falls in, so its real amount is kept on that pay month */
+  const fxd=fixedOn(selDate).map(x=>x.card?{...x,bym:payYmOf(selDate),amount:(fixedAt(payYmOf(selDate)).find(y=>y.id===x.id)||x).amount}:x);
+  $("dayWins").innerHTML=(fxd.length?`<div class="li"><span class="av">📌</span><div><div class="t">고정비 나가는 날</div><div class="s">${fxd.map(x=>`${esc(x.name)} ${fxWhere(x)}`).join(" · ")} · 가계부에 안 적어도 돼요</div></div><div style="text-align:right"><div class="a">${num(sum(fxd,x=>x.amount))}</div></div></div>`+
+    fxd.filter(x=>x.card).map(x=>`<div class="li"><span class="av">💳</span><div><div class="t">${esc(x.name)} 실제 금액</div><div class="s">카드로 나간 금액이 다르면 고쳐요 · ${ymKo(x.bym)} 카드값 예상에 바로 반영</div></div><input type="text" inputmode="numeric" class="fxin" data-fx="${esc(x.id)}" data-ym="${x.bym}" value="${num(x.amount)}" style="width:6.5rem;text-align:right;font-weight:700" aria-label="${esc(x.name)} 실제 금액"></div>`).join(""):"")+wl.map(w=>`<div class="li win"><span class="av">${w.kind==="skip"?"🙅":"💰"}</span><div><div class="t">${w.kind==="skip"?"참았어요":"부수입"}${w.memo?` <span class="muted" style="font-weight:400">· ${esc(w.memo)}</span>`:""}</div><div class="s">지출 아님 · ${fasterTxt(w.amount)} 당겨짐</div></div><div style="text-align:right"><div class="a">+${num(w.amount)}</div><button type="button" class="btn ghost" style="margin-top:4px;padding:4px 10px;font-size:.76rem" data-delwin="${esc(w.id)}">삭제</button></div></div>`).join("");
   const dc=cycleOf(payYmOf(selDate)),df=Math.min(1,(dayDiff(dc.start,selDate)+1)/(dayDiff(dc.start,dc.end)+1)),used=[...new Set(list.filter(e=>!e.excl).map(e=>e.cat))].map(id=>LIVECATS(payYmOf(selDate)).find(c=>c.id===id)).filter(Boolean);
   const fx=[...new Set(list.filter(e=>fundOut(e)).map(e=>e.cat))].map(FUNDCAT).filter(Boolean);
   const fundNote=fx.map(c=>`<span class="chip good">${look(c.id)[0]} ${esc(c.fund.bank)}에서 · 남은 ${num(fundBalance(c))}</span>`).join("");
@@ -2044,7 +2046,9 @@ const incSave=el=>{const v=parseNum(el.value),cur=ST().incomeActual&&ST().income
 document.addEventListener("input",e=>{const el=e.target;if(!(el.classList&&el.classList.contains("incin")))return;const v=parseNum(el.value);el.value=v?num(v):"";clearTimeout(incSave.t);incSave.t=setTimeout(()=>incSave(el),1000)});
 document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("incin")){clearTimeout(incSave.t);incSave(el)}});
 document.addEventListener("visibilitychange",()=>{const el=document.activeElement;if(document.hidden&&el&&el.classList&&el.classList.contains("incin")){clearTimeout(incSave.t);incSave(el)}});
-document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("fxin"))saveFixedOverride(el.dataset.fx,el.dataset.ym,parseNum(el.value))});
+const fxSave=el=>{const v=parseNum(el.value),cur=(fixedAt(el.dataset.ym).find(x=>x.id===el.dataset.fx)||{}).amount;if(v!==cur)saveFixedOverride(el.dataset.fx,el.dataset.ym,v)};
+document.addEventListener("input",e=>{const el=e.target;if(!(el.classList&&el.classList.contains("fxin")))return;const v=parseNum(el.value);el.value=v?num(v):"";clearTimeout(fxSave.t);fxSave.t=setTimeout(()=>fxSave(el),1200)});
+document.addEventListener("change",e=>{const el=e.target;if(el.classList&&el.classList.contains("fxin")){clearTimeout(fxSave.t);fxSave(el)}});
 $("habits").addEventListener("change",saveDay);
 $("spDate").addEventListener("input",()=>stepPreview());
 $("spAcct").addEventListener("change",()=>stepPreview());
