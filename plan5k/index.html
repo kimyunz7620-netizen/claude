@@ -1007,8 +1007,8 @@ function payTxSteps(M,pl){
   if(pl.gift&&gapDest!==fundAcc){const ro=(c=>c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28&&(c-0xAC00)%28!==8?"으로":"로")(fundAcc.charCodeAt(fundAcc.length-1));
     steps.push({k:"giftmove",from:gapDest,to:fundAcc,amt:pl.gift,sub:`✋ 자동이체 아님 · 직접 옮기기 (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")}) · 매달 ${won((fundFix&&fundFix.amount)||0)}은 ${(fundFix&&fundFix.day)||22}일에 자동으로 ${fundAcc}${ro} 들어가요`})}
   if(toCard>0)steps.push({k:"kb",from:SALARY,to:ca,amt:toCard,sub:[`카드값 ${won(pl.card-pl.giftCard)}`,prepay?`할부 선결제용 ${won(prepay)}`:""].filter(Boolean).join(" + ")});
-  if(pl.cashRes){const ce=entriesIn(cycleOf(M),e=>e.method==="cash"&&!imported(e)),kin=kbankInAt(cycleOf(M)),auto=ST().cashReserve==null||ST().cashReserve==="";
-    steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,sub:auto&&ce.length?`케뱅(체크카드)에서 쓴 생활비를 다시 채워요 · `+ce.map(e=>`${md(bDate(e))} ${e.memo||catName(e.cat)} ${won(e.amount)}`).join(" + ")+(kin?` − 케뱅으로 들어온 부수입 ${won(kin)}`:""):"체크카드로 쓸 생활비"})}
+  if(pl.cashRes){const cw=cashWin(M),ce=entriesIn(cw,e=>e.method==="cash"&&!imported(e)),kin=kbankInAt(cw),auto=ST().cashReserve==null||ST().cashReserve==="";
+    steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,head:auto&&ce.length?`케뱅에서 쓴 생활비 ${ce.length}건 다시 채우기`:"",sub:auto&&ce.length?ce.map(e=>`${md(bDate(e))} ${e.memo||catName(e.cat)} ${won(e.amount)}`).concat(kin?[`케뱅으로 들어온 부수입 −${won(kin)}`]:[]).join(" + "):"체크카드로 쓸 생활비"})}
   if(pl.giftCard)steps.push({k:"gc",from:fundAcc,to:ca,amt:pl.giftCard,sub:"카드로 산 경조사 선물만큼 경조사 통장에서 채워요"});
   steps.push({k:"pay",act:`롯데카드 앱 › ${early?"즉시결제":"결제계좌 확인"}`,amt:pl.card,sub:early?`결제예정금액 › 즉시결제 · ${ca}에서 빠져요`:`${md(pd)}에 ${ca}에서 자동으로 빠져요`});
   if(items.length)steps.push({k:"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 '선결제·상환 기록'에 적기"});
@@ -1024,19 +1024,19 @@ function payTxSteps(M,pl){
 function renderPayTx(M,pl,phase){
   const el=$("payTx");if(!el)return;const {steps,auto,keep,ded,left,pot}=payTxSteps(M,pl),pre=phase==="before";
   el.innerHTML=`<div class="row"><h2>💸 ${md(ymDay(M,PAY()))} 월급날 이체 순서</h2>${pre?`<span class="chip">D-${dayDiff(TODAY,ymDay(M,PAY()))}</span>`:""}</div><p class="small muted">위에서부터 하나씩 하고 체크해요.</p>
-    <ol class="tx">${steps.map((s,i)=>{const id=`tx-${M}-${s.k}`,dn=!!S.tasks[id];return `<li class="${dn?"done":""}"><span class="txn">${dn?"✓":i+1}</span><div><div class="txr">${s.act?`<span>${esc(s.act)}</span>`:`<span class="acc">${esc(s.from)}</span><span>→</span><span class="acc">${esc(s.to)}</span>`}</div>${s.sub?txSub(s.sub):""}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(Math.round(s.amt))}</span><input type="checkbox" data-task="${id}" ${dn?"checked":""} aria-label="${i+1}번 했어요"></div></li>`}).join("")}
+    <ol class="tx">${steps.map((s,i)=>{const id=`tx-${M}-${s.k}`,dn=!!S.tasks[id];return `<li class="${dn?"done":""}"><span class="txn">${dn?"✓":i+1}</span><div><div class="txr">${s.act?`<span>${esc(s.act)}</span>`:`<span class="acc">${esc(s.from)}</span><span>→</span><span class="acc">${esc(s.to)}</span>`}</div>${s.sub?txSub(s.sub,s.head):""}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(Math.round(s.amt))}</span><input type="checkbox" data-task="${id}" ${dn?"checked":""} aria-label="${i+1}번 했어요"></div></li>`}).join("")}
     <li class="${S.tasks[`tx-${M}-keep`]?"done":""}"><span class="txn" style="background:var(--muted)">🏦</span><div><div class="txr"><span class="acc">${SALARY}</span><span>에 그대로 두기</span></div><div class="txs">${auto.map(x=>`${esc(x.name)} ${won(x.amount)}`).join(" · ")||"남는 돈 없음"}${ded.length?`<br>${ded.map(x=>`${esc(x.name)} ${won(x.amount)}`).join(" · ")}은 실수령에서 따로 빠져요`:""}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="txa">${num(keep)}</span>${pot?`<input type="checkbox" data-task="tx-${M}-keep" data-pot="${M}:${Math.round(pot)}" ${S.tasks[`tx-${M}-keep`]?"checked":""} aria-label="모아 둔 돈 확인">`:""}</div></li></ol>
     <p class="small ${Math.abs(left)<1000?"good-t":"bad-t"}" style="margin-top:10px">${Math.abs(left)<1000?`✅ 이렇게 하면 ${SALARY}에 ${won(keep)}이 남아요`:left>0?`${SALARY}에 ${won(left)}이 더 남아요`:`⚠️ ${won(-left)}이 모자라요 · 위 '선결제·상환 가능'이 마이너스예요`}</p>${left<=-1000?balHint(-left):""}`;
 }
 
 /* a long transfer note folds: "주거비 686,000원 외 6건 ›" and the full list on tap */
-function txSub(t){if(t.length<=60)return `<div class="txs">${esc(t)}</div>`;const parts=t.split(" + "),head=parts.length>1?`${parts[0].replace(/\s*\(.*$/,"")} 외 ${parts.length-1}건`:t.split(" · ")[0].slice(0,40)+"…";
-  return `<details class="txs txd"><summary>${esc(head)}</summary>${parts.length>1?`<div class="txl">${parts.map(p=>{const m=p.match(/^(.*?)\s([\d,]+원)(.*)$/);return m?`<div><span>${esc(m[1])}${m[3]?`<small>${esc(m[3].replace(/^\s*[·(]?\s*/,"").replace(/\)$/,""))}</small>`:""}</span><b>${esc(m[2])}</b></div>`:`<div><span>${esc(p)}</span></div>`}).join("")}</div>`:`<p class="txp">${esc(t).replace(/ · /g,"<br>")}</p>`}</details>`}
+function txSub(t,hd){const parts0=t.split(" + ");if(t.length<=60&&!(hd&&parts0.length>1))return `<div class="txs">${esc(t)}</div>`;const parts=parts0,head=hd||(parts.length>1?`${parts[0].replace(/\s*\(.*$/,"")} 외 ${parts.length-1}건`:t.split(" · ")[0].slice(0,40)+"…");
+  return `<details class="txs txd"><summary>${esc(head)}</summary>${parts.length>1?`<div class="txl">${parts.map(p=>{const m=p.match(/^(.*?)\s(−?[\d,]+원)(.*)$/);return m?`<div><span>${esc(m[1])}${m[3]?`<small>${esc(m[3].replace(/^\s*[·(]?\s*/,"").replace(/\)$/,""))}</small>`:""}</span><b>${esc(m[2])}</b></div>`:`<div><span>${esc(p)}</span></div>`}).join("")}</div>`:`<p class="txp">${esc(t).replace(/ · /g,"<br>")}</p>`}</details>`}
 /* ---------- payday plan ---------- */
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
   const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),back=backIn(M),extra=extraHanaAt(M)+back;
-  const autoRes=Math.max(0,sum(entriesIn(c,e=>e.method==="cash"&&!imported(e)),e=>e.amount)-kbankInAt(c)) /* only what was spent from 케뱅 since the app started; old-tracker rows were settled before */,manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
+  const autoRes=Math.max(0,sum(entriesIn(cashWin(M),e=>e.method==="cash"&&!imported(e)),e=>e.amount)-kbankInAt(cashWin(M))) /* only what was spent from 케뱅 since the app started; old-tracker rows were settled before */,manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
   const fixed=fixedCash(M),inc=incomeAt(M),gift=fundGapAt(M),giftCard=ab!=null?fundCardIn(M):0,pp=st.prepayPot,potIn=pp&&ymAdd(pp.ym,1)===M&&pp.amount>0?pp.amount:0,avail=inc+extra+potIn-card+giftCard-fixed-gift-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
   return{M,inc,extra,back,potIn,gift,giftCard,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
@@ -1109,6 +1109,8 @@ const planYmOf=d=>dom(d)<(ST().payEarly?PAY():CARD()+1)?ymOf(d):ymAdd(ymOf(d),1)
 const extraAt=ym=>sum(S.wins.filter(w=>w.kind==="sell"&&planYmOf(w.date)===ym),w=>w.amount);
 /* 부수입 that landed in 케뱅 (acct "kbank") is not in the salary account on payday: it shrinks the 케뱅 top-up instead */
 const extraHanaAt=ym=>sum(S.wins.filter(w=>w.kind==="sell"&&w.acct!=="kbank"&&planYmOf(w.date)===ym),w=>w.amount);
+/* 케뱅 top-up window: everything spent from 케뱅 since the last payday, up to the day before this one (cash leaves at once, unlike the card cycle) */
+const cashWin=M=>({start:ymDay(ymAdd(M,-1),PAY()),end:addDays(ymDay(M,PAY()),-1)});
 const kbankInAt=c=>sum(S.wins.filter(w=>w.kind==="sell"&&w.acct==="kbank"&&inRange(w.date,c)),w=>w.amount);
 /* money I paid on my card for others (곗돈 등) and get back in cash: it offsets that charge in the same card bill */
 const backIn=ym=>sum(S.entries.filter(e=>e.back&&e.excl&&e.method==="lotte"&&e.amount>0&&payYmOf(e.date)===ym),e=>e.amount);
