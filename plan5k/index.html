@@ -619,7 +619,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <label class="field"><span>🏦 하나은행 (급여·카드값)</span><input type="text" inputmode="numeric" id="acHana" placeholder="0"></label>
         <label class="field"><span>🏦 케이뱅크 (체크카드 생활비)</span><input type="text" inputmode="numeric" id="acKbank" placeholder="0"></label>
         <label class="field"><span>🐷 우리은행 (저축, 파킹통장 전까지)</span><input type="text" inputmode="numeric" id="acWoori" placeholder="0"></label>
-        <label class="field"><span>🏦 토스뱅크 (자동이체)</span><input type="text" inputmode="numeric" id="acToss" placeholder="0"></label>
+        <label class="field"><span>🏦 토스뱅크 (자동이체)</span><input type="text" inputmode="numeric" id="acToss" placeholder="0"><span class="tiny muted" id="acTossHint" hidden></span></label>
         <label class="field"><span id="acLGift">🎁 경조사 통장</span><input type="text" inputmode="numeric" id="acShinhan" placeholder="0"></label>
         <label class="field"><span>📈 증권 (주식·ISA 평가액 합계)</span><input type="text" inputmode="numeric" id="acStock" placeholder="0"></label>
         <label class="field"><span>🌱 청년미래적금 (낸 돈 합계)</span><input type="text" inputmode="numeric" id="acYouth" placeholder="0"></label>
@@ -1484,6 +1484,12 @@ function renderMonth(){
   if(!$("payForm").contains(document.activeElement)){fillTargets();if(!$("pfDate").value)$("pfDate").value=TODAY;if(!$("pfAmount").value)pfAuto()}
   if(!$("nwMonth").value)$("nwMonth").value=ymOf(TODAY);
   {const fc=CATS().find(c=>c.fund);$("acLGift").textContent=`🎁 ${fc&&fc.fund.bank||"경조사 통장"}`}
+  /* 토스뱅크 only passes money through: what is still due to leave by auto-debit this month shouldn't count as savings */
+  {const end=dom(TODAY)>=PAY()?ymDay(ymAdd(ymOf(TODAY),1),PAY()):ymDay(ymOf(TODAY),PAY()),M0=dom(TODAY)>=PAY()?ymOf(TODAY):ymAdd(ymOf(TODAY),-1);
+   /* auto-debits from 토스뱅크 between today and the next payday (the money for them was moved in on payday) */
+   const due=fixedAt(M0).filter(x=>x.acct==="토스뱅크"&&!x.card&&x.amount>0).map(x=>{if(!x.day)return{x,d:null};let d=ymDay(ymOf(TODAY),x.day);if(d<TODAY)d=ymDay(ymAdd(ymOf(TODAY),1),x.day);return{x,d}}).filter(o=>!o.d||o.d<end).sort((a,b)=>(a.d||"9")<(b.d||"9")?-1:1);
+   const t=sum(due,o=>o.x.amount),el=$("acTossHint");el.hidden=!t;
+   if(t)el.textContent=`다음 월급날 전까지 자동으로 빠질 돈 ${won(t)} (${due.map(o=>`${o.d?md(o.d):"날짜 미정"} ${o.x.name}`).join(" · ")}). 지금 적을 땐 이만큼 빼고 적어요. 다 빠진 뒤라면 잔액 그대로 적으면 돼요.`}
   $("fundHint").textContent=CATS().filter(c=>c.fund).map(c=>`🎁 ${c.fund.bank} 예상 잔액 ${num(fundBalance(c))} (매달 이체 + 모자랄 때 채운 돈 − 쓴 돈)`).join(" · ");
   if(!$("nwForm").contains(document.activeElement)){const a=S.accounts||{};ACC.forEach(([k,id])=>$(id).value=a[k]!=null?num(a[k]):"");}
   $("acSum").textContent=won(accTotal(readAcc()));
