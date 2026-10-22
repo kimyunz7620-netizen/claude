@@ -1030,6 +1030,7 @@ function payTxSteps(M,pl){
   const prepay=sum(items,r=>r.amt),savePot=sum(pots,r=>r.amt),rest=bm?0:Math.max(0,pl.avail-sum(rows,r=>r.amt)),fundAcc=(CATS().find(c=>c.fund)||{fund:{}}).fund.bank||"경조사 통장";
   /* the card is paid from CARDACC: move money there only if it isn't the salary account; the check-card allowance goes to 케이뱅크 */
   const ca=CARDACC(),toCard=ca===SALARY?0:pl.card-pl.giftCard+prepay;
+  pl.park.rows.forEach(r=>steps.push({k:"park-"+r.n,from:r.n,to:SALARY,amt:r.v,sub:"선결제·케뱅 채우기에 쓸 돈 · 월급날에 먼저 꺼내 와요"}));
   const byDest={};fx.forEach(x=>{const d=fixedDest(x);if(d)(byDest[d]=byDest[d]||[]).push(x)});
   /* the gift shortfall goes wherever the monthly gift transfer leaves from (e.g. 토스뱅크, moved to the gift account by hand later) */
   const fundFix=fx.find(x=>/경조사/.test(x.name+" "+x.note)),gapDest=(fundFix&&fixedDest(fundFix))||fundAcc,gapTxt=`경조사 부족분 ${won(pl.gift)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})${gapDest!==fundAcc?" · 다음 단계에서 직접 옮겨요":""}`;
@@ -1054,7 +1055,7 @@ function payTxSteps(M,pl){
   const ded=fx.filter(x=>x.acct==="급여 공제"),own=fx.filter(x=>!fixedDest(x)&&x.acct!=="급여 공제");
   const auto=(savePot?[{name:`다음 선결제(${pots[0].target.x.name})용으로 모아 두기`,amount:savePot}]:[]).concat(own.map(x=>({name:x.name,amount:x.amount,note:x.note}))).concat(ST().buffer?[{name:"버퍼",amount:ST().buffer}]:[]);
   const keep=sum(auto,x=>x.amount),outCard=ca===SALARY?pl.card-pl.giftCard+prepay:0;
-  return{steps,auto,keep,ded,bm,prepay,pot:savePot,left:pl.inc+pl.extra-sum(ded,x=>x.amount)-sum(steps.filter(s=>s.from===SALARY),s=>s.amt)-outCard-keep};
+  return{steps,auto,keep,ded,bm,prepay,pot:savePot,left:pl.inc+pl.extra+pl.park.sum-sum(ded,x=>x.amount)-sum(steps.filter(s=>s.from===SALARY),s=>s.amt)-outCard-keep};
 }
 function renderPayTx(M,pl,phase){
   const el=$("payTx");if(!el)return;const {steps,auto,keep,ded,left,pot,bm,prepay}=payTxSteps(M,pl),pre=phase==="before";
@@ -1076,13 +1077,16 @@ function balMode(M){const a=S.accounts||{},pd=ymDay(M,PAY());if(!(a.hana>0)||!a.
 function txSub(t,hd){const parts0=t.split(" + ");if(t.length<=60&&!(hd&&parts0.length>1))return `<div class="txs">${esc(t)}</div>`;const parts=parts0,head=hd||(parts.length>1?`${parts[0].replace(/\s*\(.*$/,"")} 외 ${parts.length-1}건`:t.split(" · ")[0].slice(0,40)+"…");
   return `<details class="txs txd"><summary>${esc(head)}</summary>${parts.length>1?`<div class="txl">${parts.map(p=>{const m=p.match(/^(.*?)\s(−?[\d,]+원)(.*)$/);return m?`<div><span>${esc(m[1])}${m[3]?`<small>${esc(m[3].replace(/^\s*[·(]?\s*/,"").replace(/\)$/,""))}</small>`:""}</span><b>${esc(m[2])}</b></div>`:`<div><span>${esc(p)}</span></div>`}).join("")}</div>`:`<p class="txp">${esc(t).replace(/ · /g,"<br>")}</p>`}</details>`}
 /* ---------- payday plan ---------- */
+/* 파킹통장 money is only parked until payday: the balances saved before that payday come back to 하나은행 for the prepay and the 케뱅 refill */
+function parkAt(M){const a=S.accounts||{},pd=ymDay(M,PAY());if(!a.updatedAt||iso(new Date(a.updatedAt))>=pd)return{sum:0,rows:[]};
+  const rows=[["woori",SAVEACC+" 1"],["park2",SAVEACC+" 2"]].filter(([k])=>a[k]>0).map(([k,n])=>({n,v:a[k]}));return{sum:sum(rows,r=>r.v),rows}}
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
   const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),back=backIn(M),extra=extraHanaAt(M)+back;
   const autoRes=Math.max(0,sum(entriesIn(cashWin(M),e=>e.method==="cash"&&!imported(e)),e=>e.amount)-kbankInAt(cashWin(M))) /* only what was spent from 케뱅 since the app started; old-tracker rows were settled before */,manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
-  const fixed=fixedCash(M),inc=incomeAt(M),gift=fundGapAt(M),giftCard=ab!=null?fundCardIn(M):0,pp=st.prepayPot,potIn=pp&&ymAdd(pp.ym,1)===M&&pp.amount>0?pp.amount:0,avail=inc+extra+potIn-card+giftCard-fixed-gift-cashRes-(st.buffer||0);
+  const fixed=fixedCash(M),inc=incomeAt(M),gift=fundGapAt(M),giftCard=ab!=null?fundCardIn(M):0,pp=st.prepayPot,potIn=pp&&ymAdd(pp.ym,1)===M&&pp.amount>0?pp.amount:0,park=parkAt(M),avail=inc+extra+potIn+park.sum-card+giftCard-fixed-gift-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
-  return{M,inc,extra,back,potIn,gift,giftCard,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
+  return{M,inc,extra,back,potIn,park,gift,giftCard,card,cardSrc:ab!=null?"app":open?"est-open":"est",fixed,cashRes,resSrc:manual?"설정값":"지난 주기 체크·현금 사용액",avail,paid,rest:Math.max(0,avail-paid)};
 }
 
 /* ---------- bank balances (bank names only, never account numbers) ---------- */
