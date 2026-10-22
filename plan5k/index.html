@@ -830,7 +830,7 @@ function fundWalk(c){const f=c.fund,from=f.from||"",ents=S.entries.filter(e=>e.c
   return items.map(x=>{add(x.due);const gap=Math.max(0,x.amount-bal),nat=dom(x.due)>=PAY()?ymOf(x.due):ymAdd(ymOf(x.due),-1),top=ymDay(nat,PAY()),late=!!x.createdAt&&x.createdAt>top;bal=Math.max(0,bal-x.amount);
     return{...x,gap,top,late,ym:nat>=ymOf(TODAY)?nat:late?nextPayYm():nat}})}
 function fundBalance(c){const f=c.fund,from=f.from||"",w=fundWalk(c);let put=0;for(let m=ymOf(from);ymDay(m,PAY())<=TODAY;m=ymAdd(m,1))if(ymDay(m,PAY())>=from)put+=f.monthly||0;
-  return put+sum(w.filter(x=>x.top<TODAY&&!x.late),x=>x.gap)-sum(w.filter(x=>x.due<TODAY),x=>x.amount)}
+  return put+sum(w.filter(x=>x.top<TODAY&&!x.late),x=>x.gap)-sum(w.filter(x=>x.due<TODAY||(x.rec&&!x.card)),x=>x.amount)}
 const fundPlan=c=>fundWalk(c).filter(x=>x.due>=TODAY&&!x.extra).map(x=>x.ym<ymOf(TODAY)?{...x,gap:0}:x);
 const fundTop=ym=>CATS().filter(c=>c.fund).flatMap(c=>fundPlan(c).filter(x=>x.ym===ym&&x.gap>0).map(x=>({...x,c})));
 const fundGapAt=ym=>sum(fundTop(ym),x=>x.gap);
@@ -1258,7 +1258,7 @@ function renderCal(){
     const inc=sum(S.wins.filter(w=>w.kind==="sell"&&w.date===d),w=>w.amount)+(dom(d)===PAY()&&!fut?incomeAt(ymOf(d)):0);
     /* 경조사 paid from its own account stays out of the 생활비 colour but still shows on the day */
     const gs=sum(S.entries.filter(e=>e.date===d&&!e.excl&&fundOut(e)),e=>e.amount),gtxt=gs?`🎁${gs>=10000?manC(gs):num(gs)}`:"";
-    const v=fut?"":s>0?(s>=10000?manC(s):num(s)):gs?gtxt:d===TODAY&&!ns?(rec?"0원":""):rec?'<span class="nz">무지출</span>':"",fxs=sum(fixedOn(d),x=>x.amount),ftxt=fxs?`📌${fxs>=10000?manC(fxs):num(fxs)}`:s>0&&gs?gtxt:"";
+    const v=fut&&!s&&!gs?"":s>0?(s>=10000?manC(s):num(s)):gs?gtxt:d===TODAY&&!ns?(rec?"0원":""):rec?'<span class="nz">무지출</span>':"",fxs=sum(fixedOn(d),x=>x.amount),ftxt=fxs?`📌${fxs>=10000?manC(fxs):num(fxs)}`:s>0&&gs?gtxt:"";
     html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
   $("cal").innerHTML=html;
   /* 이 달 성적: 기록한 날 중 하루 한도 안(초록)이 몇 %, 지난달과 비교 */
