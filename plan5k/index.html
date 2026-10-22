@@ -948,7 +948,8 @@ function appBill(ym){const w=S.weekly.filter(w=>w.payYm===ym&&w.nextBill>0).sort
   return (a!=null&&b!=null?w.nextBill+a-b:w.nextBill)+late}
 /* card fixed costs of a card cycle; with upTo only those already charged by then (the card app shows posted charges only) */
 function cardFixedEst(ym,upTo){const c=cycleOf(ym);return sum(fixedAt(ym).filter(x=>x.card&&!S.entries.some(e=>e.fixedId===x.id&&inRange(e.date,c))&&(!upTo||!x.day||(()=>{const d=[ymDay(ymOf(c.start),x.day),ymDay(ymOf(c.end),x.day)].find(v=>inRange(v,c));return !d||d<=upTo})())),x=>x.amount)}
-function lumpEst(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"&&!e.pending),e=>e.amount)+cardFixedEst(ym,upTo)}
+/* a cancelled instalment leaves the bill through its own schedule (itemBill), so its refund must not come off the lump sum again */
+function lumpEst(ym,upTo){const c=cycleOf(ym);const r={start:c.start,end:upTo&&upTo<c.end?upTo:c.end};return sum(cardIn(r,e=>e.method==="lotte"&&!e.pending&&!e.cancelItem),e=>e.amount)+cardFixedEst(ym,upTo)}
 function estBill(ym,upTo){return lumpEst(ym,upTo)+effSched(ym)}
 
 /* pick the card items to prepay with the money at hand so the fee saved is as large as possible (0/1 knapsack in 1,000원 steps) */
