@@ -1634,14 +1634,18 @@ function renderReport(){const el=$("rpCard");if(!el||!S.settings)return;
   <div class="rp-sec"><h3>📅 요일별 패턴 <span class="tiny muted" style="font-weight:400">최근 4주</span></h3>
    <div class="vbars" style="grid-template-columns:repeat(7,1fr)">${wk.map((v,i)=>`<div class="${i===wi&&v>0?"hi":""}"><b>${v?manC(v):""}</b><i style="height:${Math.max(2,v/wmx*70)}px"></i><span>${DOW[i]}</span></div>`).join("")}</div>
    <p class="small">${wk[wi]>0?`<b>${DOW[wi]}요일</b>에 지출이 가장 많았어요 (4주 합계 ${man1(wk[wi])})`:"최근 4주 기록이 없어요"}</p></div>
-  <div class="rp-sec" id="mxChart"><h3>📊 월별 지출 <span class="tiny muted" style="font-weight:400">고정비 + 저축 + 생활비 (카드 결제월)</span></h3>${(()=>{
+  <div class="rp-sec" id="mxChart"><div class="row"><h3>📊 월별 지출 <span class="tiny muted" style="font-weight:400">고정비 + 저축 + 생활비</span></h3><span class="seg" style="width:170px;flex:none">${[["cal","달력 월"],["card","카드 주기"]].map(([k,l])=>`<button type="button" data-mxmode="${k}" aria-pressed="${LS.get("mxmode","cal")===k}">${l}</button>`).join("")}</span></div>${(()=>{
+    const cal=LS.get("mxmode","cal")==="cal";
     /* per pay month: 고정비 + 고정 저축(자동이체) + 생활비 (variable). The running month also shows what's left of its budget, later months are plans. */
     const fxm=m=>sum(fixedAt(m).filter(x=>!x.saving),x=>x.amount),svm=m=>sum(fixedAt(m).filter(x=>x.saving),x=>x.amount),
-      cols=cyc.map(c=>({p:c.p,fx:fxm(c.p),sv:svm(c.p),v:c.v,b:c.b,cur:c.cur,plan:false}));
-    for(let i=1;i<=3;i++){const m=ymAdd(P,i);cols.push({p:m,fx:fxm(m),sv:svm(m),v:0,b:cycleBudgetFor(m),cur:false,plan:true})}
+      /* calendar month m: each fixed cost counts in the month its day falls in (a day from payday on belongs to that pay month, earlier days to the one before) */
+      cfx=(m,sv)=>sum((S.fixed&&S.fixed.items)||[],it=>{const pm=it.day&&it.day<PAY()?ymAdd(m,-1):m,x=fixedAt(pm).find(y=>y.id===it.id);return x&&!!x.saving===sv?x.amount:0}),
+      CM=ymOf(TODAY),calc=m=>({p:m,fx:cfx(m,false),sv:cfx(m,true),v:m>CM?0:sum(entriesIn({start:ymDay(m,1),end:addDays(ymDay(ymAdd(m,1),1),-1)}),e=>e.amount),b:cycleBudgetFor(m),cur:m===CM,plan:m>CM}),
+      cols=cal?[...Array(6)].map((_,i)=>ymAdd(CM,i-5)).filter(m=>addDays(ymDay(ymAdd(m,1),1),-1)>=first).map(calc).concat([1,2,3].map(i=>calc(ymAdd(CM,i)))):cyc.map(c=>({p:c.p,fx:fxm(c.p),sv:svm(c.p),v:c.v,b:c.b,cur:c.cur,plan:false}));
+    if(!cal)for(let i=1;i<=3;i++){const m=ymAdd(P,i);cols.push({p:m,fx:fxm(m),sv:svm(m),v:0,b:cycleBudgetFor(m),cur:false,plan:true})}
     const mx=Math.max(...cols.map(c=>c.fx+c.sv+Math.max(c.v,c.b)),1),H=150,px=v=>Math.max(0,Math.round(v/mx*H));
     return `<div class="mxc" style="grid-template-columns:repeat(${cols.length},1fr);height:${H+54}px">${cols.map(c=>{const vv=c.plan?c.b:c.v,over=!c.plan&&!c.cur&&c.v>c.b,left=c.cur?Math.max(0,c.b-c.v):0,tot=c.fx+c.sv+vv,
-      tip=`${ymKo(c.p)} 결제 · 고정비 ${num(c.fx)} + 저축 ${num(c.sv)} + 생활비 ${num(vv)}${c.cur?` (예산 ${num(c.b)} 중 ${num(left)} 남음)`:c.plan?" (예산 기준 예상)":` (예산 ${num(c.b)})`} = ${num(tot)}원`;
+      tip=`${ymKo(c.p)}${cal?"":" 결제"} · 고정비 ${num(c.fx)} + 저축 ${num(c.sv)} + 생활비 ${num(vv)}${c.cur?` (예산 ${num(c.b)} 중 ${num(left)} 남음)`:c.plan?" (예산 기준 예상)":` (예산 ${num(c.b)})`} = ${num(tot)}원`;
       return `<button type="button" class="mxk ${c.cur?"cur":""} ${c.plan?"plan":""}" data-mxtip="${esc(tip)}" aria-pressed="false"><b>${manC(tot)}</b><div class="mxs" style="height:${px(c.fx+c.sv+vv+left)}px"><i class="sv${over?" over":""}${c.plan?" pl":""}" style="height:${px(vv)}px"></i>${left?`<i class="sl" style="height:${px(left)}px"></i>`:""}<i class="ss${c.plan?" pl":""}" style="height:${px(c.sv)}px"></i><i class="sf${c.plan?" pl":""}" style="height:${px(c.fx)}px"></i></div><span>${ymShort(c.p)}<small>${c.cur?"진행":c.plan?"예상":"실제"}</small></span></button>`}).join("")}</div>
     <div class="mxl"><span><i class="sf"></i>고정비</span><span><i class="ss"></i>저축</span><span><i class="sv"></i>생활비</span><span><i class="sv over"></i>예산 초과</span><span><i class="sl"></i>남은 예산</span></div>
     <div class="tiny muted" id="mxTip" data-def="막대를 누르면 그 달 숫자가 보여요. 다시 누르면 닫혀요.">막대를 누르면 그 달 숫자가 보여요. 다시 누르면 닫혀요.</div>`})()}</div>${(()=>{/* 고정비 that really varied month to month (an amount was set for a month): actual vs the usual */
@@ -1933,6 +1937,7 @@ document.addEventListener("mouseover",e=>{const t=e.target.closest&&e.target.clo
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button,[data-tip]");if(!t)return;
   if(t.dataset.go){go(t.dataset.go);return}
+  if(t.dataset.mxmode){LS.set("mxmode",t.dataset.mxmode);renderReport();return}
   if(t.dataset.dsub){setDashSub(t.dataset.dsub);return}
   if(t.dataset.msub){setMonthSub(t.dataset.msub);return}
   if(t.dataset.rvday!=null){rvSel=t.dataset.rvday&&t.dataset.rvday!==rvSel?t.dataset.rvday:null;renderWeek();return}
