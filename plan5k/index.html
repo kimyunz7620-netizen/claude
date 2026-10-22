@@ -401,7 +401,7 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 .back-t{color:var(--coral);font-weight:700}.back-t.got{color:var(--mint)}
 .cd.today .n{color:var(--grape);font-weight:800}
 .cd.sel{border-color:var(--grape)}
-.cd.fut{opacity:.35;cursor:default}
+.cd.fut{opacity:.4}.cd.fut:hover,.cd.fut.sel{opacity:.85}
 .cd.pad{visibility:hidden}
 .mstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .mstats div{background:var(--bg);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
@@ -1205,8 +1205,8 @@ function renderToday(){
     const qh=top.length?`<span class="tiny muted">⚡ 자주 쓰는 것</span>`+top.map((x,i)=>`<button type="button" class="pill" data-quick="${i}">${look(x.cat)[0]} ${esc(x.memo)} ${x.amount<10000?num(x.amount)+"원":manC(x.amount)}</button>`).join(""):"";if(qk.dataset.sig!==qh){qk.dataset.sig=qh;qk.innerHTML=qh}qk.hidden=!top.length;QUICK=top}else if(qk)qk.hidden=true;
   const cats=$("enCats"),sig=CATS().map(c=>c.id).join()+"|"+selCat;
   if(cats.dataset.sig!==sig){cats.dataset.sig=sig;cats.innerHTML=CATS().length?CATS().map(c=>{const[e,col]=look(c.id);return `<button type="button" class="cat" style="--c:${col}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="e">${e}</span>${esc(SHORT[c.id]||c.name)}</button>`}).join(""):'<p class="empty" style="grid-column:1/-1">카테고리를 불러오는 중이에요.</p>'}
-  if(document.activeElement!==$("enDate"))$("enDate").value=selDate;$("enDate").max=TODAY;
-  $("enDateChip").textContent=selDate===TODAY?"오늘":mdw(selDate);
+  if(document.activeElement!==$("enDate"))$("enDate").value=selDate;$("enDate").removeAttribute("max");
+  $("enDateChip").textContent=selDate===TODAY?"오늘":selDate>TODAY?`${mdw(selDate)} · 예정`:mdw(selDate);
   {const fc=FUNDCAT(selCat);$("enFundBox").hidden=!fc;if(fc){$("enFundLbl").textContent=`🎁 ${fc.fund.bank} 돈으로 냈어요 (안 체크하면 생활비에서 나간 걸로 봐요)`;
     /* a fresh 경조사 entry near a planned event starts ticked; anything else starts unticked */
     if(!editingId&&$("enFund").dataset.cat!==selCat+selDate){$("enFund").dataset.cat=selCat+selDate;$("enFund").checked=(fc.fund.events||[]).some(x=>Math.abs(dayDiff(x.date,selDate))<=3)}}}
@@ -1259,7 +1259,7 @@ function renderCal(){
     /* 경조사 paid from its own account stays out of the 생활비 colour but still shows on the day */
     const gs=sum(S.entries.filter(e=>e.date===d&&!e.excl&&fundOut(e)),e=>e.amount),gtxt=gs?`🎁${gs>=10000?manC(gs):num(gs)}`:"";
     const v=fut?"":s>0?(s>=10000?manC(s):num(s)):gs?gtxt:d===TODAY&&!ns?(rec?"0원":""):rec?'<span class="nz">무지출</span>':"",fxs=sum(fixedOn(d),x=>x.amount),ftxt=fxs?`📌${fxs>=10000?manC(fxs):num(fxs)}`:s>0&&gs?gtxt:"";
-    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" ${fut?"disabled":""} data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
+    html+=`<button type="button" class="cd ${cls} ${d===TODAY?"today":""} ${d===selDate?"sel":""} ${fut?"fut":""}" data-day="${d}" aria-label="${m}월 ${k}일 ${s?won(s):""}"><span class="n">${k}</span><span class="v">${v}</span>${inc?`<span class="i">+${inc>=10000?manC(inc):num(inc)}</span>`:""}${ftxt?`<span class="f">${ftxt}</span>`:""}</button>`}
   $("cal").innerHTML=html;
   /* 이 달 성적: 기록한 날 중 하루 한도 안(초록)이 몇 %, 지난달과 비교 */
   {const pct=recDays?Math.round(sc.g/recDays*100):0,pv=calScoreOf(ymAdd(calYm,-1)),dp=pv&&pv.rec?pct-Math.round(pv.g/pv.rec*100):null,bar=k=>recDays?sc[k]/recDays*100:0;
