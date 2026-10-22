@@ -644,7 +644,8 @@ nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
         <div class="ach">입출금 통장</div>
         <label class="acr"><span class="n">🏦 하나은행<small>급여·카드값</small></span><input type="text" inputmode="numeric" id="acHana" placeholder="0"></label>
         <label class="acr"><span class="n">🏦 케이뱅크<small>체크카드</small></span><input type="text" inputmode="numeric" id="acKbank" placeholder="0"></label>
-        <label class="acr"><span class="n">🐷 우리은행<small>저축</small></span><input type="text" inputmode="numeric" id="acWoori" placeholder="0"></label>
+        <label class="acr"><span class="n">🐷 파킹통장 1<small>KB 팡팡mini</small></span><input type="text" inputmode="numeric" id="acWoori" placeholder="0"></label>
+        <label class="acr"><span class="n">🐷 파킹통장 2<small>다올 · 만들면 입력</small></span><input type="text" inputmode="numeric" id="acPark2" placeholder="0"></label>
         <label class="acr"><span class="n">🏦 토스뱅크<small>자동이체</small></span><input type="text" inputmode="numeric" id="acToss" placeholder="0"></label>
         <div class="acx tiny muted" id="acTossHint" hidden></div>
         <label class="acr"><span class="n" id="acLGift">🎁 경조사 통장</span><input type="text" inputmode="numeric" id="acShinhan" placeholder="0"></label>
@@ -1019,9 +1020,9 @@ function simulateRun(extra,plan){
 }
 
 /* ---------- payday transfers: where each won of the salary goes, one transfer per row ---------- */
-const SALARY="하나은행",SAVEACC="우리은행",GROUPACC="모임통장",CHECKACC="케이뱅크";
+const SALARY="하나은행",SAVEACC="파킹통장",GROUPACC="모임통장",CHECKACC="케이뱅크";
 const CARDACC=()=>ST().cardAcct||SALARY; /* where the Lotte card is paid from */
-const FIXACCTS_=()=>[...new Set(["","토스뱅크","하나은행","우리은행","모임통장",...((S.fixed&&S.fixed.items)||[]).map(x=>x.acct).filter(Boolean),...CATS().filter(c=>c.fund&&c.fund.bank).map(c=>c.fund.bank),"급여 공제"])];
+const FIXACCTS_=()=>[...new Set(["","토스뱅크","하나은행","우리은행","파킹통장","모임통장",...((S.fixed&&S.fixed.items)||[]).map(x=>x.acct).filter(Boolean),...CATS().filter(c=>c.fund&&c.fund.bank).map(c=>c.fund.bank),"급여 공제"])];
 function fixedDest(x){if(x.src&&x.to)return x.to;if(x.acct)return x.acct===SALARY||x.acct==="급여 공제"?null:x.acct;const t=(x.name||"")+" "+(x.note||"");if(/모임통장|계모임/.test(t))return GROUPACC;const fc=CATS().find(c=>c.fund&&t.includes((c.fund.bank||"").split(" ")[0]));if(fc||/경조사/.test(t))return fc?fc.fund.bank:"경조사 통장";return null}
 function payTxSteps(M,pl){
   const early=!!ST().payEarly,pd=early?ymDay(M,PAY()):ymDay(M,CARD()),steps=[],fx=fixedAt(M).filter(x=>!x.card&&!offSalary(x)&&x.amount>0);
@@ -1085,7 +1086,7 @@ function payPlan(M){
 }
 
 /* ---------- bank balances (bank names only, never account numbers) ---------- */
-const ACC=[["hana","acHana"],["kbank","acKbank"],["woori","acWoori"],["toss","acToss"],["shinhan","acShinhan"],["stock","acStock"],["youth","acYouth"],["housing","acHousing"],["pension","acPension"]];
+const ACC=[["hana","acHana"],["kbank","acKbank"],["woori","acWoori"],["park2","acPark2"],["toss","acToss"],["shinhan","acShinhan"],["stock","acStock"],["youth","acYouth"],["housing","acHousing"],["pension","acPension"]];
 const accTotal=a=>a?sum(ACC,([k])=>a[k]||0):null;
 const readAcc=()=>Object.fromEntries(ACC.map(([k,id])=>[k,parseNum($(id).value)]));
 /* money that only passes through: 토스뱅크 holds this month's auto-debits until they leave, and the 경조사 저금통 is gift money
@@ -1296,7 +1297,7 @@ function questItems(){
     it.push({e:/축의|결혼|부의|조의/.test(x.memo||"")?"💒":"🎁",task:k,done:!!S.tasks[k],t:`${x.memo||"경조사"} ${man1(x.amount)}${n===0?" 오늘":n===1?" 내일":" 모레"}`,s:x.card?"롯데카드로 결제 · 가계부에 경조사/선물·롯데로 적기":`${c.fund.bank}에서 이체 · 가계부에 경조사/선물로 적기`})}));
   /* payday coming up short: say how much, and what to do about it (move saved money first, then trim the 생활비 until payday) */
   {const Mn=d<PAY()?M:ymAdd(M,1),pd=ymDay(Mn,PAY()),n=dayDiff(TODAY,pd);
-   if(n>=0&&n<=14&&!S.tasks["secure-"+Mn]){const pl=payPlan(Mn);if(pl.avail<0){const short=-pl.avail,k="short-"+Mn,a=S.accounts||{},names={hana:SALARY,kbank:CHECKACC,woori:SAVEACC,toss:"토스뱅크"},rows=Object.keys(names).filter(x=>a[x]>0&&names[x]!==SALARY),have=sum(rows,x=>a[x]),mv=Math.min(have,short),rest=short-mv,days=Math.max(1,n);
+   if(n>=0&&n<=14&&!S.tasks["secure-"+Mn]){const pl=payPlan(Mn);if(pl.avail<0){const short=-pl.avail,k="short-"+Mn,a=S.accounts||{},names={hana:SALARY,kbank:CHECKACC,woori:SAVEACC+" 1",park2:SAVEACC+" 2",toss:"토스뱅크"},rows=Object.keys(names).filter(x=>a[x]>0&&names[x]!==SALARY),have=sum(rows,x=>a[x]),mv=Math.min(have,short),rest=short-mv,days=Math.max(1,n);
      const steps=[];if(mv>0)steps.push(`① ${rows.map(x=>names[x]).join("·")} → ${SALARY} ${won(mv)} 옮기기`);if(rest>0)steps.push(`${mv>0?"②":"①"} 남은 ${won(rest)}은 월급날까지 생활비에서 줄이기 (하루 ${won(Math.ceil(rest/days/100)*100)}씩)`);steps.push("리볼빙·분할납부·현금서비스 ✕");
      it.push({e:"⚠️",task:k,done:!!S.tasks[k],urgent:true,t:`${md(pd)} 월급날 ${won(short)} 모자라요`,s:steps.join("\n")+(a.updatedAt?`\n(통장 잔액은 ${md(iso(new Date(a.updatedAt)))}에 적은 기준)`:"\n통장 잔액을 먼저 적어 주세요"),btn:["보기","pay:"]})}}}
   /* the 생활비 that meets the goals has moved away from the one in use: tell which way and send to the goal panel */
@@ -1517,7 +1518,7 @@ function renderWeek(){
 
 /* ---------- 월급·상환 ---------- */
 /* money already sitting in my accounts (last saved balances, gift account left out) that can cover a payday shortfall */
-function balHint(short){const a=S.accounts||{},names={hana:SALARY,kbank:CHECKACC,woori:SAVEACC,toss:"토스뱅크"},rows=Object.keys(names).filter(k=>a[k]>0).map(k=>({n:names[k],v:a[k]}));if(!rows.length)return"";
+function balHint(short){const a=S.accounts||{},names={hana:SALARY,kbank:CHECKACC,woori:SAVEACC+" 1",park2:SAVEACC+" 2",toss:"토스뱅크"},rows=Object.keys(names).filter(k=>a[k]>0).map(k=>({n:names[k],v:a[k]}));if(!rows.length)return"";
   const t=sum(rows,r=>r.v),when=a.updatedAt?md(iso(new Date(a.updatedAt))):"";
   return `<p class="small" style="margin-top:8px">💡 마지막으로 적은 통장 잔액${when?`(${when})`:""}: ${rows.map(r=>`${esc(r.n)} ${num(r.v)}`).join(" · ")}${rows.length>1?` · 합계 ${num(t)}`:""}<br>${t>=short?`<b class="good-t">월급날 전에 ${esc(SALARY)}으로 옮기면 모자란 ${won(short)}을 다 메울 수 있어요.</b>`:`월급날 전에 ${esc(SALARY)}으로 옮기면 ${won(t)}을 메우고, <b class="bad-t">${won(short-t)}</b>이 남아요.`}</p>`}
 function renderMonth(){
@@ -1683,7 +1684,7 @@ function renderDash(){
   $("loanList").innerHTML=LOANS().map(d=>`<div class="li"><span class="av">🏦</span><div><div class="t">${esc(d.name)}</div><div class="s">${esc([d.rate,d.due?`만기 ${d.due.slice(2).replace(/-/g,".")}`:"",d.note].filter(Boolean).join(" · "))}${sim.loans[d.id]?` · 완납 예상 ${ymKo(sim.loans[d.id])}`:""}${sim.dueShort[d.id]?`<div class="s" style="color:var(--coral);font-weight:700">⚠️ 만기 ${md(d.due)}까지 약 ${man(sim.dueShort[d.id])} 모자라요 · 부수입을 넣거나 은행에 기한연장을 물어보세요</div>`:""}</div></div><div style="text-align:right"><div class="a">${num(loanBal(d))}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="d:${esc(d.id)}">상환</button></div></div>`).join("")||'<p class="empty">대출 정보를 불러오는 중이에요.</p>';
   const lp=lastPassed();
   $("schTbl").innerHTML="<thead><tr><th>결제월</th><th>할부 청구</th><th>건수</th></tr></thead><tbody>"+schedMonths().filter(m=>m>lp).map(m=>`<tr class="${m===nx?"next":""}"><td>${ymShort(m)}</td><td><strong>${num(effSched(m))}</strong></td><td>${ITEMS().filter(x=>itemBill(x,m)>0).length}</td></tr>`).join("")+"</tbody>";
-  $("nwList").innerHTML=snaps.slice().reverse().map(s=>`<div class="li"><span class="av">🐷</span><div><div class="t">${ymKo(s.ym)}</div><div class="s">${s.hana!=null?`하나 ${num(s.hana)} · 케뱅 ${num(s.kbank)} · 우리 ${num(s.woori)}${s.toss?` · 토스 ${num(s.toss)}`:""}${s.shinhan?` · 경조사 ${num(s.shinhan)}`:""}${s.stock?` · 증권 ${num(s.stock)}`:""}${s.youth?` · 적금 ${num(s.youth)}`:""}${s.housing?` · 청약 ${num(s.housing)}`:""}${s.pension?` · 연금 ${num(s.pension)}`:""}`:`현금 ${num(s.cash)}`} · 빚 ${num(s.debt)}</div></div><div style="text-align:right"><div class="a">${num(s.net)}</div><button type="button" class="btn danger" style="margin-top:4px" data-del-nw="${esc(s.ym)}">삭제</button></div></div>`).join("")||'<p class="empty">월급·상환 탭에서 월말 잔액을 기록하면 쌓여요.</p>';
+  $("nwList").innerHTML=snaps.slice().reverse().map(s=>`<div class="li"><span class="av">🐷</span><div><div class="t">${ymKo(s.ym)}</div><div class="s">${s.hana!=null?`하나 ${num(s.hana)} · 케뱅 ${num(s.kbank)} · 파킹 ${num((s.woori||0)+(s.park2||0))}${s.toss?` · 토스 ${num(s.toss)}`:""}${s.shinhan?` · 경조사 ${num(s.shinhan)}`:""}${s.stock?` · 증권 ${num(s.stock)}`:""}${s.youth?` · 적금 ${num(s.youth)}`:""}${s.housing?` · 청약 ${num(s.housing)}`:""}${s.pension?` · 연금 ${num(s.pension)}`:""}`:`현금 ${num(s.cash)}`} · 빚 ${num(s.debt)}</div></div><div style="text-align:right"><div class="a">${num(s.net)}</div><button type="button" class="btn danger" style="margin-top:4px" data-del-nw="${esc(s.ym)}">삭제</button></div></div>`).join("")||'<p class="empty">월급·상환 탭에서 월말 잔액을 기록하면 쌓여요.</p>';
 }
 let WI=-100000;
 /* how much sooner a sum of money brings the goal: before debt-free it speeds up 빚 0원, after that it speeds up 1억 */
