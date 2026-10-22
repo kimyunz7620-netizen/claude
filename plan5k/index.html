@@ -1232,7 +1232,7 @@ function renderToday(){
     return `<div class="li win"><span class="av">💵</span><div><div class="t">월급 (실수령)</div><div class="s">${act?"받은 금액":"예상 금액 · 월급·상환 탭에서 받은 금액을 적어요"} · ${SALARY}</div></div><div class="a good-t">+${num(incomeAt(ym))}</div></div>`})():"")+fxd.map(x=>`<div class="li"><span class="av">📌</span><div><div class="t">${esc(x.name)}</div><div class="s">고정비 · ${fxWhere(x)}${x.card?` · ${ymKo(x.bym)} 카드값`:""}</div></div><input type="text" inputmode="numeric" class="fxin fxin-q" data-fx="${esc(x.id)}" data-ym="${x.card?x.bym:ymOf(selDate)}" value="${num(x.amount)}" aria-label="${esc(x.name)} 금액 (눌러서 고치기)"></div>`).join("")+wl.map(w=>`<div class="li win"><span class="av">${w.kind==="skip"?"🙅":"💰"}</span><div><div class="t">${w.kind==="skip"?"참았어요":"부수입"}${w.memo?` <span class="muted" style="font-weight:400">· ${esc(w.memo)}</span>`:""}</div><div class="s">지출 아님 · ${fasterTxt(w.amount)} 당겨짐</div></div><div style="text-align:right"><div class="a">+${num(w.amount)}</div><button type="button" class="btn ghost" style="margin-top:4px;padding:4px 10px;font-size:.76rem" data-delwin="${esc(w.id)}">삭제</button></div></div>`).join("");
   const dc=cycleOf(payYmOf(selDate)),df=Math.min(1,(dayDiff(dc.start,selDate)+1)/(dayDiff(dc.start,dc.end)+1)),used=[...new Set(list.filter(e=>!e.excl).map(e=>e.cat))].map(id=>LIVECATS(payYmOf(selDate)).find(c=>c.id===id)).filter(Boolean);
   const fx=[...new Set(list.filter(e=>fundOut(e)).map(e=>e.cat))].map(FUNDCAT).filter(Boolean);
-  const fundNote=fx.map(c=>`<span class="chip good">${look(c.id)[0]} ${esc(c.fund.bank)}에서 · 남은 ${num(fundBalance(c))}</span>`).join("");
+  const fundNote=fx.map(c=>`<span class="chip good">${look(c.id)[0]} ${esc(c.fund.bank)}에서 · 남은 ${won(fundBalance(c))}</span>`).join("");
   $("dayCats").innerHTML=fundNote?`<div class="chips">${fundNote}</div>`:""; /* categories running hot are in the briefing's notes */
   const dd=S.days[selDate]||{},ns=$("noSpendBtn");ns.hidden=list.length>0;$("backToday").hidden=isToday;
   ns.textContent=dd.noSpend?"✨ 무지출 표시 취소":isToday?"✨ 오늘 무지출이에요":"✨ 이날 무지출이었어요";
@@ -1242,7 +1242,7 @@ function renderToday(){
   renderCal();
   const pend=S.entries.filter(e=>e.pending&&e.amount<=0).sort((a,b)=>a.date<b.date?-1:1);$("refundCount").hidden=!pend.length;$("refundCount").textContent=`예정 ${pend.length}건 · ${won(-sum(pend,e=>e.amount))}`;
   if(!$("oldRefForm").contains(document.activeElement)){if(!$("orDate").value)$("orDate").value=TODAY;
-    const open=ITEMS().filter(x=>itemBal(x)>0).sort((a,b)=>a.date<b.date?1:-1);$("orItem").innerHTML=open.map(x=>`<option value="${esc(x.id)}">${esc(x.name)} · ${md(x.date)} · 남은 ${num(itemBal(x))}</option>`).join("")||'<option value="">남은 할부가 없어요</option>';orPreview()}
+    const open=ITEMS().filter(x=>itemBal(x)>0).sort((a,b)=>a.date<b.date?1:-1);$("orItem").innerHTML=open.map(x=>`<option value="${esc(x.id)}">${esc(x.name)} · ${md(x.date)} · 남은 ${won(itemBal(x))}</option>`).join("")||'<option value="">남은 할부가 없어요</option>';orPreview()}
   $("refundList").innerHTML=pend.length?pend.map(e=>`<div class="li"><span class="av">↩️</span><div><div class="t">${esc(refName(e))}${e.memo&&!e.cancelItem&&ALLCATS().some(c=>c.id===e.cat)?` <span class="muted" style="font-weight:400">· ${esc(e.memo)}</span>`:""}</div><div class="s">${md(e.date)} 기록 · ${e.amount?num(-e.amount)+"원":"남은 할부 취소"}</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><button type="button" class="btn ghost" style="padding:6px 10px;font-size:.78rem" data-refundok="${esc(e.id)}">취소 확인</button><div style="display:flex;gap:4px"><button type="button" class="btn ghost" style="padding:4px 8px;font-size:.72rem" data-edit="${esc(e.id)}">고치기</button><button type="button" class="btn danger" style="padding:4px 8px;font-size:.72rem" data-delref="${esc(e.id)}">삭제</button></div></div></div>`).join(""):'<p class="small muted">취소 예정인 건이 없어요.</p>';
   const un=S.entries.filter(e=>!e.excl&&!ALLCATS().some(c=>c.id===e.cat)).sort((a,b)=>a.date<b.date?-1:1);
   $("uncatCard").hidden=!un.length;$("uncatCount").textContent=`${un.length}건`;
@@ -1378,7 +1378,7 @@ async function askBrief(){
   const data=briefChanges(),key=briefKey(data);
   const prompt=`너는 빚을 갚는 중인 30대 친구의 머니 코치야. 아래는 이 친구가 앱에 마지막으로 들어온 뒤부터 지금까지 바뀐 데이터야.
 바뀐 데이터를 분석해서, 이 친구에게 실제로 도움이 될 내용만 최대 3문장으로 말해 줘. 앱 화면에서 바로 보이는 숫자를 그대로 읊지 말고, 바뀐 것에서 읽히는 의미(새 지출이 어떤 영향을 줬는지, 흐름이 좋아졌는지 나빠졌는지, 그래서 오늘 뭘 하면 좋은지)를 말해.
-각 문장은 40자 안쪽, 자연스러운 존댓말, 제목·번호·불릿 없이 문장만. 어려운 말(페이스, 주기, 선결제, 순자산) 쓰지 말고 금액은 '1.2만 원'처럼 짧게. 데이터에 없는 건 지어내지 마. 금액이 마이너스인 기록은 결제 취소라 돈이 돌아온 거고, '생활비: 제외'인 기록은 이 친구 생활비가 아니야. 각 문장 맨 앞에 내용에 맞는 이모지를 1개씩 붙여 (예: 🍱 ☕ 👍 ⚠️ 💰 🎯).
+각 문장은 40자 안쪽, 자연스러운 존댓말, 제목·번호·불릿 없이 문장만. 어려운 말(페이스, 주기, 선결제, 순자산) 쓰지 말고 금액은 '12,300원'처럼 원 단위 전체 숫자로 쓰고 '1.2만'처럼 줄이지 마. 데이터에 없는 건 지어내지 마. 금액이 마이너스인 기록은 결제 취소라 돈이 돌아온 거고, '생활비: 제외'인 기록은 이 친구 생활비가 아니야. 각 문장 맨 앞에 내용에 맞는 이모지를 1개씩 붙여 (예: 🍱 ☕ 👍 ⚠️ 💰 🎯).
 도움이 될 만한 게 없으면 억지로 만들지 말고 빈 배열로 답해.
 ${JSON.stringify(data)}
 JSON으로만 답해: {"lines":["문장1","문장2","문장3"]}`;
@@ -1510,7 +1510,7 @@ function renderWeek(){
   const other=sum(es.filter(e=>!CATS().some(c=>c.id===e.cat)),e=>e.amount);
   const live=f>0&&f<1,rows=LIVECATS(bdKey).map(c=>{const b=catBudget(c,r),s=sum(es.filter(e=>e.cat===c.id),e=>e.amount),[em,col]=look(c.id),over=s>b,fast=!over&&live&&s>b*f*1.1&&s>0;
     const lvl=over?0:fast?1:s>0?2:3,ratio=b>0?s/b:s>0?99:0;
-    const right=b<=0&&s>0?'<span class="bad-t">예산 없음</span>':over?`<span class="bad-t">${ratio>=2?`${(Math.floor(ratio*10)/10)}배`:`+${man1(s-b)}`} 초과</span>`:f>=1?`<span class="good-t">${man1(b-s)} 남김</span>`:`<span class="${fast?"warn-t":"muted"}">남은 <b>${man1(b-s)}</b>${fast?" · 빠름":""}</span>`;
+    const right=b<=0&&s>0?'<span class="bad-t">예산 없음</span>':over?`<span class="bad-t">${ratio>=2?`${(Math.floor(ratio*10)/10)}배`:`+${won(s-b)}`} 초과</span>`:f>=1?`<span class="good-t">${won(b-s)} 남김</span>`:`<span class="${fast?"warn-t":"muted"}">남은 <b>${won(b-s)}</b>${fast?" · 빠름":""}</span>`;
     const op=BDOPEN.has(c.id),list=es.filter(e=>e.cat===c.id).sort((a,b)=>bDate(a)<bDate(b)?1:bDate(a)>bDate(b)?-1:b.amount-a.amount);
     return{lvl,ratio,html:`<button type="button" class="crow${over?" over":fast?" fast":""}" data-bdcat="${esc(c.id)}" aria-expanded="${op}"><span class="e">${em}</span><span class="nm">${esc(c.name)}${c.accumulate&&bdMode==="cycle"?' <span class="tiny muted">적립</span>':""}<span class="amt">${s?manC(s):"0원"} / ${manC(b)}</span></span><span class="rt small">${right}</span>
       <span class="cbar"><i style="width:${b>0?Math.min(100,s/b*100):s>0?100:0}%"></i>${live&&b>0?`<b style="left:${f*100}%"></b>`:""}</span></button>${op?catDetail(list):""}`}}).sort((a,b)=>a.lvl-b.lvl||b.ratio-a.ratio);
@@ -1579,7 +1579,7 @@ function renderMonth(){
 }
 function fillTargets(keep){
   const sel=$("pfTarget"),v=keep||sel.value;
-  sel.innerHTML=`<optgroup label="카드 할부 (아끼는 수수료 큰 순)">${cardOrder(TODAY).sort((a,b)=>b.save-a.save).map(o=>`<option value="i:${esc(o.x.id)}">💳 ${esc(o.x.name)} ${md(o.x.date)} · ${itemLeftN(o.x)}회 남음 · ${num(o.amt)}</option>`).join("")}</optgroup><optgroup label="대출">${LOANS().map(d=>`<option value="d:${esc(d.id)}">🏦 ${esc(d.name)} · ${num(loanBal(d))}</option>`).join("")}</optgroup>`;
+  sel.innerHTML=`<optgroup label="카드 할부 (아끼는 수수료 큰 순)">${cardOrder(TODAY).sort((a,b)=>b.save-a.save).map(o=>`<option value="i:${esc(o.x.id)}">💳 ${esc(o.x.name)} ${md(o.x.date)} · ${itemLeftN(o.x)}회 남음 · ${won(o.amt)}</option>`).join("")}</optgroup><optgroup label="대출">${LOANS().map(d=>`<option value="d:${esc(d.id)}">🏦 ${esc(d.name)} · ${num(loanBal(d))}</option>`).join("")}</optgroup>`;
   if(v)sel.value=v;
 }
 function pfAuto(){
@@ -1629,7 +1629,7 @@ function renderReport(){const el=$("rpCard");if(!el||!S.settings)return;
    ${hasPrev&&sP?`<span class="small ${diff<=0?"good-t":"bad-t"}">지난 주기 같은 날(${k}일째)보다 ${diff<=0?`${Math.abs(diff)}% 덜 쓰고 있어요 (${signed(sN-sP)})`:`${diff}% 더 쓰고 있어요 (${signed(sN-sP)})`}</span>`:'<span class="small muted">지난 주기 기록이 쌓이면 같은 날짜끼리 비교해 드려요</span>'}
    <div class="bar thin" style="margin-top:6px"><i style="width:${Math.min(100,B?sN/B*100:0)}%"></i><b style="left:${Math.min(100,k/len*100)}%"></b></div><span class="tiny muted">예산 ${won(B)} 중 ${B?Math.round(sN/B*100):0}% · 기간 ${Math.round(k/len*100)}% 지남</span></div>
   <div class="rp-two" style="margin-top:12px"><div><span class="tiny muted">💸 돈 샌 곳</span>${leak?`<b class="small">${name(leak.id)}</b><span class="tiny ${"bad-t"}">지난 주기 같은 기간보다 ${leak.p!=null?`${leak.p}% `:""}늘었어요 (+${man1(leak.d)})</span>`:'<span class="small good-t">지난 주기보다 크게 는 곳이 없어요 👍</span>'}</div>
-   <div><span class="tiny muted">🔮 주기말 예측</span><b class="small">${man1(proj)}</b><span class="tiny ${proj>B?"bad-t":"good-t"}">이 속도면 ${md(cur.end)}에 ${proj>B?`예산보다 ${man1(proj-B)} 넘어요`:`${man1(B-proj)} 남아요`}</span></div></div>
+   <div><span class="tiny muted">🔮 주기말 예측</span><b class="small">${man1(proj)}</b><span class="tiny ${proj>B?"bad-t":"good-t"}">이 속도면 ${md(cur.end)}에 ${proj>B?`예산보다 ${won(proj-B)} 넘어요`:`${won(B-proj)} 남아요`}</span></div></div>
   <div class="rp-sec"><h3>🏆 카테고리 TOP 3</h3>${top.map(([id,v],i)=>`<button type="button" class="hbar" data-topcat="${esc(id)}"><span>${i+1}. ${name(id)}</span><span class="tr"><i style="width:${v/mx*100}%"></i></span><span class="v">${num(v)}원 ›</span></button>`).join("")||'<p class="small muted">아직 기록이 없어요.</p>'}</div>
   <div class="rp-sec"><h3>📅 요일별 패턴 <span class="tiny muted" style="font-weight:400">최근 4주</span></h3>
    <div class="vbars" style="grid-template-columns:repeat(7,1fr)">${wk.map((v,i)=>`<div class="${i===wi&&v>0?"hi":""}"><b>${v?manC(v):""}</b><i style="height:${Math.max(2,v/wmx*70)}px"></i><span>${DOW[i]}</span></div>`).join("")}</div>
@@ -1645,7 +1645,7 @@ function renderReport(){const el=$("rpCard");if(!el||!S.settings)return;
     if(!cal)for(let i=1;i<=3;i++){const m=ymAdd(P,i);cols.push({p:m,fx:fxm(m),sv:svm(m),v:0,b:cycleBudgetFor(m),cur:false,plan:true})}
     const mx=Math.max(...cols.map(c=>c.fx+c.sv+Math.max(c.v,c.b)),1),H=150,px=v=>Math.max(0,Math.round(v/mx*H));
     return `<div class="mxc" style="grid-template-columns:repeat(${cols.length},1fr);height:${H+54}px">${cols.map(c=>{const vv=c.plan?c.b:c.v,over=!c.plan&&!c.cur&&c.v>c.b,left=c.cur?Math.max(0,c.b-c.v):0,tot=c.fx+c.sv+vv,
-      tip=`${ymKo(c.p)}${cal?"":" 결제"} · 고정비 ${num(c.fx)} + 저축 ${num(c.sv)} + 생활비 ${num(vv)}${c.cur?` (예산 ${num(c.b)} 중 ${num(left)} 남음)`:c.plan?" (예산 기준 예상)":` (예산 ${num(c.b)})`} = ${num(tot)}원`;
+      tip=`${ymKo(c.p)}${cal?"":" 결제"} · 고정비 ${num(c.fx)} + 저축 ${num(c.sv)} + 생활비 ${num(vv)}${c.cur?` (예산 ${num(c.b)} 중 ${won(left)} 남음)`:c.plan?" (예산 기준 예상)":` (예산 ${num(c.b)})`} = ${num(tot)}원`;
       return `<button type="button" class="mxk ${c.cur?"cur":""} ${c.plan?"plan":""}" data-mxtip="${esc(tip)}" aria-pressed="false"><b>${manC(tot)}</b><div class="mxs" style="height:${px(c.fx+c.sv+vv+left)}px"><i class="sv${over?" over":""}${c.plan?" pl":""}" style="height:${px(vv)}px"></i>${left?`<i class="sl" style="height:${px(left)}px"></i>`:""}<i class="ss${c.plan?" pl":""}" style="height:${px(c.sv)}px"></i><i class="sf${c.plan?" pl":""}" style="height:${px(c.fx)}px"></i></div><span>${ymShort(c.p)}<small>${c.cur?"진행":c.plan?"예상":"실제"}</small></span></button>`}).join("")}</div>
     <div class="mxl"><span><i class="sf"></i>고정비</span><span><i class="ss"></i>저축</span><span><i class="sv"></i>생활비</span><span><i class="sv over"></i>예산 초과</span><span><i class="sl"></i>남은 예산</span></div>
     <div class="tiny muted" id="mxTip" data-def="막대를 누르면 그 달 숫자가 보여요. 다시 누르면 닫혀요.">막대를 누르면 그 달 숫자가 보여요. 다시 누르면 닫혀요.</div>`})()}</div>${(()=>{/* 고정비 that really varied month to month (an amount was set for a month): actual vs the usual */
@@ -1666,7 +1666,7 @@ function renderFixedDday(){const el=$("fxdCard");if(!el)return;const M=ymOf(TODA
 }
 function renderDash(){
   const st=ST(),T=totalDebt(),start=st.startDebt||T,pr=start>0?Math.max(0,Math.min(1,(start-T)/start)):0,sim=simulate();
-  $("dbFree").textContent=`남은 빚 ${man(T)} · `+(sim.free?`이대로면 유이자 카드 할부는 ${ymKo(sim.cardDone)}, 모든 빚은 ${ymKo(sim.free)}에 끝나요.`:"지금 숫자로는 완납 시점을 계산할 수 없어요.");
+  $("dbFree").textContent=`남은 빚 ${won(T)} · `+(sim.free?`이대로면 유이자 카드 할부는 ${ymKo(sim.cardDone)}, 모든 빚은 ${ymKo(sim.free)}에 끝나요.`:"지금 숫자로는 완납 시점을 계산할 수 없어요.");
   const snaps=S.networth.slice().sort((a,b)=>a.ym<b.ym?-1:1),lastCash=cashNow(),now=(st.deposit||0)+(lastCash||0)-T;
   $("nwNow").textContent=won(now);
   const startNet=goalBase(),GL=GOALS(),lastG=GL[GL.length-1],target=lastG?lastG.net:startNet+(st.targetGain||0),gain=target-startNet,fin=st.finalTarget||1e8,goalYm=lastG?lastG.ym:st.targetYm||"2027-12";
@@ -1683,7 +1683,7 @@ function renderDash(){
   drawChart(snaps,snaps.length?snaps[0].ym:ymOf(TODAY),goalYm,snaps.length?startNet:null,snaps.length?target:null,sim.path);
   const order=cardOrder(TODAY).sort((a,b)=>b.save-a.save),open=ITEMS().filter(x=>itemBal(x)>0),done=ITEMS().filter(x=>itemBal(x)<=0),free=open.filter(x=>x.fee===0),nx=ymAdd(lastPassed(),1);
   $("instCount").textContent=`${open.length}건`;$("instSum").textContent=`원금 ${won(cardDebt())}`;
-  const row=(o,i)=>`<div class="li"><span class="av">${["🥇","🥈","🥉"][i]||"💳"}</span><div><div class="t">${esc(o.x.name)} <span class="eff">−${manC(o.save)} 수수료</span></div><div class="s">${md(o.x.date)} 결제 · ${itemLeftN(o.x)}회 남음 · 다음 청구 ${num(itemBill(o.x,nx))} · 선결제하면 수수료 ${num(o.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(o.amt)}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(o.x.id)}">선결제</button></div></div>`;
+  const row=(o,i)=>`<div class="li"><span class="av">${["🥇","🥈","🥉"][i]||"💳"}</span><div><div class="t">${esc(o.x.name)} <span class="eff">−${manC(o.save)} 수수료</span></div><div class="s">${md(o.x.date)} 결제 · ${itemLeftN(o.x)}회 남음 · 다음 청구 ${won(itemBill(o.x,nx))} · 선결제하면 수수료 ${won(o.save)} 절약</div></div><div style="text-align:right"><div class="a">${num(o.amt)}</div><button type="button" class="btn ghost" style="margin-top:4px" data-act="pay-open" data-target="i:${esc(o.x.id)}">선결제</button></div></div>`;
   $("instList").innerHTML=order.slice(0,3).map(row).join("")||'<p class="empty">선결제할 유이자 할부가 없어요 🎉</p>';
   $("instMoreBox").hidden=order.length<=3&&!free.length;$("instMoreSum").textContent=`나머지 ${order.length-3>0?order.length-3:0}건${free.length?` + 무이자 ${free.length}건`:""} 보기`;
   $("instMore").innerHTML=(order.slice(3).map((o,i)=>row(o,i+3)).join("")+
