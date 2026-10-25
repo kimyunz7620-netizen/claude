@@ -385,7 +385,7 @@ nav.tabs button small{font-size:.62rem;font-weight:400;opacity:.8}
 nav.tabs button[aria-current="page"]{color:var(--grape)}
 nav.tabs button[aria-current="page"] .e{filter:none;opacity:1}
 .banner{background:var(--sun-soft);border-radius:12px;padding:10px 12px;font-size:.85rem}
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:.9rem;font-weight:600;z-index:20;max-width:calc(100% - 32px);text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:.9rem;font-weight:600;z-index:60;max-width:calc(100% - 32px);text-align:center}
 .cal,.cal-h{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 /* every day block is the same size whatever it holds (spend, income, fixed cost) */
 .cal{grid-auto-rows:68px}
@@ -2049,12 +2049,12 @@ let QKI=[]; /* rows read from a card-app screenshot */
 function qkRender(){const box=$("qkPrev");QK=qkParse($("qkText").value).concat(QKI.filter(x=>!x.off)).map(x=>x.memo in QKO?{...x,cat:QKO[x.memo]}:x);box.hidden=!QK.length;if(!QK.length){box.innerHTML="";return}
   const opts=c=>`<option value="">분류 선택</option>`+CATS().filter(x=>!x.fund).map(x=>`<option value="${esc(x.id)}" ${x.id===c?"selected":""}>${look(x.id)[0]} ${esc(SHORT[x.id]||x.name)}</option>`).join("");
   box.innerHTML=QK.map((x,i)=>`<div class="qk-row ${x.cat?"":"need"}"><span class="m">${x.date?`<span class="muted">${md(x.date)}</span> `:""}${esc(x.memo||"(메모 없음)")}${x.src?` <button type="button" class="link tiny muted" data-qkoff="${x.src}" aria-label="빼기">✕</button>`:""}</span><b>${num(x.amount)}원</b><select data-qkcat="${i}" aria-label="분류">${opts(x.cat)}</select></div>`).join("")+
-    `<div class="btns" style="margin-top:6px"><button type="button" class="btn" id="qkSave" style="flex:1">💳 롯데 일시불로 ${QK.length}건 기록${QK.some(x=>x.date)?"":` · ${md($("enDate").value||TODAY)}`}</button></div>`}
-async function qkSave(){if(!QK.length)return;if(QK.some(x=>!x.cat)){toast("분류를 골라 주세요");return}const date=$("enDate").value||TODAY,b=$("qkSave");if(b)b.disabled=true;
+    `<div class="btns" style="margin-top:6px"><button type="button" class="btn" id="qkSave" style="flex:1">${QK.some(x=>!x.cat)?`⚠️ 분류를 골라 주세요 (${QK.filter(x=>!x.cat).length}건)`:`💳 롯데 일시불로 ${QK.length}건 기록${QK.some(x=>x.date)?"":` · ${md($("enDate").value||TODAY)}`}`}</button></div>`}
+async function qkSave(){if(!QK.length)return;if(QK.some(x=>!x.cat)){toast("분류를 골라 주세요");const s=document.querySelector(".qk-row.need select");if(s){s.scrollIntoView({block:"center"});s.focus()}return}const date=$("enDate").value||TODAY,b=$("qkSave");if(b)b.disabled=true;
   try{for(const x of QK)await put("entries/"+newId(),{date:x.date||date,cat:x.cat,amount:x.amount,method:"lotte",memo:x.memo,createdAt:new Date().toISOString()});
     toast(`⚡ ${QK.length}건 ${won(sum(QK,x=>x.amount))} 기록!`);$("qkText").value="";QKI=[];$("qkShotMsg").textContent="";qkRender();cancelEdit();closeSheet();selDate=date;calYm=ymOf(date);renderToday()}catch(_){if(b)b.disabled=false}}
 $("qkText").addEventListener("input",()=>{clearTimeout(qkRender.t);qkRender.t=setTimeout(qkRender,200)});
-$("qkPrev").addEventListener("change",e=>{const i=e.target.dataset.qkcat;if(i!=null){QK[i].cat=e.target.value||null;QKO[QK[i].memo]=QK[i].cat;e.target.closest(".qk-row").classList.toggle("need",!QK[i].cat)}});
+$("qkPrev").addEventListener("change",e=>{const i=e.target.dataset.qkcat;if(i!=null){QK[i].cat=e.target.value||null;QKO[QK[i].memo]=QK[i].cat;e.target.closest(".qk-row").classList.toggle("need",!QK[i].cat);const n=QK.filter(x=>!x.cat).length,bt=$("qkSave");if(bt)bt.textContent=n?`⚠️ 분류를 골라 주세요 (${n}건)`:`💳 롯데 일시불로 ${QK.length}건 기록${QK.some(x=>x.date)?"":` · ${md($("enDate").value||TODAY)}`}`}});
 $("qkPrev").addEventListener("click",e=>{if(e.target.id==="qkSave")qkSave();const o=e.target.dataset.qkoff;if(o){const r=QKI.find(x=>x.src===o);if(r)r.off=true;qkRender()}});
 /* 카드 앱 이용내역 캡처 → Claude가 날짜·가맹점·금액만 읽어 빠른 입력 미리보기에 넣어요. 이미 적은 건(같은 날·같은 금액)은 빼 둬요. 이미지는 저장하지 않아요 */
 async function qkShotInit(){if(!sample||qkShotInit.done)return;qkShotInit.done=true;const c=await Promise.resolve().then(()=>sample.limits()).catch(()=>null);if(!c||!c.images)return;$("qkShot").accept=c.images.mediaTypes.join(",");$("qkShotRow").hidden=false;qkShotInit.max=c.images.maxCount}
