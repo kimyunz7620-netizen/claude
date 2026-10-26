@@ -1082,7 +1082,7 @@ function parkAt(M){const a=S.accounts||{},pd=ymDay(M,PAY());if(!a.updatedAt||iso
   const rows=[["woori",SAVEACC+" 1"],["park2",SAVEACC+" 2"]].filter(([k])=>a[k]>0).map(([k,n])=>({n,v:a[k]}));return{sum:sum(rows,r=>r.v),rows}}
 function payPlan(M){
   const st=ST(),ab=appBill(M),c=cycleOf(M),open=TODAY<=c.end,spent=sum(entriesIn(c),e=>e.amount);
-  const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),back=backIn(M),extra=extraHanaAt(M)+back;
+  const card=ab!=null?ab:estBill(M)+(open?Math.max(0,cycleBudgetFor(M)-cyclePledge(c)-spent):0),back=backIn(M)-backGot(M) /* money already received is in the saved balances, so only what is still to come counts */,extra=extraHanaAt(M)+back;
   const autoRes=Math.max(0,sum(entriesIn(cashWin(M),e=>e.method==="cash"&&!imported(e)),e=>e.amount)-kbankInAt(cashWin(M))) /* only what was spent from 케뱅 since the app started; old-tracker rows were settled before */,manual=st.cashReserve!=null&&st.cashReserve!=="",cashRes=manual?st.cashReserve:autoRes;
   const fixed=fixedCash(M),inc=incomeAt(M),gift=fundGapAt(M),giftCard=ab!=null?fundCardIn(M):0,pp=st.prepayPot,potIn=pp&&ymAdd(pp.ym,1)===M&&pp.amount>0?pp.amount:0,park=parkAt(M),avail=inc+extra+potIn+park.sum-card+giftCard-fixed-gift-cashRes-(st.buffer||0);
   const paid=sum(S.payments.filter(p=>p.date>=ymDay(M,PAY())),p=>p.amount);
