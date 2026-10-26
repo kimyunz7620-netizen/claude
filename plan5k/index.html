@@ -858,7 +858,8 @@ function fixedAt(ym){return((S.fixed&&S.fixed.items)||[]).map(it=>{let a=it.amou
 /* 적금 (saving) plans: deposits month by month over the term; the government match is paid only at maturity and is lost on early cancellation */
 const SAVINGS=()=>((S.fixed&&S.fixed.items)||[]).filter(x=>x.saving&&x.startYm&&x.term);
 function savePlan(x){const end=ymAdd(x.startYm,x.term),months=[];for(let m=x.startYm;m<end;m=ymAdd(m,1)){const it=fixedAt(m).find(y=>y.id===x.id);months.push({ym:m,amt:it?it.amount:0})}
-  const total=sum(months,m=>m.amt);return{x,end,months,total,match:Math.round(total*(x.match||0))}}
+  const total=sum(months,m=>m.amt),n=months.length,interest=Math.round(sum(months,(m,i)=>0)+months.reduce((a,m,i)=>a+m.amt*(n-i)*(x.rate||0)/12,0)); /* 정기적금: each deposit earns the yearly rate for the months until maturity (tax-free) */
+  return{x,end,months,total,match:Math.round(total*(x.match||0)),interest}}
 /* fixed costs that leave on a given date (a day past the month's end falls on its last day; salary deductions are not shown) */
 function fixedOn(d){const last=Number(ymDay(ymOf(d),31).slice(8));return fixedAt(ymOf(d)).filter(x=>x.day&&x.amount>0&&x.acct!=="급여 공제"&&Math.min(x.day,last)===dom(d))}
 const fxWhere=x=>x.card?"💳 카드":x.src?`${esc(x.src)}에서 ${x.to?esc(x.to)+"로 ":""}냄`:x.acct?esc(x.acct):"🏦 통장";
@@ -1014,7 +1015,7 @@ function simulateRun(extra,plan){
     const debtLeft=cardRem+sum(loans,l=>Math.max(0,l.bal));
     const svMon=Math.round(sum(fixedAt(ym).filter(x=>x.saving),x=>x.amount));svAcc+=svMon;svMatch+=Math.round(sum(fixedAt(ym).filter(x=>x.saving),x=>x.amount*(x.match||0)));
     /* at maturity the deposits plus the match land in the bank */
-    let svOut=0;svPlans.filter(p=>p.end===ym).forEach(p=>{svOut+=p.total+p.match;svAcc-=p.total;svMatch-=p.match;pot+=p.total+p.match});
+    let svOut=0;svPlans.filter(p=>p.end===ym).forEach(p=>{svOut+=p.total+p.match+p.interest;svAcc-=p.total;svMatch-=p.match;pot+=p.total+p.match+p.interest});
     path.push({ym,net:base+pot+svAcc-debtLeft,avail,debt,save:avail-debt+svMon,svMon,parts:{inst:Math.min(instDebt,debt),pre,lp,hold:Math.max(0,debt-Math.min(instDebt,debt)-sum(pre,x=>x.a)-sum(lp,x=>x.a))},inc:incomeAt(ym),dep:st.deposit||0,bank:base-(st.deposit||0)+pot+svAcc,sv:svAcc,svMatch,svOut,owe:debtLeft});
     ym=next;
   }
@@ -1135,6 +1136,7 @@ const TASKS=[
  {g:"여행",label:"10/15~10/18 상해 여행",d:"2026-10-15",end:"2026-10-18",items:[
   {id:"t1",t:"여행 중 개인카드 쓰지 않기",n:"항공·숙박은 이미 할부 목록에 있어요. 현지 경비는 계모임 돈으로"}]},
  {g:"파킹통장",label:"10/22 파킹통장 개설",d:"2026-10-22",items:[{id:"p4",t:"파킹통장 개설하고 우리은행 저축분 옮기기",n:"월말 잔액 기록의 '우리은행' 칸을 파킹통장으로 쓰면 돼요"}]},
+ {g:"청약",label:"10/27 주택청약 우대 조건 확인",d:"2026-10-27",items:[{id:"h2",t:"연소득 5천만 원을 넘어도 주택청약 우대가 되는지 확인",n:"조건이 바뀌는 것 같다고 들었어요 · 은행이나 청약홈에서 확인하고, 소득 기준이 바뀌었으면 청약 납입 계획(월 2만 원)도 다시 보기"}]},
  {g:"구독료",label:"11/10 구독료 한 달 점검",d:"2026-11-10",items:[{id:"sub1",t:"토스뱅크·카드에서 나간 구독료 확인",n:"쿠팡와우·아이클라우드 말고 더 나가는 게 있으면 설정 › 고정비 구독료에 더해 주세요"}]},
  {g:"자동이체",label:"10/22 토스뱅크 첫 자동이체",d:"2026-10-22",items:[{id:"b2",t:"토스뱅크 자동이체가 다 나갔는지 확인",n:"월세·대출 이자·보험·계모임·경조사·구독료"}]},
  {g:"선결제",label:"12/25 결제 직후 선결제",d:"2026-12-25",items:[{id:"g1",t:"추천대로 선결제, 이마트용으로 모으기 시작",n:"이마트 선결제 시 수수료 약 32만원 절약"}]},
@@ -1612,14 +1614,14 @@ function renderSavings(){const box=$("svCard"),ps=SAVINGS().map(savePlan);box.da
     const runs=[];p.months.filter(m=>m.amt>0).forEach(m=>{const r=runs[runs.length-1];if(r&&r.amt===m.amt&&ymAdd(r.to,1)===m.ym){r.to=m.ym;r.n++}else runs.push({from:m.ym,to:m.ym,amt:m.amt,n:1})});
     const kv=(k,v,s)=>`<div class="li" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="t">${k}</div>${s?`<div class="s">${s}</div>`:""}</div><div class="a">${v}</div></div>`;
     return `<div class="row"><div class="title"><span class="em">🌱</span><h2>${esc(x.name)}</h2></div><span class="muted small">${ymShort(x.startYm)} ~ ${ymShort(ymAdd(p.end,-1))} · ${x.term}개월</span></div>
-    <div class="pj-head"><span class="small muted">만기 ${ymKo(p.end)} 예상 수령</span><span class="pj-big">${won(p.total+p.match)}</span><span class="small">낸 돈 ${man(p.total)} + 정부기여금 ${man(p.match)} · 이자(비과세) 별도</span></div>
+    <div class="pj-head"><span class="small muted">만기 ${ymKo(p.end)} 예상 수령</span><span class="pj-big">${won(p.total+p.match+p.interest)}</span><span class="small">낸 돈 ${man(p.total)} + 정부기여금 ${man(p.match)} + 이자 ${p.interest?man(p.interest):"별도"}${p.interest?` (연 ${Math.round((x.rate||0)*1000)/10}% · 비과세)`:" (비과세)"}</span></div>
     <div class="list">${kv("지금까지 낸 돈",won(paid),rec?"월말 잔액 기록 기준":"계획 기준 · 월말 잔액에 적으면 정확해져요")}
     ${kv("다음 납입",nx?won(nx.amt):"-",nx?`${md(ymDay(nx.ym,x.day||PAY()))} ${x.day?"":"월급날 "}· ${esc(x.acct||"")} 자동이체`:"남은 납입이 없어요")}
     ${kv("앞으로 낼 돈",won(sum(fut,m=>m.amt)),`${fut.length}번 남음`)}
     ${kv("만기까지 낼 돈 합계",won(p.total),`최대 ${won(500000*x.term)}`)}
     ${kv(`정부기여금 ${Math.round((x.match||0)*100)}%`,won(p.match),"만기에 한 번에 받아요 · 중도해지하면 0원")}</div>
     <div class="chips" style="margin-top:10px">${runs.map(r=>`<span class="chip plain">${ymShort(r.from)}${r.n>1?`~${ymShort(r.to)}`:""} 월 ${man1(r.amt)} × ${r.n}</span>`).join("")}</div>
-    <p class="tiny muted" style="margin-top:8px">순자산엔 낸 돈만, 기여금은 만기 때 더해요.</p>`}).join("");
+    <p class="tiny muted" style="margin-top:8px">순자산엔 낸 돈만, 기여금과 이자는 만기 때 더해요.</p>`}).join("");
 }
 /* ---------- 📊 소비 리포트: 지난 주기 같은 날까지와 비교, 돈 샌 곳, 주기말 예측, TOP3, 요일 패턴, 주기별 흐름 ---------- */
 function renderReport(){const el=$("rpCard");if(!el||!S.settings)return;
@@ -1847,7 +1849,7 @@ function renderProjection(sim,now,target){
   if(st.raiseFromYm&&(!sim.free||st.raiseFromYm<=ymAdd(sim.free,24))){const before=baseIncomeAt(ymAdd(st.raiseFromYm,-1)),aft=baseIncomeAt(ymAdd(st.raiseFromYm,1)),bp=backPay();if(aft>before)items.push([st.raiseFromYm,li("","💵",ymKo(st.raiseFromYm),`월급 ${st.raisePct||0}% 인상`,bp?`${st.raiseBackMonths}개월 소급분 ${man(bp)}도 이달에 · 전부 상환·저축으로`:"인상분은 전부 상환·저축으로",`월 ${dm(aft-before)}`)])}
   /* a savings plan (적금) starting or stepping up */
   ((S.fixed&&S.fixed.items)||[]).filter(x=>x.saving).forEach(x=>{(x.changes||[]).filter(c=>c.fromYm>=ymOf(TODAY)).forEach(c=>items.push([c.fromYm,li("good","🌱",ymKo(c.fromYm),`${esc(x.name)} 월 ${man1(c.amount)}`,`자유적립${x.match?` · 정부기여금 ${Math.round(x.match*100)}%는 만기에 받아요`:""}`,"")]))});
-  SAVINGS().map(savePlan).filter(p=>p.end>=ymOf(TODAY)).forEach(p=>items.push([p.end,li("good","🌱",ymKo(p.end),`${esc(p.x.name)} 만기`,`낸 돈 ${man(p.total)} + 정부기여금 ${man(p.match)} 받아요 (이자 별도)`,`+${man(p.total+p.match)}`)]));
+  SAVINGS().map(savePlan).filter(p=>p.end>=ymOf(TODAY)).forEach(p=>items.push([p.end,li("good","🌱",ymKo(p.end),`${esc(p.x.name)} 만기`,`낸 돈 ${man(p.total)} + 정부기여금 ${man(p.match)} 받아요${p.interest?` + 이자 ${man(p.interest)}`:" (이자 별도)"}`,`+${man(p.total+p.match+p.interest)}`)]));
   BONUS().filter(x=>x.ym>=ymOf(TODAY)&&x.ym<=tYm).forEach(x=>items.push([x.ym,li("","🧾",ymKo(x.ym),esc(x.memo||"보너스·환급"),"한 번 들어오는 돈 · 전부 상환·저축으로",`+${man(x.amount)}`)]));
   if(sim.free)items.push([sim.free,li("good","🎉",ymKo(sim.free),"빚 0원!",sim.intBack?`대출 이자 월 ${man(sim.intBack)}도 더는 안 나가요`:"","")]);
   if(after){items.push([after.ym,li("good","💰",`${ymKo(after.ym)}부터`,"매달 저축 시작",after.svMon?`${esc(SAVEACC)} ${man(after.save-after.svMon)} + 청년미래적금 ${man(after.svMon)}`:"파킹통장에 그대로 쌓아요",`월 ${man(after.save)}`)]);
