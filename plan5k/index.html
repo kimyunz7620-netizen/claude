@@ -1026,11 +1026,14 @@ const FIXACCTS_=()=>[...new Set(["","토스뱅크","하나은행","우리은행"
 function fixedDest(x){if(x.src&&x.to)return x.to;if(x.acct)return x.acct===SALARY||x.acct==="급여 공제"?null:x.acct;const t=(x.name||"")+" "+(x.note||"");if(/모임통장|계모임/.test(t))return GROUPACC;const fc=CATS().find(c=>c.fund&&t.includes((c.fund.bank||"").split(" ")[0]));if(fc||/경조사/.test(t))return fc?fc.fund.bank:"경조사 통장";return null}
 function payTxSteps(M,pl){
   const early=!!ST().payEarly,pd=early?ymDay(M,PAY()):ymDay(M,CARD()),steps=[],fx=fixedAt(M).filter(x=>!x.card&&!offSalary(x)&&x.amount>0);
+  const PARK1=SAVEACC+" 1",viaPark=!!ST().cashViaPark,parkCap=ST().parkCap||300000;
   const bm=balMode(M),paidL=bm?bm.paid:S.payments.filter(p=>p.date>=ymDay(M,PAY())),rows=bm?allocate(bm.room,TODAY):pl.rest>0?allocate(pl.rest,pd):[],items=rows.filter(r=>r.kind==="item"),loans=rows.filter(r=>r.kind==="loan"),pots=rows.filter(r=>r.kind==="pot");
   const prepay=sum(items,r=>r.amt),savePot=sum(pots,r=>r.amt),rest=bm?0:Math.max(0,pl.rest-sum(rows,r=>r.amt)),fundAcc=(CATS().find(c=>c.fund)||{fund:{}}).fund.bank||"경조사 통장";
   /* the card is paid from CARDACC: move money there only if it isn't the salary account; the check-card allowance goes to 케이뱅크 */
   const ca=CARDACC(),toCard=ca===SALARY?0:pl.card-pl.giftCard+prepay;
-  pl.park.rows.forEach(r=>steps.push({k:"park-"+r.n,from:r.n,to:SALARY,amt:r.v,sub:"선결제·케뱅 채우기에 쓸 돈 · 월급날에 먼저 꺼내 와요"}));
+  /* money already waiting in the parking account counts against what has to be refilled into it, so it only moves when it is really needed */
+  const potMove=bm?0:Math.min(savePot,Math.max(0,parkCap-(viaPark&&pl.cashRes?pl.cashRes:0))),v1=(pl.park.rows.find(r=>r.n===PARK1)||{v:0}).v,chkTo=viaPark?pl.cashRes:0,cover=Math.min(v1,chkTo+potMove),c1=Math.min(cover,chkTo),c2=cover-c1;
+  pl.park.rows.forEach(r=>{const a=r.n===PARK1?r.v-cover:r.v;if(a>0)steps.push({k:"park-"+r.n,from:r.n,to:SALARY,amt:a,sub:"선결제·카드값에 쓸 돈 · 월급날에 먼저 꺼내 와요"+(r.n===PARK1&&cover?` · ${won(cover)}은 파킹에 그대로 둬요`:"")})});
   const byDest={};fx.forEach(x=>{const d=fixedDest(x);if(d)(byDest[d]=byDest[d]||[]).push(x)});
   /* the gift shortfall goes wherever the monthly gift transfer leaves from (e.g. 토스뱅크, moved to the gift account by hand later) */
   const fundFix=fx.find(x=>/경조사/.test(x.name+" "+x.note)),gapDest=(fundFix&&fixedDest(fundFix))||fundAcc,gapTxt=`경조사 부족분 ${won(pl.gift)} (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")})${gapDest!==fundAcc?" · 다음 단계에서 직접 옮겨요":""}`;
@@ -1041,21 +1044,22 @@ function payTxSteps(M,pl){
   if(pl.gift&&gapDest!==fundAcc){const ro=(c=>c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28&&(c-0xAC00)%28!==8?"으로":"로")(fundAcc.charCodeAt(fundAcc.length-1));
     steps.push({k:"giftmove",from:gapDest,to:fundAcc,amt:pl.gift,head:`✋ 1번에서 ${gapDest}로 보낸 돈 중 ${man1(pl.gift)}을 옮겨요 (새 돈 아님)`,sub:`✋ 직접 옮기기 (${fundTop(M).map(t=>`${md(t.date)} ${t.memo||"경조사"}`).join(", ")}) · 매달 ${won((fundFix&&fundFix.amount)||0)}은 ${(fundFix&&fundFix.day)||22}일에 자동으로 ${fundAcc}${ro} 들어가요`})}
   if(toCard>0)steps.push({k:"kb",from:SALARY,to:ca,amt:toCard,sub:[`카드값 ${won(pl.card-pl.giftCard)}`,prepay?`할부 선결제용 ${won(prepay)}`:""].filter(Boolean).join(" + ")});
-  if(pl.cashRes){const cw=cashWin(M),ce=entriesIn(cw,e=>e.method==="cash"&&!imported(e)),kin=kbankInAt(cw),auto=ST().cashReserve==null||ST().cashReserve==="";
-    steps.push({k:"chk",from:SALARY,to:CHECKACC,amt:pl.cashRes,head:auto&&ce.length?`케뱅에서 쓴 생활비 ${ce.length}건 다시 채우기`:"",sub:auto&&ce.length?ce.map(e=>`${md(bDate(e))} ${e.memo||catName(e.cat)} ${won(e.amount)}`).concat(kin?[`케뱅으로 들어온 부수입 −${won(kin)}`]:[]).join(" + "):"체크카드로 쓸 생활비"})}
+  if(pl.cashRes-c1>0){const cw=cashWin(M),ce=entriesIn(cw,e=>e.method==="cash"&&!imported(e)),kin=kbankInAt(cw),auto=ST().cashReserve==null||ST().cashReserve==="";
+    steps.push({k:"chk",from:SALARY,to:viaPark?PARK1:CHECKACC,amt:pl.cashRes-c1,head:auto&&ce.length?`케뱅에서 쓴 생활비 ${ce.length}건 다시 채우기`:"",sub:(auto&&ce.length?ce.map(e=>`${md(bDate(e))} ${e.memo||catName(e.cat)} ${won(e.amount)}`).concat(kin?[`케뱅으로 들어온 부수입 −${won(kin)}`]:[]).join(" + "):"체크카드로 쓸 생활비")+(viaPark?" · 케뱅엔 두지 않고 쓸 때 파킹에서 옮겨요":"")})}
   if(pl.giftCard)steps.push({k:"gc",from:fundAcc,to:ca,amt:pl.giftCard,sub:"카드로 산 경조사 선물만큼 경조사 통장에서 채워요"});
   steps.push({k:"pay",act:`롯데카드 앱 › ${early?"즉시결제":"결제계좌 확인"}`,amt:pl.card,sub:early?`결제예정금액 › 즉시결제 · ${ca}에서 빠져요`:`${md(pd)}에 ${ca}에서 자동으로 빠져요`});
   if(paidL.length){const nm=p=>{const it=ITEMS().find(x=>x.id===p.itemId),d=LOANS().find(x=>x.id===p.loanId);return it?it.name:d?d.name:p.memo||"선결제"};
     steps.push({k:"pre-done",done:true,act:"롯데카드 앱 › 건별 선결제 (기록함)",amt:sum(paidL,p=>p.amount),sub:paidL.map(p=>`${nm(p)} ${won(p.amount)}`).join(" + ")})}
   if(items.length)steps.push({k:paidL.length?"pre2":"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 '선결제·상환 기록'에 적기"});
   loans.forEach(r=>steps.push({k:"loan-"+r.d.id,from:SALARY,to:r.d.name,amt:r.amt,sub:`중도상환${r.due?` · ${md(r.d.due)} 만기 전 상환`:""} · 하고 나면 '기록'`}));
+  if(potMove-c2>0)steps.push({k:"park-pot",from:SALARY,to:PARK1,amt:potMove-c2,sub:`다음 선결제(${pots[0].target.x.name})용으로 모아 두기 · 파킹통장 한도 ${man(parkCap)}까지`});
   if(rest>0)steps.push({k:"save",from:SALARY,to:SAVEACC,amt:rest,sub:"빚을 다 갚고 남는 돈 · 저축"});
   /* what really stays in the salary account: money saved toward the next prepayment, the buffer, and costs that leave it on their own.
      Costs taken out of the salary before it arrives (급여 공제) never reach it. The card and prepay are paid from it in steps above. */
   const ded=fx.filter(x=>x.acct==="급여 공제"),own=fx.filter(x=>!fixedDest(x)&&x.acct!=="급여 공제");
-  const auto=(savePot?[{name:`다음 선결제(${pots[0].target.x.name})용으로 모아 두기`,amount:savePot}]:[]).concat(own.map(x=>({name:x.name,amount:x.amount,note:x.note}))).concat(ST().buffer?[{name:"버퍼",amount:ST().buffer}]:[]);
+  const auto=(savePot-potMove>0?[{name:`다음 선결제(${pots[0].target.x.name})용으로 모아 두기`,amount:savePot-potMove}]:[]).concat(own.map(x=>({name:x.name,amount:x.amount,note:x.note}))).concat(ST().buffer?[{name:"버퍼",amount:ST().buffer}]:[]);
   const keep=sum(auto,x=>x.amount),outCard=ca===SALARY?pl.card-pl.giftCard+prepay:0;
-  return{steps,auto,keep,ded,bm,prepay,pot:savePot,left:pl.inc+pl.extra+pl.park.sum-sum(ded,x=>x.amount)-sum(steps.filter(s=>s.from===SALARY),s=>s.amt)-outCard-keep-(bm?0:Math.min(sum(paidL,p=>p.amount),Math.max(0,pl.avail)))};
+  return{steps,auto,keep,ded,bm,prepay,pot:savePot,left:pl.inc+pl.extra+pl.park.sum-cover-sum(ded,x=>x.amount)-sum(steps.filter(s=>s.from===SALARY),s=>s.amt)-outCard-keep-(bm?0:Math.min(sum(paidL,p=>p.amount),Math.max(0,pl.avail)))};
 }
 function renderPayTx(M,pl,phase){
   const el=$("payTx");if(!el)return;const {steps,auto,keep,ded,left,pot,bm,prepay}=payTxSteps(M,pl),pre=phase==="before";
