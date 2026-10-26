@@ -911,6 +911,8 @@ function itemBill(x,ym){const c=closedFrom(x);if(c&&ym>=c)return 0;const r=itemR
 function itemMonths(x){const out=[];for(let k=-(x.n-1);k<=x.N-x.n;k++)out.push(ymAdd(ASOF(),k));return out}
 function itemBal(x){if(closedFrom(x))return 0;const lp=lastPassed();return sum(itemMonths(x).filter(m=>m>lp),m=>itemRaw(x,m).p)}
 function prepayAmt(x,date){if(closedFrom(x))return 0;const f=fromOf(date||TODAY);return sum(itemMonths(x).filter(m=>m>=f),m=>itemRaw(x,m).p)}
+/* yearly return of prepaying an item: the fee it saves against the average principal still owed (fee is paid every month on what is left) */
+function itemRate(x,date){const f=fromOf(date||TODAY),ms=itemMonths(x).filter(m=>m>=f),S0=sum(ms,m=>itemRaw(x,m).p),F=prepaySave(x,date);return ms.length&&S0>0?24*F/(S0*(ms.length+1)):0}
 function prepaySave(x,date){if(closedFrom(x))return 0;const f=fromOf(date||TODAY);return sum(itemMonths(x).filter(m=>m>=f),m=>itemRaw(x,m).fee)}
 function itemLeftN(x){const lp=lastPassed();return itemMonths(x).filter(m=>m>lp).length}
 const itemEnd=x=>ymAdd(ASOF(),x.N-x.n);
@@ -1027,7 +1029,7 @@ function fixedDest(x){if(x.src&&x.to)return x.to;if(x.acct)return x.acct===SALAR
 function payTxSteps(M,pl){
   const early=!!ST().payEarly,pd=early?ymDay(M,PAY()):ymDay(M,CARD()),steps=[],fx=fixedAt(M).filter(x=>!x.card&&!offSalary(x)&&x.amount>0);
   const PARK1=SAVEACC+" 1",viaPark=!!ST().cashViaPark,parkCap=ST().parkCap||300000;
-  const bm=balMode(M),paidL=bm?bm.paid:S.payments.filter(p=>p.date>=ymDay(M,PAY())),rows=bm?allocate(bm.room,TODAY):pl.rest>0?allocate(pl.rest,pd):[],items=rows.filter(r=>r.kind==="item"),loans=rows.filter(r=>r.kind==="loan"),pots=rows.filter(r=>r.kind==="pot");
+  const bm=balMode(M),paidL=bm?bm.paid:S.payments.filter(p=>p.date>=ymDay(M,PAY())),rows0=bm?allocate(bm.room,TODAY):pl.rest>0?allocate(pl.rest,pd):[],parkRate=ST().parkRate||0.08,weak=rows0.filter(r=>r.kind==="item"&&itemRate(r.x,bm?TODAY:pd)<parkRate),rows=rows0.map(r=>weak.includes(r)?{kind:"pot",target:{x:r.x},amt:r.amt,weak:itemRate(r.x,bm?TODAY:pd)}:r),items=rows.filter(r=>r.kind==="item"),loans=rows.filter(r=>r.kind==="loan"),pots=rows.filter(r=>r.kind==="pot");
   const prepay=sum(items,r=>r.amt),savePot=sum(pots,r=>r.amt),rest=bm?0:Math.max(0,pl.rest-sum(rows,r=>r.amt)),fundAcc=(CATS().find(c=>c.fund)||{fund:{}}).fund.bank||"경조사 통장";
   /* the card is paid from CARDACC: move money there only if it isn't the salary account; the check-card allowance goes to 케이뱅크 */
   const ca=CARDACC(),toCard=ca===SALARY?0:pl.card-pl.giftCard+prepay;
@@ -1052,7 +1054,7 @@ function payTxSteps(M,pl){
     steps.push({k:"pre-done",done:true,act:"롯데카드 앱 › 건별 선결제 (기록함)",amt:sum(paidL,p=>p.amount),sub:paidL.map(p=>`${nm(p)} ${won(p.amount)}`).join(" + ")})}
   if(items.length)steps.push({k:paidL.length?"pre2":"pre",act:"롯데카드 앱 › 건별 선결제",amt:prepay,sub:items.map(r=>`${r.x.name} ${won(r.amt)}`).join(" · ")+" · 하고 나면 아래 '선결제·상환 기록'에 적기"});
   loans.forEach(r=>steps.push({k:"loan-"+r.d.id,from:SALARY,to:r.d.name,amt:r.amt,sub:`중도상환${r.due?` · ${md(r.d.due)} 만기 전 상환`:""} · 하고 나면 '기록'`}));
-  if(potMove-c2>0)steps.push({k:"park-pot",from:SALARY,to:PARK1,amt:potMove-c2,sub:`다음 선결제(${pots[0].target.x.name})용으로 모아 두기 · 파킹통장 한도 ${man(parkCap)}까지`});
+  if(potMove-c2>0)steps.push({k:"park-pot",from:SALARY,to:PARK1,amt:potMove-c2,sub:pots[0].weak!=null?`선결제 수익률 연 ${Math.round(pots[0].weak*100)}%가 파킹 연 ${Math.round(parkRate*100)}%보다 낮아서 파킹에 모아 둬요 · 한도 ${man(parkCap)}까지`:`다음 선결제(${(pots[0].target.x||pots[0].target).name})용으로 모아 두기 · 파킹통장 한도 ${man(parkCap)}까지`});
   if(rest>0)steps.push({k:"save",from:SALARY,to:SAVEACC,amt:rest,sub:"빚을 다 갚고 남는 돈 · 저축"});
   /* what really stays in the salary account: money saved toward the next prepayment, the buffer, and costs that leave it on their own.
      Costs taken out of the salary before it arrives (급여 공제) never reach it. The card and prepay are paid from it in steps above. */
