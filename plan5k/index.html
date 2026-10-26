@@ -1526,7 +1526,8 @@ function balHint(short){const a=S.accounts||{},names={hana:SALARY,kbank:CHECKACC
   const t=sum(rows,r=>r.v),when=a.updatedAt?md(iso(new Date(a.updatedAt))):"";
   return `<p class="small" style="margin-top:8px">💡 마지막으로 적은 통장 잔액${when?`(${when})`:""}: ${rows.map(r=>`${esc(r.n)} ${num(r.v)}`).join(" · ")}${rows.length>1?` · 합계 ${num(t)}`:""}<br>${t>=short?`<b class="good-t">월급날 전에 ${esc(SALARY)}으로 옮기면 모자란 ${won(short)}을 다 메울 수 있어요.</b>`:`월급날 전에 ${esc(SALARY)}으로 옮기면 ${won(t)}을 메우고, <b class="bad-t">${won(short-t)}</b>이 남아요.`}</p>`}
 function renderMonth(){
-  const d=dom(TODAY),M=ymOf(TODAY),pl=payPlan(M),early=!!ST().payEarly,sk="secure-"+M,phase=d<PAY()?"before":early?(S.tasks[sk]?"repay":"secure"):d<CARD()?"secure":"repay";
+  /* once payday has passed and every step is ticked and nothing is left to prepay, show next month's payday instead */
+  const d=dom(TODAY),M0=ymOf(TODAY),nextM=d>=PAY()&&(()=>{const p0=payPlan(M0),tx=payTxSteps(M0,p0);return p0.avail>0&&p0.rest<=0&&tx.steps.every(s=>s.done||S.tasks[`tx-${M0}-${s.k}`])})(),M=nextM?ymAdd(M0,1):M0,pl=payPlan(M),early=!!ST().payEarly,sk="secure-"+M,phase=d<PAY()||nextM?"before":early?(S.tasks[sk]?"repay":"secure"):d<CARD()?"secure":"repay";
   const secured=!!S.tasks[sk]||phase==="repay",es=earlySave(M),nwDone=S.networth.some(n=>n.ym===M),repDone=phase==="repay"&&pl.avail>0&&pl.rest<=0;
   $("monthSteps").innerHTML=`<div class="stepc ${phase!=="repay"?"cur":""} ${secured?"done":""}"><strong>① ${PAY()}일</strong><span>${early?"카드값 즉시결제":"카드값·고정비 확보"}</span></div><div class="stepc ${phase==="repay"&&!repDone?"cur":""} ${repDone?"done":""}"><strong>② ${early?"바로 이어서":`${CARD()}일 뒤`}</strong><span>선결제하고 기록</span></div><div class="stepc ${nwDone?"done":""}"><strong>③ 월말</strong><span>잔액 기록</span></div>`;
   const head=phase==="before"?`<div class="row"><h2>${md(ymDay(M,PAY()))} 월급날 미리보기</h2><span class="chip">D-${dayDiff(TODAY,ymDay(M,PAY()))}</span></div>`
